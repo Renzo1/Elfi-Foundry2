@@ -1,6 +1,6 @@
 forge-std/=lib/forge-std/src/
 @chimera/=lib/chimera/src/
-@openzeppelin/contracts=node_modules/@openzeppelin/contracts
-@chainlink/contracts/=node_modules/@chainlink/contracts
-@chainlink/contracts/=node_modules/@chainlink/contracts
-@uniswap=node_modules/@uniswap
+@openzeppelin/contracts=lib/@openzeppelin/contracts
+@chainlink/contracts/=lib/@chainlink/contracts
+@chainlink/contracts/=lib/@chainlink/contracts
+@uniswap=lib/@uniswap
