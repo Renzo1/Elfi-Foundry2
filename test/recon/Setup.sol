@@ -144,15 +144,16 @@ interface IHevm {
   // Labels the address in traces
   function label(address addr, string calldata label) external;
 }
-
 abstract contract Setup is BaseSetup {
   IHevm hevm = IHevm(address(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D));
-
+  
   ///////// Network Assets ////////
   WETH weth;
   MockToken wbtc;
   MockToken usdc;
+  address ETH_ADDRESS;
   address[] internal tokens;
+  
 
   StakeToken stakedETH;
   StakeToken stakedBTC;
@@ -363,8 +364,9 @@ abstract contract Setup is BaseSetup {
   function setup() internal virtual override {
     /// Deploy Tokens
     weth = new WETH();
-    usdc = new MockToken("USDC", 6);
-    wbtc = new MockToken("WBTC", 8);
+    usdc = new MockToken("USDC", 18); // toggle between 6 and 18
+    wbtc = new MockToken("WBTC", 8); 
+    ETH_ADDRESS = hevm.addr(0x122333444455555);
 
     tokens = new address[](3);
     tokens[0] = address(weth); 
@@ -410,6 +412,8 @@ abstract contract Setup is BaseSetup {
     setLpPoolConfig();
 
     setCommonConfig();
+
+    // TODO assert wrapper token is set to weth diamondConfigFacet.getChainConfig() == address(weth);
 
     /// Setup Actors and deal them some tokens
     setupActors();
@@ -1165,5 +1169,9 @@ abstract contract Setup is BaseSetup {
     assert(wbtc.balanceOf(address(BOB)) == WBTC_INITIAL_ALLOWANCE * (10 ** wbtc.decimals()));
     assert(wbtc.balanceOf(address(ALICE)) == WBTC_INITIAL_ALLOWANCE * (10 ** wbtc.decimals()));
     assert(wbtc.balanceOf(address(JAKE)) == WBTC_INITIAL_ALLOWANCE * (10 ** wbtc.decimals()));
+
+    assert(BOB.balance == ETH_INITIAL_ALLOWANCE);
+    assert(ALICE.balance == ETH_INITIAL_ALLOWANCE);
+    assert(JAKE.balance == ETH_INITIAL_ALLOWANCE);
   }
 }
