@@ -37,12 +37,14 @@ contract AccountFacet is IAccount {
         );
     }
 
-    function createWithdrawRequest(address token, uint256 amount) external override {
+
+    // @audit added a return for requestId value for easy testing
+    function createWithdrawRequest(address token, uint256 amount) external override returns (uint256 requestId) {
         AddressUtils.validEmpty(token);
         if (amount == 0) {
             revert Errors.AmountZeroNotAllowed();
         }
-        AssetsProcess.createWithdrawRequest(token, amount);
+        requestId = AssetsProcess.createWithdrawRequest(token, amount);
     }
 
     function executeWithdraw(uint256 requestId, OracleProcess.OracleParam[] calldata oracles) external override {

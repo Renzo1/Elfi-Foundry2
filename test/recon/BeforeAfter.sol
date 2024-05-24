@@ -18,7 +18,7 @@ abstract contract BeforeAfter is Setup {
         ///////// AccountFacet /////////
         /// getAccountInfo deconstructed values
         address accountOwner;
-        Account.TokenBalance[] accountTokenBalances;
+        // Account.TokenBalance[] accountTokenBalances;
         address[] accountTokens;
         bytes32[] accountPositions;
         uint256 accountPortfolioNetValue;
@@ -38,7 +38,7 @@ abstract contract BeforeAfter is Setup {
 
         /// getAccountInfoWithOracles deconstructed values
         address accountOwnerWithOracles;
-        Account.TokenBalance[] accountTokenBalancesWithOracles;
+        // Account.TokenBalance[] accountTokenBalancesWithOracles;
         address[] accountTokensWithOracles;
         bytes32[] accountPositionsWithOracles;
         uint256 accountPortfolioNetValueWithOracles;

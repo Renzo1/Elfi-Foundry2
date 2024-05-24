@@ -154,7 +154,8 @@ library AssetsProcess {
         );
     }
 
-    function createWithdrawRequest(address token, uint256 amount) external {
+    // @audit added a return for requestId value for easy testing
+    function createWithdrawRequest(address token, uint256 amount) external returns (uint256 requestId) {
         uint256 requestId = UuidCreator.nextId(WITHDRAW_ID_KEY);
         Withdraw.Request storage request = Withdraw.create(requestId);
         request.account = msg.sender;

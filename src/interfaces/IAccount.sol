@@ -24,7 +24,8 @@ interface IAccount {
 
     function deposit(address token, uint256 amount) external payable;
 
-    function createWithdrawRequest(address token, uint256 amount) external;
+    // @audit added a return for requestId value for easy testing
+    function createWithdrawRequest(address token, uint256 amount) external returns (uint256);
 
     function executeWithdraw(uint256 requestId, OracleProcess.OracleParam[] calldata oracles) external;
 

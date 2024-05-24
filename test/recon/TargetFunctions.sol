@@ -34,11 +34,10 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
       uint256 usdcPrice = 1e8;
 
     //   address[] memory tokens = new address[](2);
-
     //   tokens[0] = address(weth);
     //   tokens[1] = address(wbtc);
-
     //   OracleProcess.OracleParam[] oracles_ = new OracleProcess.OracleParam[](tokens.length);
+
         oracles = new OracleProcess.OracleParam[](tokens.length);
 
 
@@ -59,13 +58,54 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
       return oracles;
     }
 
+    /**
+      tokenToUsd(value: bigint, price: number | string | bigint, decimal: number) {
+        return (value * BigInt(price) * BigInt(Math.pow(10, 18 - decimal))) / BigInt(Math.pow(10, 8))
+    },
+
+    usdToToken(value: bigint, price: number | string | bigint, decimal: number = 18) {
+        return (value * BigInt(Math.pow(10, 8))) / BigInt(price) / BigInt(Math.pow(10, 18 - decimal))
+    },
+    */
+    function ethToWethConverter(uint256 _amount) internal returns(uint256) {
+        uint256 wethDecimal = weth.decimals(); // 6 or 18
+        uint256 ethDecimal = 18;
+
+        return (_amount / (10 ** (ethDecimal - wethDecimal)));    
+    }
+
+    function wethToEthConverter(uint256 _amount) internal returns(uint256) {
+        uint256 wethDecimal = weth.decimals(); // 6 or 18
+        uint256 ethDecimal = 18;
+
+        return (_amount * (10 ** (ethDecimal - wethDecimal)));
+    }
+
     //////////////////////////////////////
     //// Keeper Execution Modifiers //////
     //////////////////////////////////////
 
+
+    struct AccountWithdrawExecutions {
+        address account;
+        uint256 requestId;
+        address token;
+        uint256 amount;
+        bool executed;
+    }
+
+    struct CancelWithdrawExecutions {
+        address account;
+        uint256 requestId;
+        address token;
+        uint256 amount;
+        bool executed;
+    }
+
     struct KeeperExecutions {
         OrderExecutions[] orderExecutions;
         AccountWithdrawExecutions[] accountWithdrawExecutions;
+        CancelWithdrawExecutions[] cancelWithdrawExecutions;
     }
     
     KeeperExecutions internal _keeperExecutions;
@@ -150,6 +190,64 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         }
     }
   
+    /////////// cancelWithdraw ///////////
+
+    function accountFacet_cancelWithdraw(uint8 _requestIndex, uint16 _answer) public {
+        /// Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        __before(msg.sender, oracles); // Update the contract state tracker
+
+        uint256 requestId;
+        bytes32 reasonCode;
+
+        /// create a new list of requests yet to be executed
+        // get the number of unexecuted requests
+        uint256 numRequests = _keeperExecutions.accountWithdrawExecutions.length;
+        uint256 numNonExecutedRequests;
+        for(uint256 i = 0; i < numRequests; i++) {
+            if(!_keeperExecutions.accountWithdrawExecutions[i].executed) {
+                numNonExecutedRequests++;
+            }
+        }
+
+        AccountWithdrawExecutions[] memory openRequests = new AccountWithdrawExecutions[](numNonExecutedRequests);
+        for(uint256 i = 0; i < openRequests.length; i++) {
+            if(!_keeperExecutions.accountWithdrawExecutions[i].executed) {
+                openRequests[i] = _keeperExecutions.accountWithdrawExecutions[i];
+            }
+        }
+
+        /// select a random request from the list
+        uint256 _requestIndex = EchidnaUtils.clampBetween(uint256(_requestIndex), 0, openRequests.length - 1);
+        AccountWithdrawExecutions memory request = openRequests[_requestIndex];
+        requestId = request.requestId;
+
+        vm.prank(keeper); // prolly redundant
+        try diamondAccountFacet.cancelWithdraw(requestId, ""){
+            __after(msg.sender, oracles); // Update the contract state tracker
+
+            // Add to cancelWithdrawRequest Queue
+            CancelWithdrawExecutions memory execution = CancelWithdrawExecutions(request.account, requestId, request.token, request.amount,true);
+            _keeperExecutions.cancelWithdrawExecutions.push(execution);
+
+            // Update status of request in withdrawRequest queue
+            for(uint256 i = 0; i < numRequests; i++) {
+                if(_keeperExecutions.accountWithdrawExecutions[i].requestId == requestId) {
+                    _keeperExecutions.accountWithdrawExecutions[i].executed = true;
+                }
+            }
+
+            /// Invariants assessment
+
+            // Update the deposit tracker
+            // Add tx to keeper queue orders --> KeeperExecutions.accountExecutions[]
+
+        }catch{       
+
+        }
+    }
+
+
     /////////// executeUpdatePositionMarginRequest ///////////
     function positionFacet_executeUpdatePositionMarginRequest(uint16 _answer) public{
         
@@ -206,7 +304,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     ////////// AccountFacet //////////
     
     /// deposit
-    function accountFacet_deposit(uint8 _tokenIndex, uint256 _amount, bool _sendEth, bool _onlyEth, uint256 _ethValue, uint16 _answer) public{
+    function accountFacet_deposit(uint8 _tokenIndex, uint96 _amount, bool _sendEth, bool _onlyEth, uint96 _ethValue, uint16 _answer) public{
         // Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         __before(msg.sender, oracles); // Update the contract state tracker
@@ -215,20 +313,19 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         uint256 tokenIndex = EchidnaUtils.clampBetween(uint256(_tokenIndex), 0, tokens.length - 1);
         address token = tokens[tokenIndex]; // select a random token
 
-        uint256 amount = EchidnaUtils.clampBetween(_amount, 0, IERC20(token).balanceOf(msg.sender));
+        uint256 amount = EchidnaUtils.clampBetween(uint256(_amount), 0, IERC20(token).balanceOf(msg.sender));
         
         uint256 ethValue;
         // _sendEth = false; // toggle this on for some jobs
         if(_sendEth){
-            ethValue = EchidnaUtils.clampBetween(_ethValue, 0, msg.sender.balance);
+            ethValue = EchidnaUtils.clampBetween(uint256(_ethValue), 0, msg.sender.balance);
             amount = ethValue;
+
+            if (_onlyEth){ // to successfully deposit only eth
+                token = address(0);
+            }
         }else{
             ethValue = 0;
-        }
-        if (_sendEth && _onlyEth){ // to successfully deposit only eth
-            ethValue =  EchidnaUtils.clampBetween(_ethValue, 0, msg.sender.balance);
-            amount = ethValue;
-            token = address(0);
         }
 
         vm.prank(msg.sender); // prolly redundant
@@ -253,16 +350,157 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     }
 
 
+    /// createWithdrawRequest
+    function accountFacet_createWithdrawRequest(uint8 _tokenIndex, uint96 _amount, uint16 _answer) public {
+        // Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        __before(msg.sender, oracles); // Update the contract state tracker
+
+        // select a random token
+        uint256 tokenIndex = EchidnaUtils.clampBetween(uint256(_tokenIndex), 0, tokens.length - 1);
+        address token = tokens[tokenIndex]; // select a random token
+        uint256 amount;
+
+        if(token == address(usdc)){
+            amount = EchidnaUtils.clampBetween(uint256(_amount), 0, _before.portfolioVaultUsdcBalance);
+        }else if(token == address(weth)){
+            amount = EchidnaUtils.clampBetween(uint256(_amount), 0, _before.portfolioVaultWethBalance);
+        }else{ // wbtc
+            amount = EchidnaUtils.clampBetween(uint256(_amount), 0, _before.portfolioVaultBtcBalance);
+        }
+
+        vm.prank(msg.sender); // prolly redundant
+        try diamondAccountFacet.createWithdrawRequest(token, amount) returns(uint256 requestId){
+            __after(msg.sender, oracles); // Update the contract state tracker
+
+            // Add to withdrawRequest Queue
+            AccountWithdrawExecutions memory execution = AccountWithdrawExecutions(msg.sender, requestId, token, amount,false);
+            _keeperExecutions.accountWithdrawExecutions.push(execution);
+
+            /// Invariants assessment
+
+            // Update the deposit tracker
+            // Add tx to keeper queue orders --> KeeperExecutions.accountExecutions[]
+
+        }catch{       
+
+        }
+    }
+
+    /// batchUpdateAccountToken
+    function accountFacet_batchUpdateAccountToken(
+        uint16 _answer, 
+        uint96 _changedUsdc, 
+        uint96 _changedWeth, 
+        uint96 _changedBtc, 
+        bool _addUsdc,
+        bool _addWeth,
+        bool _addBtc
+    ) public {
+        // Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        __before(msg.sender, oracles); // Update the contract state tracker
+
+        AssetsProcess.UpdateAccountTokenParams memory params;
+        params.account = msg.sender;
+        params.tokens = tokens;
+        params.changedTokenAmounts = new int256[](tokens.length);
+
+        int256 usdcDelta;
+        int256 wethDelta;
+        int256 btcDelta;
+
+        uint256 accountUsdcBalance;
+        uint256 accountWethBalance;
+        uint256 accountBtcBalance;
+
+        for(uint256 i = 0; i < params.tokens.length; i++) {
+            
+            for(uint256 j = 0; j < _before.accountTokens.length; j++) {
+                if(_before.accountTokens[j] == address(usdc)){
+                    accountUsdcBalance = _before.accountTokenBalancesAmount[j];
+                }else if(_before.accountTokens[j] == address(weth)){
+                    accountWethBalance = _before.accountTokenBalancesAmount[j];
+                }else if(_before.accountTokens[j] == address(wbtc)){
+                    accountBtcBalance = _before.accountTokenBalancesAmount[j];
+                }else{
+                    accountUsdcBalance = 0;
+                    accountWethBalance = 0;
+                    accountBtcBalance = 0;
+                }
+            }
+
+            if(params.tokens[i] == address(weth)){
+                if(_addWeth){
+                    // set weth delta
+                    wethDelta = int256(EchidnaUtils.clampBetween(uint256(_changedWeth), 0, accountWethBalance));
+                }else{
+                    // set weth delta
+                    wethDelta = -(int256(EchidnaUtils.clampBetween(uint256(_changedWeth), 0, accountWethBalance)));
+                }
+
+                params.changedTokenAmounts[i] = wethDelta;
+
+            }else if(params.tokens[i] == address(wbtc)){
+                if(_addBtc){
+                    // set btc delta
+                    btcDelta = int256(EchidnaUtils.clampBetween(uint256(_changedBtc), 0, accountBtcBalance));
+                }else{
+                    // set btc delta
+                    btcDelta = -(int256(EchidnaUtils.clampBetween(uint256(_changedBtc), 0, accountBtcBalance)));
+                }
+
+                params.changedTokenAmounts[i] = btcDelta;
+
+            }else{
+                if(_addUsdc){
+                    // set usdc delta
+                    usdcDelta = int256(EchidnaUtils.clampBetween(uint256(_changedUsdc), 0, accountUsdcBalance));
+                }else{
+                    // set usdc delta
+                    usdcDelta = -(int256(EchidnaUtils.clampBetween(uint256(_changedUsdc), 0, accountUsdcBalance)));
+                }
+
+                params.changedTokenAmounts[i] = usdcDelta;
+
+            }
+            
+        }
+
+        vm.prank(msg.sender); // prolly redundant
+        try diamondAccountFacet.batchUpdateAccountToken(params) {
+            __after(msg.sender, oracles); // Update the contract state tracker
+
+            // Add to withdrawRequest Queue
+            // AccountWithdrawExecutions memory execution = AccountWithdrawExecutions(msg.sender, requestId, token, amount,false);
+            // _keeperExecutions.accountWithdrawExecutions.push(execution);
+
+            /// Invariants assessment
+
+            // Update the deposit tracker
+            // Add tx to keeper queue orders --> KeeperExecutions.accountExecutions[]
+
+        }catch{       
+
+        }
+    
+    }
+  
+
+    ////////// OrderFacet //////////
+
     /**
     
     struct KeeperExecutions {
         OrderExecutions[] orderExecutions;
         AccountWithdrawExecutions[] accountWithdrawExecutions;
+        CancelWithdrawExecutions[] cancelWithdrawExecutions;
     }
     
     KeeperExecutions internal _keeperExecutions;
     */
     
+
     struct TxsTracking {
         ////////// AccountFacet //////////
         // mapping users to their deposits
@@ -289,65 +527,6 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     TxsTracking internal _txsTracking;
 
-    struct AccountWithdrawExecutions {
-        address account;
-        uint256 requestId;
-        address token;
-        uint256 amount;
-        bool executed;
-    }
-
-
-    /// createWithdrawRequest
-    function accountFacet_createWithdrawRequest(uint8 _tokenIndex, uint256 _amount, uint16 _answer) public {
-        // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
-
-        // select a random token
-        uint256 tokenIndex = EchidnaUtils.clampBetween(uint256(_tokenIndex), 0, tokens.length - 1);
-        address token = tokens[tokenIndex]; // select a random token
-        uint256 amount;
-
-        if(token == address(usdc)){
-            amount = EchidnaUtils.clampBetween(_amount, 0, _before.portfolioVaultUsdcBalance);
-        }else if(token == address(weth)){
-            amount = EchidnaUtils.clampBetween(_amount, 0, _before.portfolioVaultWethBalance);
-        }else{ // wbtc
-            amount = EchidnaUtils.clampBetween(_amount, 0, _before.portfolioVaultBtcBalance);
-        }
-
-        vm.prank(msg.sender); // prolly redundant
-        try diamondAccountFacet.createWithdrawRequest(token, amount){
-            __after(msg.sender, oracles); // Update the contract state tracker
-            uint256 requestId;
-
-            // Add to withdrawRequest Queue
-            AccountWithdrawExecutions memory execution = AccountWithdrawExecutions(msg.sender, requestId, token, amount,false);
-            _keeperExecutions.accountWithdrawExecutions.push(execution);
-
-            /// Invariants assessment
-
-            // Update the deposit tracker
-            // Add tx to keeper queue orders --> KeeperExecutions.accountExecutions[]
-
-        }catch{            
-        }
-    }
-
-    /// cancelWithdraw
-    function accountFacet_cancelWithdraw(uint256 requestId, bytes32 reasonCode) public {
-        diamondAccountFacet.cancelWithdraw(requestId, reasonCode);
-    }
-  
-
-    /// batchUpdateAccountToken
-    function accountFacet_batchUpdateAccountToken(AssetsProcess.UpdateAccountTokenParams calldata params) public {
-        diamondAccountFacet.batchUpdateAccountToken(params);
-    }
-  
-
-    ////////// OrderFacet //////////
 
     /// createOrderRequest
     // create order with weth or btc. 
@@ -452,6 +631,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     ////////////////////////////
     //// Scenario functions ////
     ////////////////////////////
+    // Consider moving to stateless test
 
     //////////// Frontrunners //////////
 
