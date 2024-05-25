@@ -44,11 +44,12 @@ library OrderProcess {
         bool isLong;
     }
 
+    // @audit added a return for orderId value for easy testing
     function createOrderRequest(
         Account.Props storage accountProps,
         IOrder.PlaceOrderParams calldata params,
         bool validateExecutionFee
-    ) external {
+    ) external returns(uint256) {
         _validatePlaceOrder(params);
         if (
             params.posSide == Order.PositionSide.INCREASE &&
@@ -97,6 +98,7 @@ library OrderProcess {
         }
         accountProps.addOrder(orderId);
         emit PlaceOrderEvent(orderId, order);
+        return orderId;     // @audit added a return for orderId value for easy testing
     }
 
     function executeOrder(uint256 orderId, Order.OrderInfo memory order) external {

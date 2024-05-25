@@ -311,14 +311,14 @@ abstract contract Setup is BaseSetup {
   uint256 constant USDC_LIQUIDATION_FACTOR = 5 * 1e3;
 
   bool constant WETH_IS_SUPPORT_COLLATERAL = true;
-  uint256 constant WETH_PRECISION = 6;
-  uint256 constant WETH_DISCOUNT = 99 * 1e3;
+  uint256 constant WETH_PRECISION = 6; 
+  uint256 constant WETH_DISCOUNT = 99 * 1e3; // TODO: change value to be different from wbtc values and test again
   uint256 constant WETH_COLLATERAL_USER_CAP = 100 * 1e18;
-  uint256 constant WETH_COLLATERAL_TOTAL_CAP = 100_000 * 1e18;
-  uint256 constant WETH_LIABILITY_USER_CAP = 1 * 1e18;
+  uint256 constant WETH_COLLATERAL_TOTAL_CAP = 100_000 * 1e18; 
+  uint256 constant WETH_LIABILITY_USER_CAP = 1 * 1e18; 
   uint256 constant WETH_LIABILITY_TOTAL_CAP = 50 * 1e18;
-  uint256 constant WETH_INTEREST_RATE_FACTOR = 10;
-  uint256 constant WETH_LIQUIDATION_FACTOR = 5 * 1e3;
+  uint256 constant WETH_INTEREST_RATE_FACTOR = 10; // TODO: change value to be different from wbtc values and test again
+  uint256 constant WETH_LIQUIDATION_FACTOR = 5 * 1e3; // TODO: change value to be different from wbtc values and test again
 
   bool constant WBTC_IS_SUPPORT_COLLATERAL = true;
   uint256 constant WBTC_PRECISION = 6;

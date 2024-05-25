@@ -16,7 +16,7 @@ contract OrderFacet is IOrder, ReentrancyGuard {
     using Account for Account.Props;
     using Order for Order.Props;
 
-    function createOrderRequest(PlaceOrderParams calldata params) external payable override nonReentrant {
+    function createOrderRequest(PlaceOrderParams calldata params) external payable override nonReentrant returns (uint256 orderId) {
         address account = msg.sender;
         if (params.posSide == Order.PositionSide.INCREASE && !params.isCrossMargin) {
             require(!params.isNativeToken || msg.value == params.orderMargin, "Deposit native token amount error!");
@@ -31,15 +31,19 @@ contract OrderFacet is IOrder, ReentrancyGuard {
             );
         }
         Account.Props storage accountProps = Account.loadOrCreate(account);
-        OrderProcess.createOrderRequest(accountProps, params, true);
+        orderId = OrderProcess.createOrderRequest(accountProps, params, true); // @audit added a return for orderId value for easy testing
     }
 
-    function batchCreateOrderRequest(PlaceOrderParams[] calldata params) external payable override nonReentrant {
+    // @audit added a return for orderId value for easy testing
+    function batchCreateOrderRequest(PlaceOrderParams[] calldata params) external payable override nonReentrant returns (uint256[] memory orderIds) {
         address account = msg.sender;
         Account.Props storage accountProps = Account.loadOrCreate(account);
         uint256 totalExecutionFee;
         AppConfig.ChainConfig memory chainConfig = AppConfig.getChainConfig();
         bool isCrossMargin = params[0].isCrossMargin;
+
+        orderIds = new uint256[](params.length); // @audit added a return for orderId value for easy testing
+
         for (uint256 i; i < params.length; i++) {
             if (params[i].posSide == Order.PositionSide.INCREASE) {
                 revert Errors.OnlyDecreaseOrderSupported();
@@ -48,7 +52,7 @@ contract OrderFacet is IOrder, ReentrancyGuard {
                 revert Errors.MarginModeError();
             }
             GasProcess.validateExecutionFeeLimit(params[i].executionFee, chainConfig.placeDecreaseOrderGasFeeLimit);
-            OrderProcess.createOrderRequest(accountProps, params[i], false);
+            orderIds[i] = OrderProcess.createOrderRequest(accountProps, params[i], false);
             totalExecutionFee += params[i].executionFee;
         }
         require(msg.value == totalExecutionFee, "Batch place order with execution fee error!");

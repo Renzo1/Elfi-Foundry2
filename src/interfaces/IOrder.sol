@@ -29,9 +29,10 @@ interface IOrder {
         Order.OrderInfo orderInfo;
     }
 
-    function createOrderRequest(PlaceOrderParams calldata params) external payable;
+    // @audit added a return for orderId value for easy testing
+    function createOrderRequest(PlaceOrderParams calldata params) external payable returns(uint256);
 
-    function batchCreateOrderRequest(PlaceOrderParams[] calldata params) external payable;
+    function batchCreateOrderRequest(PlaceOrderParams[] calldata params) external payable returns(uint256[] memory);
 
     function executeOrder(uint256 orderId, OracleProcess.OracleParam[] calldata oracles) external;
 
