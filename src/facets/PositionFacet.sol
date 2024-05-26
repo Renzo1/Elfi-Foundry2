@@ -19,7 +19,8 @@ contract PositionFacet is IPosition, ReentrancyGuard {
 
     bytes32 constant AUTO_REDUCE_ID_KEY = keccak256("AUTO_REDUCE_ID_KEY");
 
-    function createUpdatePositionMarginRequest(UpdatePositionMarginParams calldata params) external payable override {
+    // @audit added a return for requestId value for easy testing
+    function createUpdatePositionMarginRequest(UpdatePositionMarginParams calldata params) external payable override returns(uint256 requestId) {
         if (params.updateMarginAmount == 0) {
             revert Errors.AmountZeroNotAllowed();
         }
@@ -50,7 +51,7 @@ contract PositionFacet is IPosition, ReentrancyGuard {
             params
         );
 
-        PositionMarginProcess.createUpdatePositionMarginRequest(
+        requestId = PositionMarginProcess.createUpdatePositionMarginRequest(
             account,
             params,
             updateMarginAmount,
@@ -105,7 +106,9 @@ contract PositionFacet is IPosition, ReentrancyGuard {
         );
     }
 
-    function createUpdateLeverageRequest(UpdateLeverageParams calldata params) external payable override {
+    
+    // @audit added a return for requestId value for easy testing
+    function createUpdateLeverageRequest(UpdateLeverageParams calldata params) external payable override returns(uint256 requestId){
         AppConfig.SymbolConfig memory symbolConfig = ConfigProcess.getSymbolConfig(params.symbol);
         Symbol.Props memory symbolProps = Symbol.load(params.symbol);
         if (symbolProps.code.length == 0) {
@@ -138,7 +141,7 @@ contract PositionFacet is IPosition, ReentrancyGuard {
             params
         );
 
-        PositionMarginProcess.createUpdateLeverageRequest(
+        requestId = PositionMarginProcess.createUpdateLeverageRequest(
             account,
             params,
             addMarginAmount,

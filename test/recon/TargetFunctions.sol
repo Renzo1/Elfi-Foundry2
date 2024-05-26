@@ -127,12 +127,70 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     struct OrderExecutions {
         address account;
         uint256 orderId;
+        bool isNativeToken;
+        address marginToken;
+        uint256 orderMargin;
+        uint256 executionFee;
         bool executed;
     }
 
     struct CanceledOrders {
         address account;
         uint256 orderId;
+        bool isNativeToken;
+        address marginToken;
+        uint256 orderMargin;
+        uint256 executionFee;
+        bool executed;
+    }
+
+    struct PositionMarginRequests {
+        address account;
+        uint256 requestId;
+        uint256 positionKey;
+        bool isAdd;
+        bool isNativeToken;
+        uint256 updateMarginAmount;
+        uint256 executionFee;
+        bool executed;
+    }
+
+    struct CanceledPositionMarginRequests {
+        address account;
+        uint256 requestId;
+        uint256 positionKey;
+        bool isAdd;
+        bool isNativeToken;
+        uint256 updateMarginAmount;
+        uint256 executionFee;
+        bool executed;
+    }
+
+    struct PositionLeverageRequests {
+        address account;
+        uint256 requestId;
+        bytes32 symbol;
+        bool isLong;
+        bool isNativeToken;
+        bool isCrossMargin;
+        uint256 leverage;
+        address marginToken;
+        uint256 addMarginAmount;
+        uint256 executionFee;
+        bool executed;
+    }
+
+    struct CanceledPositionLeverageRequests {
+        address account;
+        uint256 requestId;
+        bytes32 symbol;
+        bool isLong;
+        bool isNativeToken;
+        bool isCrossMargin;
+        uint256 leverage;
+        address marginToken;
+        uint256 addMarginAmount;
+        uint256 executionFee;
         bool executed;
     }
 
@@ -141,6 +199,10 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         CancelWithdrawExecutions[] cancelWithdrawExecutions;
         OrderExecutions[] orderExecutions;
         CanceledOrders[] canceledOrders;
+        PositionMarginRequests[] positionMarginRequests;
+        PositionLeverageRequests[] positionLeverageRequests;
+        CanceledPositionMarginRequests[] canceledPositionMarginRequests;
+        CanceledPositionLeverageRequests[] canceledPositionLeverageRequests;
     }
     
     KeeperExecutions internal _keeperExecutions;
@@ -232,9 +294,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         }
 
         OrderExecutions[] memory openRequests = new OrderExecutions[](numNonExecutedRequests);
-        for(uint256 i = 0; i < openRequests.length; i++) {
+        uint256 index;
+        for(uint256 i = 0; i < numRequests; i++) {
             if(!_keeperExecutions.orderExecutions[i].executed) {
-                openRequests[i] = _keeperExecutions.orderExecutions[i];
+                openRequests[index] = _keeperExecutions.orderExecutions[i];
+                index++;
             }
         }
 
@@ -248,7 +312,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             __after(msg.sender, oracles); // Update the contract state tracker
 
             // Add to canceledOrder Queue -- tracking canceledOrder requests is not critical, but is useful for debugging
-            CanceledOrders memory execution = CanceledOrders(request.account, requestId, false);
+            CanceledOrders memory execution = CanceledOrders(request.account, requestId, request.isNativeToken, request.marginToken, request.orderMargin,request.executionFee,false);
             _keeperExecutions.canceledOrders.push(execution);
 
             // Update status of request in withdrawRequest queue
@@ -260,8 +324,6 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
             /// Invariants assessment
 
-            // Update the deposit tracker
-            // Add tx to keeper queue orders --> KeeperExecutions.accountExecutions[]
 
         }catch{       
 
@@ -346,9 +408,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         }
 
         AccountWithdrawExecutions[] memory openRequests = new AccountWithdrawExecutions[](numNonExecutedRequests);
-        for(uint256 i = 0; i < openRequests.length; i++) {
+        uint256 index;
+        for(uint256 i = 0; i < numRequests; i++) {
             if(!_keeperExecutions.accountWithdrawExecutions[i].executed) {
-                openRequests[i] = _keeperExecutions.accountWithdrawExecutions[i];
+                openRequests[index] = _keeperExecutions.accountWithdrawExecutions[i];
+                index++;
             }
         }
 
@@ -374,8 +438,6 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
             /// Invariants assessment
 
-            // Update the deposit tracker
-            // Add tx to keeper queue orders --> KeeperExecutions.accountExecutions[]
 
         }catch{       
 
@@ -385,21 +447,296 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     /////////// executeUpdatePositionMarginRequest ///////////
     function positionFacet_executeUpdatePositionMarginRequest(uint16 _answer) public{
+        // Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         
+        PositionMarginRequests memory request;
+        address account;
+        uint256 requestId;
+        
+        for (uint256 i = 0; i < _keeperExecutions.positionMarginRequests.length; i++) {
+            request = _keeperExecutions.positionMarginRequests[i];
+            account = request.account;
+            requestId = request.requestId;
+            
+            __before(account, oracles); // Update the contract state tracker
 
-        // uint256 requestId;
-        // OracleProcess.OracleParam[] memory oracles;
-        // diamondPositionFacet.executeUpdatePositionMarginRequest(requestId, oracles);
+            if(!request.executed){
+                vm.prank(keeper);
+                try diamondPositionFacet.executeUpdatePositionMarginRequest(requestId, oracles){
+                    __after(account, oracles); // Update the contract state tracker
+                    _keeperExecutions.positionMarginRequests[i].executed = true;
+    
+                    
+                    
+                    /// Invariants assessment
+    
+    
+    
+                } catch {
+                    // if executeWithdraw fails for valid reasons set:
+                    _keeperExecutions.positionMarginRequests[i].executed = true;
+    
+                    // if executeWithdraw fails for invalid reasons assert false: DOS
+                    // assert(false);
+                }
+            }
+        }
+
+        for(uint256 i = 0; i < _keeperExecutions.positionMarginRequests.length; i++) {
+            // remove all executed requests from the queue
+            if(_keeperExecutions.positionMarginRequests[i].executed) {
+                _keeperExecutions.positionMarginRequests[i] = _keeperExecutions.positionMarginRequests[_keeperExecutions.positionMarginRequests.length - 1];
+                _keeperExecutions.positionMarginRequests.pop();
+                // Decrement i to ensure the current index is checked again
+                if (i > 0) {
+                    i--;
+                }
+            }
+
+        }
     }
 
 
+    /// cancelUpdatePositionMarginRequest
+    function positionFacet_cancelUpdatePositionMarginRequest(uint8 _requestIndex, uint16 _answer) public {
+        /// Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        __before(msg.sender, oracles); // Update the contract state tracker
+
+        uint256 requestId;
+
+        /// create a new list of requests yet to be executed
+        // get the number of unexecuted requests (numNonExecutedRequests)
+        uint256 numRequests = _keeperExecutions.positionMarginRequests.length;
+        uint256 numNonExecutedRequests;
+        for(uint256 i = 0; i < numRequests; i++) {
+            if(!_keeperExecutions.positionMarginRequests[i].executed) {
+                numNonExecutedRequests++;
+            }
+        }
+
+        PositionMarginRequests[] memory openRequests = new PositionMarginRequests[](numNonExecutedRequests);
+        uint256 index;
+        for(uint256 i = 0; i < numRequests; i++) {
+            if(!_keeperExecutions.positionMarginRequests[i].executed) {
+                openRequests[index] = _keeperExecutions.positionMarginRequests[i];
+                index++;
+            }
+        }
+
+        /// select a random request from the list
+        uint256 requestIndex = EchidnaUtils.clampBetween(uint256(_requestIndex), 0, openRequests.length - 1);
+        PositionMarginRequests memory request = openRequests[requestIndex];
+        requestId = request.requestId;
+
+        vm.prank(keeper); // prolly redundant
+        try diamondPositionFacet.cancelUpdatePositionMarginRequest(requestId, ""){
+            __after(msg.sender, oracles); // Update the contract state tracker
+
+            // Add to canceledOrder Queue -- tracking canceledOrder requests is not critical, but is useful for debugging
+            CanceledPositionMarginRequests memory execution = CanceledPositionMarginRequests(
+                request.account, 
+                requestId, 
+                request.positionKey,
+                request.isAdd,
+                request.isNativeToken,
+                request.updateMarginAmount,
+                request.executionFee,
+                false);
+            _keeperExecutions.canceledPositionMarginRequests.push(execution);
+
+            // Update status of request in withdrawRequest queue
+            for(uint256 i = 0; i < numRequests; i++) {
+                if(_keeperExecutions.positionMarginRequests[i].requestId == requestId) {
+                    _keeperExecutions.positionMarginRequests[i].executed = true;
+                }
+            }
+
+            /// Invariants assessment
+
+            // Update the deposit tracker
+            // Add tx to keeper queue orders --> KeeperExecutions.accountExecutions[]
+
+        }catch{       
+
+        }
+      }
+
     /////////// executeUpdateLeverageRequest ///////////
     function positionFacet_executeUpdateLeverageRequest(uint16 _answer) public{
+        // Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         
+        PositionLeverageRequests memory request;
+        address account;
+        uint256 requestId;
+        
+        for (uint256 i = 0; i < _keeperExecutions.positionLeverageRequests.length; i++) {
+            request = _keeperExecutions.positionLeverageRequests[i];
+            account = request.account;
+            requestId = request.requestId;
+            
+            __before(account, oracles); // Update the contract state tracker
 
-        // uint256 requestId; 
-        // OracleProcess.OracleParam[] calldata oracles;
-        // diamondPositionFacet.executeUpdateLeverageRequest(requestId, oracles);
+            if(!request.executed){
+                vm.prank(keeper);
+                try diamondPositionFacet.executeUpdateLeverageRequest(requestId, oracles){
+                    __after(account, oracles); // Update the contract state tracker
+                    _keeperExecutions.positionLeverageRequests[i].executed = true;
+    
+                    
+                    
+                    /// Invariants assessment
+    
+    
+    
+                } catch {
+                    // if executeWithdraw fails for valid reasons set:
+                    _keeperExecutions.positionLeverageRequests[i].executed = true;
+    
+                    // if executeWithdraw fails for invalid reasons assert false: DOS
+                    // assert(false);
+                }
+            }
+        }
+
+        for(uint256 i = 0; i < _keeperExecutions.positionLeverageRequests.length; i++) {
+            // remove all executed requests from the queue
+            if(_keeperExecutions.positionLeverageRequests[i].executed) {
+                _keeperExecutions.positionLeverageRequests[i] = _keeperExecutions.positionLeverageRequests[_keeperExecutions.positionLeverageRequests.length - 1];
+                _keeperExecutions.positionLeverageRequests.pop();
+                // Decrement i to ensure the current index is checked again
+                if (i > 0) {
+                    i--;
+                }
+            }
+
+        }   
+    }
+      
+  
+    /////////// cancelUpdateLeverageRequest ///////////
+    function positionFacet_cancelUpdateLeverageRequest(uint8 _requestIndex, uint16 _answer) public {
+        /// Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        __before(msg.sender, oracles); // Update the contract state tracker
+
+        uint256 requestId;
+
+        /// create a new list of requests yet to be executed
+        // get the number of unexecuted requests (numNonExecutedRequests)
+        uint256 numRequests = _keeperExecutions.positionLeverageRequests.length;
+        uint256 numNonExecutedRequests;
+        for(uint256 i = 0; i < numRequests; i++) {
+            if(!_keeperExecutions.positionLeverageRequests[i].executed) {
+                numNonExecutedRequests++;
+            }
+        }
+
+        PositionLeverageRequests[] memory openRequests = new PositionLeverageRequests[](numNonExecutedRequests);
+        uint256 index;
+        for(uint256 i = 0; i < numRequests; i++) {
+            if(!_keeperExecutions.positionLeverageRequests[i].executed) {
+                openRequests[index] = _keeperExecutions.positionLeverageRequests[i];
+                index++;
+            }
+        }
+
+        /// select a random request from the list
+        uint256 requestIndex = EchidnaUtils.clampBetween(uint256(_requestIndex), 0, openRequests.length - 1);
+        PositionLeverageRequests memory request = openRequests[requestIndex];
+        requestId = request.requestId;
+
+        vm.prank(keeper); // prolly redundant
+        try diamondPositionFacet.cancelUpdateLeverageRequest(requestId, ""){
+            __after(msg.sender, oracles); // Update the contract state tracker
+
+            // Add to canceledOrder Queue -- tracking canceledOrder requests is not critical, but is useful for debugging
+            CanceledPositionLeverageRequests memory execution = CanceledPositionLeverageRequests(
+                request.account, 
+                requestId, 
+                request.symbol,
+                request.isLong,
+                request.isNativeToken,
+                request.isCrossMargin,
+                request.leverage,
+                request.marginToken,
+                request.addMarginAmount,
+                request.executionFee,
+                false);
+            _keeperExecutions.canceledPositionLeverageRequests.push(execution);
+
+            // Update status of request in withdrawRequest queue
+            for(uint256 i = 0; i < numRequests; i++) {
+                if(_keeperExecutions.positionMarginRequests[i].requestId == requestId) {
+                    _keeperExecutions.positionMarginRequests[i].executed = true;
+                }
+            }
+
+            /// Invariants assessment
+
+            // Update the deposit tracker
+            // Add tx to keeper queue orders --> KeeperExecutions.accountExecutions[]
+
+        }catch{       
+
+        }
+    }
+
+    /**
+    
+    struct DecreasePositionParams {
+        uint256 requestId;
+        bytes32 symbol;
+        bool isLiquidation;
+        bool isCrossMargin;
+        address marginToken;
+        uint256 decreaseQty;
+        uint256 executePrice;
+    }
+
+
+    */
+
+    struct AutoDecreasePositionParamsHelper {
+        bytes32[] positionKeys;
+    }
+
+    AutoDecreasePositionParamsHelper _autoDecreasePositionParamsHelper;
+
+    /////////// autoReducePositions ///////////
+    function positionFacet_autoReducePositions(uint16 _answer) public {
+        /// Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        
+        // collect all positionKeys for every users' position
+        for(uint256 i = 0; i < USERS.length; i++) {
+            __before(USERS[i], oracles);
+            
+            // calculate the length of positionKeys
+            for(uint256 j = 0; j < _before.positionKey.length; j++) {
+                _autoDecreasePositionParamsHelper.positionKeys.push(_before.positionKey[j]);
+            }
+        }
+
+        bytes32[] memory positionKeys = new bytes32[](_autoDecreasePositionParamsHelper.positionKeys.length);
+        for(uint256 i = 0; i < _autoDecreasePositionParamsHelper.positionKeys.length; i++) {
+            positionKeys[i] = _autoDecreasePositionParamsHelper.positionKeys[i];
+        }
+
+
+        vm.prank(keeper); 
+        try diamondPositionFacet.autoReducePositions(positionKeys){
+            __after(msg.sender, oracles); // Update the contract state tracker
+
+         
+            /// Invariants assessment
+
+
+        }catch{       
+
+        }
     }
     
     
@@ -423,6 +760,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     }
 
 
+  
     /////////// Aux functions ///////////
     // Liquidation function that is called after every Tx
     // call this after every tx 
@@ -432,9 +770,9 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         // Liquidate all positions under water
     }
 
-    ///////////////////////////
-    //// Wrapper functions ////
-    ///////////////////////////
+    ///////////////////////////////
+    //// User Facing functions ////
+    ///////////////////////////////
 
     ////////// AccountFacet //////////
     
@@ -463,7 +801,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             ethValue = 0;
         }
 
-        vm.prank(msg.sender); // prolly redundant
+        // vm.prank(msg.sender); // prolly redundant - can't be too safe ;
         try diamondAccountFacet.deposit{value: ethValue}(token, amount){
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -504,7 +842,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             amount = EchidnaUtils.clampBetween(uint256(_amount), 0, _before.portfolioVaultBtcBalance);
         }
 
-        vm.prank(msg.sender); // prolly redundant
+        // vm.prank(msg.sender); // prolly redundant - can't be too safe ;
         try diamondAccountFacet.createWithdrawRequest(token, amount) returns(uint256 requestId){
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -514,8 +852,6 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
             /// Invariants assessment
 
-            // Update the deposit tracker
-            // Add tx to keeper queue orders --> KeeperExecutions.accountExecutions[]
 
         }catch{       
 
@@ -603,7 +939,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             
         }
 
-        vm.prank(msg.sender); // prolly redundant
+        vm.prank(msg.sender); // prolly redundant - can't be too safe ;
         try diamondAccountFacet.batchUpdateAccountToken(params) {
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -744,12 +1080,20 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             params.orderMargin = orderParamsHelper.ethMargin;
         }
 
-        vm.prank(msg.sender); // prolly redundant - can't be too safe ;)
+        // vm.prank(msg.sender); // prolly redundant - can't be too safe ;)
         try diamondOrderFacet.createOrderRequest{value: orderParamsHelper.ethValue}(params)returns(uint256 orderId) {
             __after(msg.sender, oracles); // Update the contract state tracker
 
             // Add to orderRequest Queue
-            OrderExecutions memory execution = OrderExecutions(msg.sender, orderId, false);
+            OrderExecutions memory execution = OrderExecutions(
+                msg.sender, 
+                orderId,
+                params.isNativeToken,
+                params.marginToken,
+                params.orderMargin,
+                params.executionFee, 
+                false
+            );
             _keeperExecutions.orderExecutions.push(execution);
 
 
@@ -781,7 +1125,6 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         - reverts if OrderType is LIMIT and OrderPositionSide is DECREASE --> 
         - reverts if OrderType is STOP and (OrderStopType is NONE or triggerPrice is Zero) --> 
         */
-
         
         orderParams = new IOrder.PlaceOrderParams[](_numOrders);
         totalEthValue;
@@ -897,9 +1240,17 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             __after(msg.sender, oracles); // Update the contract state tracker
 
             // Add to orderRequest Queue
+        
             OrderExecutions memory execution;
             for(uint256 i = 0; i < orderIds.length; i++) {
-                execution = OrderExecutions(msg.sender, orderIds[i], false);
+                execution = OrderExecutions(
+                    msg.sender, 
+                    orderIds[i], 
+                    params[i].isNativeToken, 
+                    params[i].marginToken, 
+                    params[i].orderMargin, 
+                    params[i].executionFee,
+                    false);
                 _keeperExecutions.orderExecutions.push(execution);
             }
             
@@ -912,43 +1263,142 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     ////////// PositionFacet //////////
 
-    /**
-    
-    struct KeeperExecutions {
-        OrderExecutions[] orderExecutions;
-        AccountWithdrawExecutions[] accountWithdrawExecutions;
-        CancelWithdrawExecutions[] cancelWithdrawExecutions;
-    }
-    
-    KeeperExecutions internal _keeperExecutions;
-
-    */
     /// createUpdatePositionMarginRequest
-    function positionFacet_createUpdatePositionMarginRequest(IPosition.UpdatePositionMarginParams calldata params) public {
-        diamondPositionFacet.createUpdatePositionMarginRequest(params);
+    function positionFacet_createUpdatePositionMarginRequest(uint16 _answer, bool _isAdd, bool _isNativeToken, uint8 _tokenIndex, uint96 _updateMarginAmount) public {
+        // Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        __before(msg.sender, oracles); // Update the contract state tracker
+
+        /**
+        Questions
+        - Can the update marginToken be different from the position margin token? 
+        Ans: It does validate in the contract
+        */
+
+        PositionParamsHelper memory positionParamsHelper;
+        IPosition.UpdatePositionMarginParams memory params;
+
+        positionParamsHelper.keyIndex = EchidnaUtils.clampBetween(uint256(_tokenIndex), 0, _before.positionKey.length - 1);
+
+        params.positionKey = _before.positionKey[positionParamsHelper.keyIndex];
+        params.isAdd = _isAdd;
+        params.isNativeToken = _isNativeToken;
+
+        positionParamsHelper.tokenIndex = EchidnaUtils.clampBetween(uint256(_tokenIndex), 0, tokens.length - 1);
+        positionParamsHelper.token = tokens[positionParamsHelper.tokenIndex]; // select a random token
+        params.marginToken = positionParamsHelper.token;
+
+        positionParamsHelper.updateMarginAmount = EchidnaUtils.clampBetween(uint256(_updateMarginAmount), 0, IERC20(positionParamsHelper.token).balanceOf(msg.sender));
+        params.updateMarginAmount = positionParamsHelper.updateMarginAmount;
+
+        params.executionFee = (POSITION_UPDATE_MARGIN_GAS_FEE_LIMIT * tx.gasprice) + 10_000;
+
+        positionParamsHelper.ethValue = params.executionFee;
+
+        if(_isNativeToken){
+            params.updateMarginAmount = EchidnaUtils.clampBetween(uint256(_updateMarginAmount), 0, msg.sender.balance);
+            positionParamsHelper.ethValue = params.updateMarginAmount;
+        }
+
+
+        try diamondPositionFacet.createUpdatePositionMarginRequest{value: positionParamsHelper.ethValue}(params)returns(uint256 requestId) {
+            __after(msg.sender, oracles); // Update the contract state tracker
+
+            // Add positionMarginRequest to Queue
+            PositionMarginRequests memory execution = PositionMarginRequests(
+                msg.sender, 
+                requestId, 
+                positionParamsHelper.keyIndex,
+                params.isAdd,
+                params.isNativeToken,
+                params.updateMarginAmount,
+                params.executionFee,
+                false);
+            _keeperExecutions.positionMarginRequests.push(execution);
+
+            /// Invariants assessment
+
+            
+        }catch{
+
+            // Do something
+        }
+
     }
   
 
-    /// cancelUpdatePositionMarginRequest
-    function positionFacet_cancelUpdatePositionMarginRequest(uint256 requestId, bytes32 reasonCode) public {
-      diamondPositionFacet.cancelUpdatePositionMarginRequest(requestId, reasonCode);
+    struct PositionParamsHelper{
+        uint256 tokenIndex;
+        address token;
+        uint256 updateMarginAmount;
+        uint256 ethValue;
+        uint256 keyIndex;
+        uint256 addMarginAmount;
+        bytes32 symbol;
+        uint256 symbolIndex;
+        uint256 leverage;
     }
-    
 
     /// createUpdateLeverageRequest
-    function positionFacet_createUpdateLeverageRequest(IPosition.UpdateLeverageParams calldata params) public {
-        diamondPositionFacet.createUpdateLeverageRequest(params);
-    }
+    function positionFacet_createUpdateLeverageRequest(uint16 _answer, bool _isLong, bool _isNativeToken, uint8 _tokenIndex, uint96 _addMarginAmount, uint96 _leverage ) public {
+        // Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        __before(msg.sender, oracles); // Update the contract state tracker
 
+        PositionParamsHelper memory positionParamsHelper;
+        IPosition.UpdateLeverageParams memory params;
 
-    /// cancelUpdateLeverageRequest
-    function positionFacet_cancelUpdateLeverageRequest(uint256 requestId, bytes32 reasonCode) public {
-      diamondPositionFacet.cancelUpdateLeverageRequest(requestId, reasonCode);
-    }
-    
-    /// autoReducePositions
-    function positionFacet_autoReducePositions(bytes32[] calldata positionKeys) public {
-      diamondPositionFacet.autoReducePositions(positionKeys);
+        positionParamsHelper.symbolIndex = EchidnaUtils.clampBetween(uint256(_tokenIndex), 0, _before.positionSymbol.length - 1);
+        positionParamsHelper.symbol = _before.positionSymbol[positionParamsHelper.symbolIndex];
+        
+        params.symbol = positionParamsHelper.symbol;
+        params.isLong = _isLong;
+        params.isNativeToken = _isNativeToken;
+        
+        positionParamsHelper.leverage = EchidnaUtils.clampBetween(uint256(_leverage), 0, MAX_LEVERAGE + 100);
+        params.leverage = positionParamsHelper.leverage;
+
+        positionParamsHelper.tokenIndex = EchidnaUtils.clampBetween(uint256(_tokenIndex), 0, tokens.length - 1);
+        positionParamsHelper.token = tokens[positionParamsHelper.tokenIndex]; // select a random token
+        params.marginToken = positionParamsHelper.token;
+
+        positionParamsHelper.addMarginAmount = EchidnaUtils.clampBetween(uint256(_addMarginAmount), 0, IERC20(positionParamsHelper.token).balanceOf(msg.sender));
+        params.addMarginAmount = positionParamsHelper.addMarginAmount;
+
+        params.executionFee = (POSITION_UPDATE_LEVERAGE_GAS_FEE_LIMIT * tx.gasprice) + 10_000;
+
+        positionParamsHelper.ethValue = params.executionFee;
+
+        if(_isNativeToken){
+            params.addMarginAmount = EchidnaUtils.clampBetween(uint256(_addMarginAmount), 0, msg.sender.balance);
+            positionParamsHelper.ethValue = params.addMarginAmount;
+        }
+
+        try diamondPositionFacet.createUpdateLeverageRequest{value: positionParamsHelper.ethValue}(params)returns(uint256 requestId) {
+            __after(msg.sender, oracles); // Update the contract state tracker
+
+            // Add positionMarginRequest to Queue
+            PositionLeverageRequests memory execution = PositionLeverageRequests(
+                msg.sender, 
+                requestId,
+                params.symbol,
+                params.isLong,
+                params.isNativeToken,
+                params.isCrossMargin,
+                params.leverage,
+                params.marginToken,
+                params.addMarginAmount,
+                params.executionFee,
+                false);
+            _keeperExecutions.positionLeverageRequests.push(execution);
+
+            /// Invariants assessment
+
+            
+        }catch{
+
+            // Do something
+        }
     }
 
 

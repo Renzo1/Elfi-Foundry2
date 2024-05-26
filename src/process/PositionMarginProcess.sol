@@ -47,12 +47,13 @@ library PositionMarginProcess {
         uint256 addInitialMarginFromBalance;
     }
 
+    // @audit added a return for requestId value for easy testing
     function createUpdatePositionMarginRequest(
         address account,
         IPosition.UpdatePositionMarginParams memory params,
         uint256 updateMarginAmount,
         bool isExecutionFeeFromTradeVault
-    ) external {
+    ) external returns(uint256 requestId) {
         uint256 requestId = UuidCreator.nextId(UPDATE_MARGIN_ID_KEY);
         UpdatePositionMargin.Request storage request = UpdatePositionMargin.create(requestId);
         request.account = account;
@@ -66,12 +67,13 @@ library PositionMarginProcess {
         emit CreateUpdatePositionMarginEvent(requestId, request);
     }
 
+    // @audit added a return for requestId value for easy testing
     function createUpdateLeverageRequest(
         address account,
         IPosition.UpdateLeverageParams memory params,
         uint256 addMarginAmount,
         bool isExecutionFeeFromTradeVault
-    ) external {
+    ) external returns(uint256 requestId) {
         uint256 requestId = UuidCreator.nextId(UPDATE_LEVERAGE_ID_KEY);
         UpdateLeverage.Request storage request = UpdateLeverage.create(requestId);
         request.account = account;

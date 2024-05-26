@@ -33,7 +33,8 @@ interface IPosition {
         uint256 currentTimestamp;
     }
 
-    function createUpdatePositionMarginRequest(UpdatePositionMarginParams calldata params) external payable;
+    // @audit added a return for requestId value for easy testing
+    function createUpdatePositionMarginRequest(UpdatePositionMarginParams calldata params) external payable returns (uint256);
 
     function executeUpdatePositionMarginRequest(
         uint256 requestId,
@@ -42,7 +43,8 @@ interface IPosition {
 
     function cancelUpdatePositionMarginRequest(uint256 orderId, bytes32 reasonCode) external;
 
-    function createUpdateLeverageRequest(UpdateLeverageParams calldata params) external payable;
+    // @audit added a return for requestId value for easy testing
+    function createUpdateLeverageRequest(UpdateLeverageParams calldata params) external payable returns (uint256);
 
     function executeUpdateLeverageRequest(uint256 requestId, OracleProcess.OracleParam[] calldata oracles) external;
 
