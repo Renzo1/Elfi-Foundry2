@@ -18,7 +18,8 @@ contract StakeFacet is IStake, ReentrancyGuard {
     using LpPool for LpPool.Props;
     using Account for Account.Props;
 
-    function createMintStakeTokenRequest(MintStakeTokenParams calldata params) external payable override nonReentrant {
+    // @audit added a return for requestId value for easy testing
+    function createMintStakeTokenRequest(MintStakeTokenParams calldata params) external payable override nonReentrant returns(uint256 requestId) {
         if (params.requestTokenAmount == 0) {
             revert Errors.MintWithAmountZero();
         }
@@ -60,7 +61,7 @@ contract StakeFacet is IStake, ReentrancyGuard {
             revert Errors.MintWithParamError();
         }
 
-        MintProcess.createMintStakeTokenRequest(
+        requestId = MintProcess.createMintStakeTokenRequest(
             params,
             account,
             token,
@@ -123,7 +124,7 @@ contract StakeFacet is IStake, ReentrancyGuard {
 
     function createRedeemStakeTokenRequest(
         RedeemStakeTokenParams calldata params
-    ) external payable override nonReentrant {
+    ) external payable override nonReentrant returns(uint256 requestId) {
         require(params.unStakeAmount > 0, "unStakeAmount == 0");
         AddressUtils.validEmpty(params.receiver);
 
@@ -149,7 +150,7 @@ contract StakeFacet is IStake, ReentrancyGuard {
         }
 
         RedeemProcess.validateAndDepositRedeemExecutionFee(account, params.executionFee);
-        RedeemProcess.createRedeemStakeTokenRequest(params, account, params.unStakeAmount);
+        requestId = RedeemProcess.createRedeemStakeTokenRequest(params, account, params.unStakeAmount);
     }
 
     function executeRedeemStakeToken(

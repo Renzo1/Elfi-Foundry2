@@ -154,10 +154,11 @@ abstract contract Setup is BaseSetup {
   address ETH_ADDRESS;
   address[] internal tokens;
   
-
+  
   StakeToken stakedETH;
   StakeToken stakedBTC;
   StakeToken stakedUSD;
+  address[] internal stakedTokens;
   
   ///////// Oracle PriceFeeds ////////
   MockAggregatorV3 public wethFeed;
@@ -412,6 +413,11 @@ abstract contract Setup is BaseSetup {
     setLpPoolConfig();
 
     setCommonConfig();
+
+    stakedTokens = new address[](3);
+    stakedTokens[0] = address(stakedETH);
+    stakedTokens[1] = address(stakedBTC);
+    stakedTokens[2] = address(stakedUSD);
 
     // TODO assert wrapper token is set to weth diamondConfigFacet.getChainConfig() == address(weth);
 
@@ -882,8 +888,10 @@ abstract contract Setup is BaseSetup {
       baseToken: address(wbtc)
     });
 
-    diamondMarketManagerFacet.createMarket(params1);
-    diamondMarketManagerFacet.createMarket(params2);
+    address stakeWethTokenAddress = diamondMarketManagerFacet.createMarket(params1);
+    address stakeWbtcTokenAddress = diamondMarketManagerFacet.createMarket(params2);
+    stakedETH = StakeToken(stakeWethTokenAddress);
+    stakedBTC = StakeToken(stakeWbtcTokenAddress);
         
     address stakeUsdTokenAddress = diamondMarketManagerFacet.createStakeUsdPool(stakedUsdc, 18);
     stakedUSD = StakeToken(stakeUsdTokenAddress);

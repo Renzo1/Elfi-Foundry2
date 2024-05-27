@@ -53,7 +53,7 @@ library PositionMarginProcess {
         IPosition.UpdatePositionMarginParams memory params,
         uint256 updateMarginAmount,
         bool isExecutionFeeFromTradeVault
-    ) external returns(uint256 requestId) {
+    ) external returns(uint256) {
         uint256 requestId = UuidCreator.nextId(UPDATE_MARGIN_ID_KEY);
         UpdatePositionMargin.Request storage request = UpdatePositionMargin.create(requestId);
         request.account = account;
@@ -65,6 +65,7 @@ library PositionMarginProcess {
         request.executionFee = params.executionFee;
         request.lastBlock = ChainUtils.currentBlock();
         emit CreateUpdatePositionMarginEvent(requestId, request);
+        return requestId;
     }
 
     // @audit added a return for requestId value for easy testing
@@ -73,7 +74,7 @@ library PositionMarginProcess {
         IPosition.UpdateLeverageParams memory params,
         uint256 addMarginAmount,
         bool isExecutionFeeFromTradeVault
-    ) external returns(uint256 requestId) {
+    ) external returns(uint256) {
         uint256 requestId = UuidCreator.nextId(UPDATE_LEVERAGE_ID_KEY);
         UpdateLeverage.Request storage request = UpdateLeverage.create(requestId);
         request.account = account;
@@ -88,6 +89,7 @@ library PositionMarginProcess {
         request.isCrossMargin = params.isCrossMargin;
 
         emit CreateUpdateLeverageEvent(requestId, request);
+        return requestId;
     }
 
     function updatePositionMargin(uint256 requestId, UpdatePositionMargin.Request memory request) external {

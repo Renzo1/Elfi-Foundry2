@@ -6,7 +6,7 @@ import "../process/ConfigProcess.sol";
 import "../interfaces/IConfig.sol";
 
 interface IMarketManager {
-    function createMarket(MarketFactoryProcess.CreateMarketParams calldata params) external;
+    function createMarket(MarketFactoryProcess.CreateMarketParams calldata params) external returns (address);
 
     function createStakeUsdPool(string calldata stakeTokenName, uint8 decimals) external returns (address);
 }

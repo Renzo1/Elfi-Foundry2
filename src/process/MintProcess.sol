@@ -42,13 +42,14 @@ library MintProcess {
     event MintSuccessEvent(uint256 indexed requestId, uint256 mintStakeAmount, Mint.Request data);
     event CreateMintEvent(uint256 indexed requestId, Mint.Request data);
 
+    // @audit added a return for requestId value for easy testing
     function createMintStakeTokenRequest(
         IStake.MintStakeTokenParams memory params,
         address account,
         address token,
         uint256 walletRequestTokenAmount,
         bool isExecutionFeeFromLpVault
-    ) external {
+    ) external returns (uint256) {
         uint256 requestId = UuidCreator.nextId(MINT_ID_KEY);
 
         Mint.Request storage mintRequest = Mint.create(requestId);
@@ -63,6 +64,7 @@ library MintProcess {
         mintRequest.isExecutionFeeFromLpVault = isExecutionFeeFromLpVault;
 
         emit CreateMintEvent(requestId, mintRequest);
+        return requestId;
     }
 
     function executeMintStakeToken(

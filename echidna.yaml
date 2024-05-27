@@ -7,6 +7,8 @@ balanceAddr: 0x1043561a8829300000
 balanceContract: 0x1043561a8829300000
 filterFunctions: []
 cryticArgs: ["--foundry-compile-all"]
+# cryticArgs: ["--foundry-compile-all", "--solc-remaps", "forge-std/=lib/forge-std/src/ @chimera/=lib/chimera/src/ @openzeppelin/contracts=lib/@openzeppelin/contracts @chainlink/contracts/=lib/@chainlink/contracts @uniswap=lib/@uniswap"]
+
 sender: [
   "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf",
   "0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF",

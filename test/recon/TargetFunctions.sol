@@ -194,6 +194,56 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         bool executed;
     }
 
+    struct MintStakeRequests {
+        address account;
+        uint256 requestId;
+        address stakeToken;
+        address requestToken;
+        uint256 requestTokenAmount;
+        uint256 walletRequestTokenAmount;
+        uint256 minStakeAmount;
+        uint256 executionFee;
+        bool isCollateral;
+        bool isNativeToken;
+        bool executed;
+    }
+
+    struct CanceledMintStakeRequests {
+        address account;
+        uint256 requestId;
+        address stakeToken;
+        address requestToken;
+        uint256 requestTokenAmount;
+        uint256 walletRequestTokenAmount;
+        uint256 minStakeAmount;
+        uint256 executionFee;
+        bool isCollateral;
+        bool isNativeToken;
+        bool executed;
+    }
+
+    struct RedeemStakeTokenRequests{
+        address account;
+        uint256 requestId;
+        address stakeToken;
+        address redeemToken;
+        uint256 unStakeAmount;
+        uint256 minRedeemAmount;
+        uint256 executionFee;
+        bool executed;
+    }
+
+    struct CanceledRedeemStakeTokenRequests{
+        address account;
+        uint256 requestId;
+        address stakeToken;
+        address redeemToken;
+        uint256 unStakeAmount;
+        uint256 minRedeemAmount;
+        uint256 executionFee;
+        bool executed;
+    }
+
     struct KeeperExecutions {
         AccountWithdrawExecutions[] accountWithdrawExecutions;
         CancelWithdrawExecutions[] cancelWithdrawExecutions;
@@ -203,6 +253,10 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         PositionLeverageRequests[] positionLeverageRequests;
         CanceledPositionMarginRequests[] canceledPositionMarginRequests;
         CanceledPositionLeverageRequests[] canceledPositionLeverageRequests;
+        MintStakeRequests[] mintStakeRequests;
+        CanceledMintStakeRequests[] canceledMintStakeRequests;
+        RedeemStakeTokenRequests[] redeemStakeTokenRequests;
+        CanceledRedeemStakeTokenRequests[] canceledRedeemStakeTokenRequests;
     }
     
     KeeperExecutions internal _keeperExecutions;
@@ -498,7 +552,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     }
 
 
-    /// cancelUpdatePositionMarginRequest
+    /////////// cancelUpdatePositionMarginRequest ///////////
     function positionFacet_cancelUpdatePositionMarginRequest(uint8 _requestIndex, uint16 _answer) public {
         /// Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
@@ -725,6 +779,9 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             positionKeys[i] = _autoDecreasePositionParamsHelper.positionKeys[i];
         }
 
+        // reset the _autoDecreasePositionParamsHelper.positionKeys array
+        _autoDecreasePositionParamsHelper.positionKeys = new bytes32[](0);
+
 
         vm.prank(keeper); 
         try diamondPositionFacet.autoReducePositions(positionKeys){
@@ -741,25 +798,247 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     
     
     /////////// executeMintStakeToken ///////////
-    function stakeFacet_executeMintStakeToken(uint16 _answer) public{
-        
 
-        // uint256 requestId; 
-        // OracleProcess.OracleParam[] calldata oracles;
-        // diamondStakeFacet.executeMintStakeToken(requestId, oracles);
-    }
+    function stakeFacet_executeMintStakeToken(uint16 _answer) public{
+        // Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        
+        MintStakeRequests memory request;
+        address account;
+        uint256 requestId;
+        
+        for (uint256 i = 0; i < _keeperExecutions.mintStakeRequests.length; i++) {
+            request = _keeperExecutions.mintStakeRequests[i];
+            account = request.account;
+            requestId = request.requestId;
+            
+            __before(account, oracles); // Update the contract state tracker
+
+            if(!request.executed){
+                vm.prank(keeper);
+                try diamondStakeFacet.executeMintStakeToken(requestId, oracles){
+                    __after(account, oracles); // Update the contract state tracker
+                    _keeperExecutions.mintStakeRequests[i].executed = true;
     
+                    
+                    
+                    /// Invariants assessment
+    
+    
+    
+                } catch {
+                    // if executeWithdraw fails for valid reasons set:
+                    _keeperExecutions.mintStakeRequests[i].executed = true;
+    
+                    // if executeWithdraw fails for invalid reasons assert false: DOS
+                    // assert(false);
+                }
+            }
+        }
+
+        for(uint256 i = 0; i < _keeperExecutions.mintStakeRequests.length; i++) {
+            // remove all executed requests from the queue
+            if(_keeperExecutions.mintStakeRequests[i].executed) {
+                _keeperExecutions.mintStakeRequests[i] = _keeperExecutions.mintStakeRequests[_keeperExecutions.mintStakeRequests.length - 1];
+                _keeperExecutions.mintStakeRequests.pop();
+                // Decrement i to ensure the current index is checked again
+                if (i > 0) {
+                    i--;
+                }
+            }
+        }   
+    }
+
+    
+
+    /////////// cancelMintStakeToken ///////////
+
+    function stakeFacet_cancelMintStakeToken(uint8 _requestIndex, uint16 _answer) public {
+        /// Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        __before(msg.sender, oracles); // Update the contract state tracker
+
+        uint256 requestId;
+
+        /// create a new list of requests yet to be executed
+        // get the number of unexecuted requests (numNonExecutedRequests)
+        uint256 numRequests = _keeperExecutions.mintStakeRequests.length;
+        uint256 numNonExecutedRequests;
+        for(uint256 i = 0; i < numRequests; i++) {
+            if(!_keeperExecutions.mintStakeRequests[i].executed) {
+                numNonExecutedRequests++;
+            }
+        }
+
+        MintStakeRequests[] memory openRequests = new MintStakeRequests[](numNonExecutedRequests);
+        uint256 index;
+        for(uint256 i = 0; i < numRequests; i++) {
+            if(!_keeperExecutions.mintStakeRequests[i].executed) {
+                openRequests[index] = _keeperExecutions.mintStakeRequests[i];
+                index++;
+            }
+        }
+
+        /// select a random request from the list
+        uint256 requestIndex = EchidnaUtils.clampBetween(uint256(_requestIndex), 0, openRequests.length - 1);
+        MintStakeRequests memory request = openRequests[requestIndex];
+        requestId = request.requestId;
+
+        vm.prank(keeper); // prolly redundant
+        try diamondStakeFacet.cancelMintStakeToken(requestId, ""){
+            __after(msg.sender, oracles); // Update the contract state tracker
+
+            // Add to canceledOrder Queue -- tracking canceledOrder requests is not critical, but is useful for debugging
+            CanceledMintStakeRequests memory execution = CanceledMintStakeRequests(
+                request.account, 
+                requestId, 
+                request.stakeToken,
+                request.requestToken,
+                request.requestTokenAmount,
+                request.walletRequestTokenAmount,
+                request.minStakeAmount,
+                request.executionFee,
+                request.isCollateral,
+                request.isNativeToken,
+                false);
+            _keeperExecutions.canceledMintStakeRequests.push(execution);
+
+            // Update status of request in withdrawRequest queue
+            for(uint256 i = 0; i < numRequests; i++) {
+                if(_keeperExecutions.mintStakeRequests[i].requestId == requestId) {
+                    _keeperExecutions.mintStakeRequests[i].executed = true;
+                }
+            }
+
+            /// Invariants assessment
+
+            // Update the deposit tracker
+            // Add tx to keeper queue orders --> KeeperExecutions.accountExecutions[]
+
+        }catch{       
+
+        }
+    }
 
     /////////// executeRedeemStakeToken ///////////
     function stakeFacet_executeRedeemStakeToken(uint16 _answer) public{
+            // Get oracles
+            OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+            
+            RedeemStakeTokenRequests memory request;
+            address account;
+            uint256 requestId;
+            
+            for (uint256 i = 0; i < _keeperExecutions.redeemStakeTokenRequests.length; i++) {
+                request = _keeperExecutions.redeemStakeTokenRequests[i];
+                account = request.account;
+                requestId = request.requestId;
+                
+                __before(account, oracles); // Update the contract state tracker
+    
+                if(!request.executed){
+                    vm.prank(keeper);
+                    try diamondStakeFacet.executeMintStakeToken(requestId, oracles){
+                        __after(account, oracles); // Update the contract state tracker
+                        _keeperExecutions.redeemStakeTokenRequests[i].executed = true;
         
-
-        // uint256 requestId; 
-        // OracleProcess.OracleParam[] calldata oracles;
+                        
+                        
+                        /// Invariants assessment
+        
+        
+        
+                    } catch {
+                        // if executeWithdraw fails for valid reasons set:
+                        _keeperExecutions.redeemStakeTokenRequests[i].executed = true;
+        
+                        // if executeWithdraw fails for invalid reasons assert false: DOS
+                        // assert(false);
+                    }
+                }
+            }
+    
+            for(uint256 i = 0; i < _keeperExecutions.redeemStakeTokenRequests.length; i++) {
+                // remove all executed requests from the queue
+                if(_keeperExecutions.redeemStakeTokenRequests[i].executed) {
+                    _keeperExecutions.redeemStakeTokenRequests[i] = _keeperExecutions.redeemStakeTokenRequests[_keeperExecutions.redeemStakeTokenRequests.length - 1];
+                    _keeperExecutions.redeemStakeTokenRequests.pop();
+                    // Decrement i to ensure the current index is checked again
+                    if (i > 0) {
+                        i--;
+                    }
+                }
+            }   
         // diamondStakeFacet.executeRedeemStakeToken(requestId, oracles);
     }
 
 
+    /////////// cancelRedeemStakeToken ///////////
+
+    function stakeFacet_cancelRedeemStakeToken(uint8 _requestIndex, uint16 _answer) public {
+        /// Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        __before(msg.sender, oracles); // Update the contract state tracker
+
+        uint256 requestId;
+
+        /// create a new list of requests yet to be executed
+        // get the number of unexecuted requests (numNonExecutedRequests)
+        uint256 numRequests = _keeperExecutions.redeemStakeTokenRequests.length;
+        uint256 numNonExecutedRequests;
+        for(uint256 i = 0; i < numRequests; i++) {
+            if(!_keeperExecutions.redeemStakeTokenRequests[i].executed) {
+                numNonExecutedRequests++;
+            }
+        }
+
+        RedeemStakeTokenRequests[] memory openRequests = new RedeemStakeTokenRequests[](numNonExecutedRequests);
+        uint256 index;
+        for(uint256 i = 0; i < numRequests; i++) {
+            if(!_keeperExecutions.redeemStakeTokenRequests[i].executed) {
+                openRequests[index] = _keeperExecutions.redeemStakeTokenRequests[i];
+                index++;
+            }
+        }
+
+        /// select a random request from the list
+        uint256 requestIndex = EchidnaUtils.clampBetween(uint256(_requestIndex), 0, openRequests.length - 1);
+        RedeemStakeTokenRequests memory request = openRequests[requestIndex];
+        requestId = request.requestId;
+
+        vm.prank(keeper); // prolly redundant
+        try diamondStakeFacet.cancelRedeemStakeToken(requestId, ""){
+            __after(msg.sender, oracles); // Update the contract state tracker
+
+            // Add to canceledOrder Queue -- tracking canceledOrder requests is not critical, but is useful for debugging
+
+            CanceledRedeemStakeTokenRequests memory execution = CanceledRedeemStakeTokenRequests(
+                request.account, 
+                requestId, 
+                request.stakeToken,
+                request.redeemToken,
+                request.unStakeAmount,
+                request.minRedeemAmount,
+                request.executionFee,
+                false);
+            _keeperExecutions.canceledRedeemStakeTokenRequests.push(execution);
+
+            // Update status of request in withdrawRequest queue
+            for(uint256 i = 0; i < numRequests; i++) {
+                if(_keeperExecutions.redeemStakeTokenRequests[i].requestId == requestId) {
+                    _keeperExecutions.redeemStakeTokenRequests[i].executed = true;
+                }
+            }
+
+            /// Invariants assessment
+
+            // Update the deposit tracker
+            // Add tx to keeper queue orders --> KeeperExecutions.accountExecutions[]
+
+        }catch{       
+
+        }
+    }  
   
     /////////// Aux functions ///////////
     // Liquidation function that is called after every Tx
@@ -812,9 +1091,8 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             /// Invariants assessment
             /**
             - deposited amount should only enter portfolioVault
-            
             */
-
+            t(true, "accountFacet_deposit: test passed");
 
         }catch{
 
@@ -1403,32 +1681,163 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
 
     ////////// StakeFacet //////////
+    /// @dev MintStakeTokenParams struct used for minting
+    /// @param stakeToken The address of the pool
+    /// @param requestToken The address of the token being used
+    /// @param requestTokenAmount The total amount of tokens for minting
+    /// @param walletRequestTokenAmount The amount of tokens from the wallet for minting.
+    ///        When it is zero, it means that all of the requestTokenAmount is transferred from the user's trading account(Account).
+    /// @param minStakeAmount The minimum staking return amount expected
+    /// @param executionFee The execution fee for the keeper
+    /// @param isCollateral Whether the request token is used as collateral
+    /// @param isNativeToken whether the margin is ETH
+    // struct MintStakeTokenParams {
+    //     address stakeToken;
+    //     address requestToken;
+    //     uint256 requestTokenAmount;
+    //     uint256 walletRequestTokenAmount;
+    //     uint256 minStakeAmount;
+    //     uint256 executionFee;
+    //     bool isCollateral;
+    //     bool isNativeToken;
+    // }
 
     /// createMintStakeTokenRequest
 
-    function stakeFacet_createMintStakeTokenRequest(IStake.MintStakeTokenParams calldata params) public {
-        diamondStakeFacet.createMintStakeTokenRequest(params);
+    function stakeFacet_createMintStakeTokenRequest(
+        uint16 _answer, 
+        uint8 _stakeTokenIndex, 
+        uint8 _requestTokenIndex, 
+        uint256 _requestTokenAmount,
+        uint96 _walletRequestTokenAmount,
+        uint96 _minStakeAmount,
+        bool _isCollateral,
+        bool _isNativeToken
+    ) public {
+        // Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        __before(msg.sender, oracles); // Update the contract state tracker
+
+        StakeParamsHelper memory stakeParamsHelper;
+        IStake.MintStakeTokenParams memory params;
+
+        stakeParamsHelper.stakeTokenIndex = EchidnaUtils.clampBetween(uint256(_stakeTokenIndex), 0, stakedTokens.length - 1);
+        stakeParamsHelper.stakeToken = stakedTokens[stakeParamsHelper.stakeTokenIndex]; // select a random token
+        params.stakeToken = stakeParamsHelper.stakeToken;
+
+        stakeParamsHelper.requestTokenIndex = EchidnaUtils.clampBetween(uint256(_requestTokenIndex), 0, tokens.length - 1);
+        stakeParamsHelper.requestToken = tokens[stakeParamsHelper.requestTokenIndex]; // select a random token
+        params.requestToken = stakeParamsHelper.requestToken;
+
+        params.requestTokenAmount = _requestTokenAmount;
+        
+        stakeParamsHelper.walletRequestTokenAmount = EchidnaUtils.clampBetween(uint256(_walletRequestTokenAmount), 0, IERC20(params.requestToken).balanceOf(msg.sender));
+        params.walletRequestTokenAmount = stakeParamsHelper.walletRequestTokenAmount;
+
+        params.minStakeAmount = uint256(_minStakeAmount);
+        params.executionFee = (MINT_GAS_FEE_LIMIT * tx.gasprice) + 10_000;
+        stakeParamsHelper.ethValue = params.executionFee;
+
+        params.isCollateral = _isCollateral;
+        params.isNativeToken = _isNativeToken;
+
+        if(_isNativeToken){
+            stakeParamsHelper.ethValue = EchidnaUtils.clampBetween(uint256(_requestTokenAmount), 0, msg.sender.balance);
+            params.walletRequestTokenAmount = stakeParamsHelper.ethValue; 
+        }
+
+
+        try diamondStakeFacet.createMintStakeTokenRequest{value: stakeParamsHelper.ethValue}(params)returns(uint256 requestId) {
+            __after(msg.sender, oracles); // Update the contract state tracker
+
+            MintStakeRequests memory execution = MintStakeRequests(
+                msg.sender, 
+                requestId,
+                params.stakeToken,
+                params.requestToken,
+                params.requestTokenAmount,
+                params.walletRequestTokenAmount,
+                params.minStakeAmount,
+                params.executionFee,
+                params.isCollateral,
+                params.isNativeToken,
+                false);
+            _keeperExecutions.mintStakeRequests.push(execution);
+
+            /// Invariants assessment
+
+            
+        }catch{
+
+            // Do something
+        }
     }
-  
 
-    /// cancelMintStakeToken
-
-    function stakeFacet_cancelMintStakeToken(uint256 requestId, bytes32 reasonCode) public {
-        diamondStakeFacet.cancelMintStakeToken(requestId, reasonCode);
+    struct StakeParamsHelper{
+        uint256 requestTokenIndex;
+        uint256 stakeTokenIndex;
+        uint256 redeemTokenIndex;
+        address stakeToken;
+        address requestToken;
+        address redeemToken;
+        uint256 walletRequestTokenAmount;
+        uint256 ethValue;
     }
 
-    /// createRedeemStakeTokenRequest
+    function stakeFacet_createRedeemStakeTokenRequest(
+        uint16 _answer, 
+        uint8 _stakeTokenIndex, 
+        uint8 _redeemTokenIndex, 
+        uint256 _requestTokenAmount,
+        uint96 _unStakeAmount,
+        uint96 _minRedeemAmount
+    ) public {
+        // Get oracles
+        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        __before(msg.sender, oracles); // Update the contract state tracker
 
-    function stakeFacet_createRedeemStakeTokenRequest(IStake.RedeemStakeTokenParams calldata params) public {
-        diamondStakeFacet.createRedeemStakeTokenRequest(params);
+        StakeParamsHelper memory stakeParamsHelper;
+        IStake.RedeemStakeTokenParams memory params;
+
+        params.receiver = msg.sender;
+
+        stakeParamsHelper.stakeTokenIndex = EchidnaUtils.clampBetween(uint256(_stakeTokenIndex), 0, stakedTokens.length - 1);
+        stakeParamsHelper.stakeToken = stakedTokens[stakeParamsHelper.stakeTokenIndex]; // select a random token
+        params.stakeToken = stakeParamsHelper.stakeToken;
+
+        stakeParamsHelper.redeemTokenIndex = EchidnaUtils.clampBetween(uint256(_redeemTokenIndex), 0, tokens.length - 1);
+        stakeParamsHelper.redeemToken = tokens[stakeParamsHelper.redeemTokenIndex]; // select a random token
+        params.redeemToken = stakeParamsHelper.redeemToken;
+
+        params.unStakeAmount = EchidnaUtils.clampBetween(uint256(_unStakeAmount), 0, IERC20(params.stakeToken).balanceOf(msg.sender));
+
+        params.minRedeemAmount = uint256(_minRedeemAmount); 
+        params.executionFee = (REDEEM_GAS_FEE_LIMIT * tx.gasprice) + 10_000;
+        stakeParamsHelper.ethValue = params.executionFee;
+
+        try diamondStakeFacet.createRedeemStakeTokenRequest{value: stakeParamsHelper.ethValue}(params)returns(uint256 requestId) {
+            __after(msg.sender, oracles); // Update the contract state tracker
+
+            RedeemStakeTokenRequests memory execution = RedeemStakeTokenRequests(
+                msg.sender, 
+                requestId,
+                params.stakeToken,
+                params.redeemToken,
+                params.unStakeAmount,
+                params.minRedeemAmount,
+                params.executionFee,
+                false);
+            _keeperExecutions.redeemStakeTokenRequests.push(execution);
+
+            /// Invariants assessment
+
+            
+        }catch{
+
+            // Do something
+        }
     }
 
-
-    /// cancelRedeemStakeToken
-
-    function stakeFacet_cancelRedeemStakeToken(uint256 requestId, bytes32 reasonCode) public {
-      diamondStakeFacet.cancelRedeemStakeToken(requestId, reasonCode);
-    }
 
 
     ////////////////////////////
@@ -1437,6 +1846,9 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     // Consider moving to stateless test
 
     //////////// Frontrunners //////////
+    /**
+    - Inflation attack for the stakeFacet
+    */
 
 
 }

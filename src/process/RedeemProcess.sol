@@ -46,11 +46,12 @@ library RedeemProcess {
     event RedeemSuccessEvent(uint256 indexed requestId, uint256 redeemTokenAmount, Redeem.Request data);
     event CancelRedeemEvent(uint256 indexed requestId, Redeem.Request data, bytes32 reasonCode);
 
+    // @audit added a return for requestId value for easy testing
     function createRedeemStakeTokenRequest(
         IStake.RedeemStakeTokenParams memory params,
         address account,
         uint256 unStakeAmount
-    ) external {
+    ) external returns (uint256) {
         uint256 requestId = UuidCreator.nextId(REDEEM_ID_KEY);
 
         Redeem.Request storage redeemRequest = Redeem.create(requestId);
@@ -63,6 +64,7 @@ library RedeemProcess {
         redeemRequest.executionFee = params.executionFee;
 
         emit CreateRedeemEvent(requestId, redeemRequest);
+        return requestId;
     }
 
     function executeRedeemStakeToken(uint256 requestId, Redeem.Request memory redeemRequest) external {

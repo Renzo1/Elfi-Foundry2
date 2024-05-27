@@ -2,5 +2,5 @@ forge-std/=lib/forge-std/src/
 @chimera/=lib/chimera/src/
 @openzeppelin/contracts=lib/@openzeppelin/contracts
 @chainlink/contracts/=lib/@chainlink/contracts
-@chainlink/contracts/=lib/@chainlink/contracts
 @uniswap=lib/@uniswap
+

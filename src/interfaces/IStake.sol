@@ -27,13 +27,15 @@ interface IStake {
         uint256 executionFee;
     }
 
-    function createMintStakeTokenRequest(MintStakeTokenParams calldata params) external payable;
+    // @audit added a return for requestId value for easy testing
+    function createMintStakeTokenRequest(MintStakeTokenParams calldata params) external payable returns (uint256);
 
     function executeMintStakeToken(uint256 requestId, OracleProcess.OracleParam[] calldata oracles) external;
 
     function cancelMintStakeToken(uint256 requestId, bytes32 reasonCode) external;
 
-    function createRedeemStakeTokenRequest(RedeemStakeTokenParams calldata params) external payable;
+    // @audit added a return for requestId value for easy testing
+    function createRedeemStakeTokenRequest(RedeemStakeTokenParams calldata params) external payable returns (uint256);
 
     function executeRedeemStakeToken(uint256 requestId, OracleProcess.OracleParam[] calldata oracles) external;
 
