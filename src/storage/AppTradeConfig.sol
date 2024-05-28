@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import "./AppStorage.sol";
 import "./AppTradeTokenConfig.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library AppTradeConfig {
     using AppStorage for AppStorage.Props;
 
@@ -47,7 +48,7 @@ library AppTradeConfig {
         uint256 swapSlipperTokenFactor;
     }
 
-    function getTradeConfig() external view returns (TradeConfig memory config) {
+    function getTradeConfig() internal view returns (TradeConfig memory config) {
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = AppStorage.TRADE_CONFIG;
         config.tradeTokens = app.getAddressArrayValues(keccak256(abi.encode(key, TRADE_TOKENS)));
@@ -81,7 +82,7 @@ library AppTradeConfig {
         config.swapSlipperTokenFactor = app.getUintValue(keccak256(abi.encode(key, SWAP_SLIPPER_TOKEN_FACTOR)));
     }
 
-    function setTradeConfig(TradeConfig memory config) external {
+    function setTradeConfig(TradeConfig memory config) internal {
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = AppStorage.TRADE_CONFIG;
         address[] memory oldTokens = app.getAddressArrayValues(keccak256(abi.encode(key, TRADE_TOKENS)));

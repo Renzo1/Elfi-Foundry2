@@ -5,8 +5,9 @@ import "../vault/Vault.sol";
 import "../storage/AppConfig.sol";
 import "../utils/Errors.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library VaultProcess {
-    function transferOut(address vault, address token, address receiver, uint256 amount) external returns (bool) {
+    function transferOut(address vault, address token, address receiver, uint256 amount) internal returns (bool) {
         return transferOut(vault, token, receiver, amount, false);
     }
 
@@ -16,7 +17,7 @@ library VaultProcess {
         address receiver,
         uint256 amount,
         bool skipBalanceNotEnough
-    ) public returns (bool) {
+    ) internal returns (bool) {
         if (amount == 0) {
             return false;
         }
@@ -30,7 +31,7 @@ library VaultProcess {
         return false;
     }
 
-    function tryTransferOut(address vault, address token, address receiver, uint256 amount) public returns (uint256) {
+    function tryTransferOut(address vault, address token, address receiver, uint256 amount) internal returns (uint256) {
         if (amount == 0) {
             return 0;
         }
@@ -53,7 +54,7 @@ library VaultProcess {
         safeTransferETH(receiver, amount);
     }
 
-    function safeTransferETH(address to, uint256 value) public {
+    function safeTransferETH(address to, uint256 value) internal {
         (bool success, ) = to.call{ value: value }(new bytes(0));
         require(success, "STE");
     }

@@ -10,6 +10,7 @@ import "./CancelOrderProcess.sol";
 import "./FeeQueryProcess.sol";
 import "./PositionMarginProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library DecreasePositionProcess {
     using SafeMath for uint256;
     using SafeCast for uint256;
@@ -57,7 +58,7 @@ library DecreasePositionProcess {
         bool isLiquidation;
     }
 
-    function decreasePosition(Position.Props storage position, DecreasePositionParams calldata params) external {
+    function decreasePosition(Position.Props storage position, DecreasePositionParams memory params) internal {
         int256 totalPnlInUsd = PositionQueryProcess.getPositionUnPnl(position, params.executePrice.toInt256(), false);
         Symbol.Props memory symbolProps = Symbol.load(params.symbol);
         AppConfig.SymbolConfig memory symbolConfig = AppConfig.getSymbolConfig(params.symbol);

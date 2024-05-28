@@ -15,6 +15,7 @@ import "./FeeRewardsProcess.sol";
 import "./AssetsProcess.sol";
 import "./FeeQueryProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library MintProcess {
     using LpPool for LpPool.Props;
     using LpPoolQueryProcess for LpPool.Props;
@@ -49,7 +50,7 @@ library MintProcess {
         address token,
         uint256 walletRequestTokenAmount,
         bool isExecutionFeeFromLpVault
-    ) external returns (uint256) {
+    ) internal returns (uint256) {
         uint256 requestId = UuidCreator.nextId(MINT_ID_KEY);
 
         Mint.Request storage mintRequest = Mint.create(requestId);
@@ -70,7 +71,7 @@ library MintProcess {
     function executeMintStakeToken(
         uint256 requestId,
         Mint.Request memory mintRequest
-    ) external returns (uint256 stakeAmount) {
+    ) internal returns (uint256 stakeAmount) {
         FeeRewardsProcess.updateAccountFeeRewards(mintRequest.account, mintRequest.stakeToken);
         if (CommonData.getStakeUsdToken() == mintRequest.stakeToken) {
             stakeAmount = _mintStakeUsd(mintRequest);
@@ -92,7 +93,7 @@ library MintProcess {
         emit MintSuccessEvent(requestId, stakeAmount, mintRequest);
     }
 
-    function cancelMintStakeToken(uint256 requestId, Mint.Request memory mintRequest, bytes32 reasonCode) external {
+    function cancelMintStakeToken(uint256 requestId, Mint.Request memory mintRequest, bytes32 reasonCode) internal {
         if (mintRequest.walletRequestTokenAmount > 0) {
             VaultProcess.transferOut(
                 mintRequest.isCollateral
@@ -109,8 +110,8 @@ library MintProcess {
 
     function validateAndDepositMintExecutionFee(
         address account,
-        IStake.MintStakeTokenParams calldata params
-    ) external returns (uint256, bool) {
+        IStake.MintStakeTokenParams memory params
+    ) internal returns (uint256, bool) {
         AppConfig.ChainConfig memory chainConfig = AppConfig.getChainConfig();
         GasProcess.validateExecutionFeeLimit(params.executionFee, chainConfig.mintGasFeeLimit);
         if (params.isNativeToken && params.walletRequestTokenAmount >= params.executionFee) {
@@ -278,7 +279,7 @@ library MintProcess {
     function computeStakeAmountFromMintToken(
         LpPool.Props storage pool,
         uint256 mintAmount
-    ) public view returns (uint256) {
+    ) internal view returns (uint256) {
         uint256 totalSupply = TokenUtils.totalSupply(pool.stakeToken);
         uint8 tokenDecimals = TokenUtils.decimals(pool.baseToken);
         uint256 poolValue = pool.getPoolValue();

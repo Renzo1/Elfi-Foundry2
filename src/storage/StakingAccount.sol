@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "./LpPool.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library StakingAccount {
     using EnumerableSet for EnumerableSet.AddressSet;
     using LpPool for LpPool.Props;
@@ -49,14 +50,14 @@ library StakingAccount {
         uint256 openRewardsPerStakeToken
     );
 
-    function load(address owner) public pure returns (Props storage self) {
+    function load(address owner) internal pure returns (Props storage self) {
         bytes32 s = keccak256(abi.encode("xyz.elfi.storage.StakingAccount", owner));
         assembly {
             self.slot := s
         }
     }
 
-    function loadOrCreate(address owner) public returns (Props storage self) {
+    function loadOrCreate(address owner) internal returns (Props storage self) {
         bytes32 s = keccak256(abi.encode("xyz.elfi.storage.StakingAccount", owner));
         assembly {
             self.slot := s
@@ -66,7 +67,7 @@ library StakingAccount {
         }
     }
 
-    function addStakeAmount(Props storage self, address stakeToken, uint256 amount) external {
+    function addStakeAmount(Props storage self, address stakeToken, uint256 amount) internal {
         if (self.stakeTokens.contains(stakeToken)) {
             self.stakeTokenBalances[stakeToken].stakeAmount = self.stakeTokenBalances[stakeToken].stakeAmount + amount;
         } else {
@@ -75,7 +76,7 @@ library StakingAccount {
         }
     }
 
-    function subStakeAmount(Props storage self, address stakeToken, uint256 amount) external {
+    function subStakeAmount(Props storage self, address stakeToken, uint256 amount) internal {
         require(self.stakeTokenBalances[stakeToken].stakeAmount >= amount, "token amount not enough");
         self.stakeTokenBalances[stakeToken].stakeAmount = self.stakeTokenBalances[stakeToken].stakeAmount - amount;
     }
@@ -85,7 +86,7 @@ library StakingAccount {
         address stakeToken,
         address collateralToken,
         uint256 liability
-    ) external {
+    ) internal {
         if (!self.stakeTokens.contains(stakeToken)) {
             self.stakeTokens.add(stakeToken);
         }
@@ -111,7 +112,7 @@ library StakingAccount {
         address stakeToken,
         address collateralToken,
         uint256 liability
-    ) external {
+    ) internal {
         require(
             self.stakeTokens.contains(stakeToken) &&
                 self.stakeTokenBalances[stakeToken].collateralTokens.contains(collateralToken),
@@ -140,7 +141,7 @@ library StakingAccount {
         address stakeToken,
         address collateralToken,
         uint256 amount
-    ) external {
+    ) internal {
         if (!self.stakeTokens.contains(stakeToken)) {
             self.stakeTokens.add(stakeToken);
         }
@@ -166,7 +167,7 @@ library StakingAccount {
         address stakeToken,
         address collateralToken,
         uint256 amount
-    ) external {
+    ) internal {
         require(
             self.stakeTokens.contains(stakeToken) &&
                 self.stakeTokenBalances[stakeToken].collateralTokens.contains(collateralToken),
@@ -190,7 +191,7 @@ library StakingAccount {
         );
     }
 
-    function hasCollateralToken(Props storage self, address stakeToken) external view returns (bool) {
+    function hasCollateralToken(Props storage self, address stakeToken) internal view returns (bool) {
         if (!self.stakeTokens.contains(stakeToken)) {
             return false;
         }
@@ -202,7 +203,7 @@ library StakingAccount {
         return totalAmount > 0;
     }
 
-    function getCollateralTokens(Props storage self, address stakeToken) external view returns (address[] memory) {
+    function getCollateralTokens(Props storage self, address stakeToken) internal view returns (address[] memory) {
         return self.stakeTokenBalances[stakeToken].collateralTokens.values();
     }
 
@@ -210,20 +211,20 @@ library StakingAccount {
         Props storage self,
         address stakeToken,
         address collateralToken
-    ) external view returns (CollateralData memory) {
+    ) internal view returns (CollateralData memory) {
         return self.stakeTokenBalances[stakeToken].collateralDatas[collateralToken];
     }
 
-    function addStakeUsdAmount(Props storage self, uint256 amount) external {
+    function addStakeUsdAmount(Props storage self, uint256 amount) internal {
         self.stakeUsdAmount = self.stakeUsdAmount + amount;
     }
 
-    function subStakeUsdAmount(Props storage self, uint256 amount) external {
+    function subStakeUsdAmount(Props storage self, uint256 amount) internal {
         require(self.stakeUsdAmount >= amount, "usd token amount not enough");
         self.stakeUsdAmount = self.stakeUsdAmount - amount;
     }
 
-    function emitFeeRewardsUpdateEvent(Props storage self, address stakeToken) external {
+    function emitFeeRewardsUpdateEvent(Props storage self, address stakeToken) internal {
         emit StakingAccountFeeRewardsUpdateEvent(
             self.owner,
             stakeToken,
@@ -232,11 +233,11 @@ library StakingAccount {
         );
     }
 
-    function getStakeTokens(Props storage self) external view returns (address[] memory) {
+    function getStakeTokens(Props storage self) internal view returns (address[] memory) {
         return self.stakeTokens.values();
     }
 
-    function getFeeRewards(Props storage self, address stakeToken) external view returns (FeeRewards storage) {
+    function getFeeRewards(Props storage self, address stakeToken) internal view returns (FeeRewards storage) {
         return self.feeRewards[stakeToken];
     }
 }

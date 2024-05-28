@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library OraclePrice {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -22,34 +23,34 @@ library OraclePrice {
         int256 max;
     }
 
-    function load() public pure returns (Props storage self) {
+    function load() internal pure returns (Props storage self) {
         bytes32 s = _ORACLE_PRICE;
         assembly {
             self.slot := s
         }
     }
 
-    function getPrice(Props storage oracle, address token) external view returns (Data memory) {
+    function getPrice(Props storage oracle, address token) internal view returns (Data memory) {
         return oracle.tokenPrices[token];
     }
 
-    function getPrice(Props storage oracle, address token, address targetToken) external view returns (Data memory) {
+    function getPrice(Props storage oracle, address token, address targetToken) internal view returns (Data memory) {
         bytes32 pair = keccak256(abi.encode(token, targetToken));
         return oracle.pairPrices[pair];
     }
 
-    function getPrePrice(Props storage oracle, address token) external view returns (Data memory) {
+    function getPrePrice(Props storage oracle, address token) internal view returns (Data memory) {
         return oracle.preTokenPrices[token];
     }
 
-    function setPrice(Props storage oracle, address token, Data memory price) public {
+    function setPrice(Props storage oracle, address token, Data memory price) internal {
         if (!oracle.tokens.contains(token)) {
             oracle.tokens.add(token);
         }
         oracle.tokenPrices[token] = price;
     }
 
-    function setPrice(Props storage oracle, address token, address targetToken, Data memory price) public {
+    function setPrice(Props storage oracle, address token, address targetToken, Data memory price) internal {
         bytes32 pair = keccak256(abi.encode(token, targetToken));
         if (!oracle.pairs.contains(pair)) {
             oracle.pairs.add(pair);
@@ -57,14 +58,14 @@ library OraclePrice {
         oracle.pairPrices[pair] = price;
     }
 
-    function setPrePrice(Props storage oracle, address token, Data calldata price) external {
+    function setPrePrice(Props storage oracle, address token, Data memory price) internal {
         if (!oracle.tokens.contains(token)) {
             oracle.tokens.add(token);
         }
         oracle.preTokenPrices[token] = price;
     }
 
-    function clearAllPrice(Props storage oracle) external {
+    function clearAllPrice(Props storage oracle) internal {
         address[] memory tokenAddrs = oracle.tokens.values();
         for (uint256 i; i < tokenAddrs.length; i++) {
             delete oracle.tokenPrices[tokenAddrs[i]];

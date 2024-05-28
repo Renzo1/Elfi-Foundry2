@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import "./AppStorage.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library AppConfig {
     using AppStorage for AppStorage.Props;
 
@@ -56,7 +57,7 @@ library AppConfig {
         uint256 claimRewardsGasFeeLimit;
     }
 
-    function getSymbolConfig(bytes32 symbol) external view returns (SymbolConfig memory) {
+    function getSymbolConfig(bytes32 symbol) internal view returns (SymbolConfig memory) {
         SymbolConfig memory config;
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = AppStorage.SYMBOL_CONFIG;
@@ -80,7 +81,7 @@ library AppConfig {
         return config;
     }
 
-    function setSymbolConfig(bytes32 symbol, SymbolConfig memory config) external {
+    function setSymbolConfig(bytes32 symbol, SymbolConfig memory config) internal {
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = AppStorage.SYMBOL_CONFIG;
         app.addBytes32(key, symbol);
@@ -97,7 +98,7 @@ library AppConfig {
         app.setUintValue(keccak256(abi.encode(key, symbol, LONG_SHORT_OI_BOTTOM_LIMIT)), config.longShortOiBottomLimit);
     }
 
-    function getChainConfig() external view returns (ChainConfig memory chainConfig) {
+    function getChainConfig() internal view returns (ChainConfig memory chainConfig) {
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = AppStorage.CHAIN_CONFIG;
         chainConfig.wrapperToken = app.getAddressValue(keccak256(abi.encode(key, WRAPPER_TOKEN)));
@@ -119,7 +120,7 @@ library AppConfig {
         chainConfig.claimRewardsGasFeeLimit = app.getUintValue(keccak256(abi.encode(key, CLAIM_REWARDS_GAS_FEE_LIMIT)));
     }
 
-    function setChainConfig(ChainConfig memory chainConfig) external {
+    function setChainConfig(ChainConfig memory chainConfig) internal {
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = AppStorage.CHAIN_CONFIG;
         app.setAddressValue(keccak256(abi.encode(key, WRAPPER_TOKEN)), chainConfig.wrapperToken);
@@ -145,12 +146,12 @@ library AppConfig {
         app.setUintValue(keccak256(abi.encode(key, CLAIM_REWARDS_GAS_FEE_LIMIT)), chainConfig.claimRewardsGasFeeLimit);
     }
 
-    function setUniswapRouter(address router) external {
+    function setUniswapRouter(address router) internal {
         AppStorage.Props storage app = AppStorage.load();
         app.setAddressValue(keccak256(abi.encode(AppStorage.COMMON_CONFIG, UNISWAP_ROUTER)), router);
     }
 
-    function getUniswapRouter() external view returns (address) {
+    function getUniswapRouter() internal view returns (address) {
         AppStorage.Props storage app = AppStorage.load();
         return app.getAddressValue(keccak256(abi.encode(AppStorage.COMMON_CONFIG, UNISWAP_ROUTER)));
     }

@@ -6,6 +6,7 @@ import "./VaultProcess.sol";
 import "../storage/Account.sol";
 import "../storage/Order.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library CancelOrderProcess {
     using Order for Order.Props;
     using Account for Account.Props;
@@ -68,7 +69,7 @@ library CancelOrderProcess {
         bool isCrossMargin,
         bytes32 reasonCode,
         uint256 excludeOrder
-    ) external {
+    ) internal {
         Account.Props storage accountProps = Account.load(account);
         uint256[] memory orderIds = accountProps.getAllOrders();
         if (orderIds.length == 0) {
@@ -93,7 +94,7 @@ library CancelOrderProcess {
         }
     }
 
-    function cancelOrder(uint256 orderId, Order.OrderInfo memory order, bytes32 reasonCode) external {
+    function cancelOrder(uint256 orderId, Order.OrderInfo memory order, bytes32 reasonCode) internal {
         Account.Props storage accountProps = Account.load(order.account);
         accountProps.delOrder(orderId);
         Order.remove(orderId);

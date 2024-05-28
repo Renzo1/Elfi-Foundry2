@@ -5,6 +5,7 @@ import "./OracleProcess.sol";
 import "./MarketProcess.sol";
 import "./LpPoolQueryProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library LpPoolProcess {
     using SafeMath for uint256;
     using SafeCast for uint256;
@@ -14,7 +15,7 @@ library LpPoolProcess {
     using LpPoolQueryProcess for LpPool.Props;
     using UsdPool for UsdPool.Props;
 
-    function holdPoolAmount(address stakeToken, address token, uint256 amount, bool isLong) external {
+    function holdPoolAmount(address stakeToken, address token, uint256 amount, bool isLong) internal {
         if (isLong) {
             LpPool.Props storage pool = LpPool.load(stakeToken);
             if (pool.getPoolAvailableLiquidity() < amount) {
@@ -38,7 +39,7 @@ library LpPoolProcess {
         uint256 amount,
         int256 tokenPnl,
         uint256 addLiability
-    ) external {
+    ) internal {
         LpPool.Props storage pool = LpPool.load(stakeToken);
         if (pool.baseToken == token) {
             pool.unHoldBaseToken(amount);
@@ -69,13 +70,13 @@ library LpPoolProcess {
         }
     }
 
-    function validate(LpPool.Props storage pool) public view {
+    function validate(LpPool.Props storage pool) internal view {
         if (LpPoolQueryProcess.getPoolIntValue(pool) < 0) {
             revert Errors.PoolValueLessThanZero();
         }
     }
 
-    function subPoolAmount(LpPool.Props storage pool, address token, uint256 amount) external {
+    function subPoolAmount(LpPool.Props storage pool, address token, uint256 amount) internal {
         if (!pool.isSubAmountAllowed(token, amount)) {
             revert Errors.PoolAmountNotEnough(pool.stakeToken, token);
         }

@@ -16,6 +16,7 @@ import "./VaultProcess.sol";
 import "./OracleProcess.sol";
 import "./SwapProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library RebalanceProcess {
     using LpPool for LpPool.Props;
     using UsdPool for UsdPool.Props;
@@ -31,7 +32,7 @@ library RebalanceProcess {
         uint256 reduceTransferAmount;
     }
 
-    function autoRebalance() external {
+    function autoRebalance() internal {
         address[] memory stakeTokens = CommonData.getAllStakeTokens();
         for (uint256 i; i < stakeTokens.length; i++) {
             LpPool.Props storage pool = LpPool.load(stakeTokens[i]);

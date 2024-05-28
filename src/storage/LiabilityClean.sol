@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library LiabilityClean {
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -23,37 +24,37 @@ library LiabilityClean {
 
     event LiabilityCleanEvent(uint256 id, LiabilityCleanInfo info);
 
-    function load() public pure returns (Props storage self) {
+    function load() internal pure returns (Props storage self) {
         bytes32 s = keccak256(abi.encode("xyz.elfi.storage.LiabilityClean"));
         assembly {
             self.slot := s
         }
     }
 
-    function newClean(uint256 cleanId) external returns (LiabilityCleanInfo storage info) {
+    function newClean(uint256 cleanId) internal returns (LiabilityCleanInfo storage info) {
         Props storage self = load();
         self.cleanIds.add(cleanId);
         return self.cleanInfos[cleanId];
     }
 
-    function addClean(uint256 cleanId, LiabilityCleanInfo memory info) external {
+    function addClean(uint256 cleanId, LiabilityCleanInfo memory info) internal {
         Props storage self = load();
         self.cleanIds.add(cleanId);
         self.cleanInfos[cleanId] = info;
     }
 
-    function removeClean(uint256 cleanId) external {
+    function removeClean(uint256 cleanId) internal {
         Props storage self = load();
         self.cleanIds.remove(cleanId);
         delete self.cleanInfos[cleanId];
     }
 
-    function getCleanInfo(uint256 id) external view returns (LiabilityCleanInfo memory) {
+    function getCleanInfo(uint256 id) internal view returns (LiabilityCleanInfo memory) {
         Props storage self = load();
         return self.cleanInfos[id];
     }
 
-    function getAllCleanInfo() external view returns (LiabilityCleanInfo[] memory) {
+    function getAllCleanInfo() internal view returns (LiabilityCleanInfo[] memory) {
         Props storage self = load();
         uint256[] memory ids = self.cleanIds.values();
         LiabilityCleanInfo[] memory cleanInfos = new LiabilityCleanInfo[](ids.length);
@@ -63,7 +64,7 @@ library LiabilityClean {
         return cleanInfos;
     }
 
-    function emitCleanInfo(uint256 id, LiabilityCleanInfo storage info) external {
+    function emitCleanInfo(uint256 id, LiabilityCleanInfo storage info) internal {
         emit LiabilityCleanEvent(id, info);
     }
 }

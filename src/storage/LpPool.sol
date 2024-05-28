@@ -10,6 +10,7 @@ import "../utils/ChainUtils.sol";
 import "../utils/Errors.sol";
 import "./AppPoolConfig.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library LpPool {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableMap for EnumerableMap.AddressToUintMap;
@@ -94,7 +95,7 @@ library LpPool {
 
     event PoolBorrowingFeeUpdateEvent(address stakeToken, BorrowingFee borrowingFee);
 
-    function load(address stakeToken) public pure returns (Props storage self) {
+    function load(address stakeToken) internal pure returns (Props storage self) {
         bytes32 s = keccak256(abi.encode("xyz.elfi.storage.LpPool", stakeToken));
 
         assembly {
@@ -102,11 +103,11 @@ library LpPool {
         }
     }
 
-    function addBaseToken(Props storage self, uint256 amount) external {
+    function addBaseToken(Props storage self, uint256 amount) internal {
         addBaseToken(self, amount, true);
     }
 
-    function addBaseToken(Props storage self, uint256 amount, bool needEmitEvent) public {
+    function addBaseToken(Props storage self, uint256 amount, bool needEmitEvent) internal {
         if (needEmitEvent) {
             PoolTokenUpdateEventCache memory cache = _convertBalanceToCache(
                 self.stakeToken,
@@ -126,7 +127,7 @@ library LpPool {
         uint256 amount,
         address collateral,
         uint256 collateralAmount
-    ) external {
+    ) internal {
         TokenBalance storage balance = self.baseTokenBalance;
         PoolTokenUpdateEventCache memory cache = _convertBalanceToCache(self.stakeToken, self.baseToken, balance);
         balance.amount += amount;
@@ -150,11 +151,11 @@ library LpPool {
         );
     }
 
-    function subBaseToken(Props storage self, uint256 amount) external {
+    function subBaseToken(Props storage self, uint256 amount) internal {
         subBaseToken(self, amount, true);
     }
 
-    function subBaseToken(Props storage self, uint256 amount, bool emitEvent) public {
+    function subBaseToken(Props storage self, uint256 amount, bool emitEvent) internal {
         require(self.baseTokenBalance.amount >= amount, "base token amount less than sub amount!");
         if (emitEvent) {
             PoolTokenUpdateEventCache memory cache = _convertBalanceToCache(
@@ -175,7 +176,7 @@ library LpPool {
         uint256 amount,
         address collateral,
         uint256 collateralAmount
-    ) external {
+    ) internal {
         require(
             self.baseTokenBalance.amount >= amount && self.baseTokenBalance.liability >= amount,
             "sub failed with balance not enough"
@@ -204,7 +205,7 @@ library LpPool {
         );
     }
 
-    function holdBaseToken(Props storage self, uint256 amount) external {
+    function holdBaseToken(Props storage self, uint256 amount) internal {
         require(
             isHoldAmountAllowed(self.baseTokenBalance, getPoolLiquidityLimit(self), amount),
             "hold failed with balance not enough"
@@ -219,7 +220,7 @@ library LpPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function unHoldBaseToken(Props storage self, uint256 amount) external {
+    function unHoldBaseToken(Props storage self, uint256 amount) internal {
         require(self.baseTokenBalance.holdAmount >= amount, "sub hold bigger than hold");
         PoolTokenUpdateEventCache memory cache = _convertBalanceToCache(
             self.stakeToken,
@@ -231,7 +232,7 @@ library LpPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function addUnsettleBaseToken(Props storage self, int256 amount) external {
+    function addUnsettleBaseToken(Props storage self, int256 amount) internal {
         PoolTokenUpdateEventCache memory cache = _convertBalanceToCache(
             self.stakeToken,
             self.baseToken,
@@ -242,7 +243,7 @@ library LpPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function settleBaseToken(Props storage self, uint256 amount) external {
+    function settleBaseToken(Props storage self, uint256 amount) internal {
         int256 amountInt = amount.toInt256();
         require(self.baseTokenBalance.unsettledAmount >= amountInt, "settle base token overflow!");
         PoolTokenUpdateEventCache memory cache = _convertBalanceToCache(
@@ -257,7 +258,7 @@ library LpPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function addStableToken(Props storage self, address stableToken, uint256 amount) external {
+    function addStableToken(Props storage self, address stableToken, uint256 amount) internal {
         PoolTokenUpdateEventCache memory cache = _convertBalanceToCache(
             self.stakeToken,
             stableToken,
@@ -273,7 +274,7 @@ library LpPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function subStableToken(Props storage self, address stableToken, uint256 amount) external {
+    function subStableToken(Props storage self, address stableToken, uint256 amount) internal {
         PoolTokenUpdateEventCache memory cache = _convertBalanceToCache(
             self.stakeToken,
             stableToken,
@@ -288,7 +289,7 @@ library LpPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function holdStableToken(Props storage self, address stableToken, uint256 amount) external {
+    function holdStableToken(Props storage self, address stableToken, uint256 amount) internal {
         require(
             isHoldAmountAllowed(self.stableTokenBalances[stableToken], getPoolLiquidityLimit(self), amount),
             "hold failed with balance not enough"
@@ -303,7 +304,7 @@ library LpPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function unHoldStableToken(Props storage self, address stableToken, uint256 amount) external {
+    function unHoldStableToken(Props storage self, address stableToken, uint256 amount) internal {
         require(self.stableTokenBalances[stableToken].holdAmount < amount, "sub hold bigger than hold");
         PoolTokenUpdateEventCache memory cache = _convertBalanceToCache(
             self.stakeToken,
@@ -315,7 +316,7 @@ library LpPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function addUnsettleStableToken(Props storage self, address stableToken, int256 amount) external {
+    function addUnsettleStableToken(Props storage self, address stableToken, int256 amount) internal {
         if (!self.stableTokens.contains(stableToken)) {
             self.stableTokens.add(stableToken);
         }
@@ -329,7 +330,7 @@ library LpPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function settleStableToken(Props storage self, address stableToken, uint256 amount) external {
+    function settleStableToken(Props storage self, address stableToken, uint256 amount) internal {
         if (!self.stableTokens.contains(stableToken)) {
             self.stableTokens.add(stableToken);
         }
@@ -345,7 +346,7 @@ library LpPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function addLossStableToken(Props storage self, address stableToken, uint256 amount) external {
+    function addLossStableToken(Props storage self, address stableToken, uint256 amount) internal {
         if (!self.stableTokens.contains(stableToken)) {
             self.stableTokens.add(stableToken);
         }
@@ -356,7 +357,7 @@ library LpPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function subLossStableToken(Props storage self, address stableToken, uint256 amount) external {
+    function subLossStableToken(Props storage self, address stableToken, uint256 amount) internal {
         if (!self.stableTokens.contains(stableToken)) {
             self.stableTokens.add(stableToken);
         }
@@ -368,24 +369,24 @@ library LpPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function getStableTokens(Props storage self) external view returns (address[] memory) {
+    function getStableTokens(Props storage self) internal view returns (address[] memory) {
         return self.stableTokens.values();
     }
 
     function getStableTokenBalance(
         Props storage self,
         address stableToken
-    ) external view returns (TokenBalance storage) {
+    ) internal view returns (TokenBalance storage) {
         return self.stableTokenBalances[stableToken];
     }
 
-    function getPoolLiquidityLimit(Props storage self) public view returns (uint256) {
+    function getPoolLiquidityLimit(Props storage self) internal view returns (uint256) {
         return AppPoolConfig.getLpPoolConfig(self.stakeToken).poolLiquidityLimit;
     }
 
     function getCollateralTokenAmounts(
         EnumerableMap.AddressToUintMap storage collateralTokenAmounts
-    ) external view returns (address[] memory tokens, uint256[] memory amounts) {
+    ) internal view returns (address[] memory tokens, uint256[] memory amounts) {
         tokens = collateralTokenAmounts.keys();
         amounts = new uint256[](tokens.length);
         for (uint256 i; i < tokens.length; i++) {
@@ -393,7 +394,7 @@ library LpPool {
         }
     }
 
-    function getCollateralTokenAmount(Props storage self, address token) external view returns (uint256) {
+    function getCollateralTokenAmount(Props storage self, address token) internal view returns (uint256) {
         (bool exists, uint256 amount) = self.baseTokenBalance.collateralTokenAmounts.tryGet(token);
         return exists ? amount : 0;
     }
@@ -423,7 +424,7 @@ library LpPool {
         TokenBalance storage balance,
         uint256 poolLiquidityLimit,
         uint256 amount
-    ) public view returns (bool) {
+    ) internal view returns (bool) {
         if (poolLiquidityLimit == 0) {
             return
                 balance.amount.toInt256() + balance.unsettledAmount - balance.holdAmount.toInt256() >=
@@ -436,17 +437,17 @@ library LpPool {
         }
     }
 
-    function checkExists(Props storage self) external view {
+    function checkExists(Props storage self) internal view {
         if (self.baseToken == address(0)) {
             revert Errors.PoolNotExists();
         }
     }
 
-    function isExists(Props storage self) external view returns (bool) {
+    function isExists(Props storage self) internal view returns (bool) {
         return self.baseToken != address(0);
     }
 
-    function emitPoolBorrowingFeeUpdateEvent(Props storage self) external {
+    function emitPoolBorrowingFeeUpdateEvent(Props storage self) internal {
         emit PoolBorrowingFeeUpdateEvent(self.stakeToken, self.borrowingFee);
     }
 

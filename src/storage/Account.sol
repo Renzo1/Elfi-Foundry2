@@ -6,6 +6,7 @@ import "./CommonData.sol";
 import "./AppTradeTokenConfig.sol";
 import "../utils/Errors.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library Account {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -58,14 +59,14 @@ library Account {
 
     event AccountCrossModeUpdateEvent(address account, bool isCrossMargin);
 
-    function load(address owner) public pure returns (Props storage self) {
+    function load(address owner) internal pure returns (Props storage self) {
         bytes32 s = keccak256(abi.encode("xyz.elfi.storage.Account", owner));
         assembly {
             self.slot := s
         }
     }
 
-    function loadOrCreate(address owner) public returns (Props storage) {
+    function loadOrCreate(address owner) internal returns (Props storage) {
         Props storage self = load(owner);
         if (self.owner == address(0)) {
             self.owner = owner;
@@ -73,24 +74,24 @@ library Account {
         return self;
     }
 
-    function addOrderHoldInUsd(Props storage self, uint256 holdInUsd) external {
+    function addOrderHoldInUsd(Props storage self, uint256 holdInUsd) internal {
         uint256 preOrderHoldInUsd = self.orderHoldInUsd;
         self.orderHoldInUsd += holdInUsd;
         emit AccountOrderHoldInUsdUpdateEvent(self.owner, preOrderHoldInUsd, self.orderHoldInUsd);
     }
 
-    function subOrderHoldInUsd(Props storage self, uint256 holdInUsd) external {
+    function subOrderHoldInUsd(Props storage self, uint256 holdInUsd) internal {
         require(self.orderHoldInUsd >= holdInUsd, "orderHoldInUsd is smaller than holdInUsd");
         uint256 preOrderHoldInUsd = self.orderHoldInUsd;
         self.orderHoldInUsd -= holdInUsd;
         emit AccountOrderHoldInUsdUpdateEvent(self.owner, preOrderHoldInUsd, self.orderHoldInUsd);
     }
 
-    function addToken(Props storage self, address token, uint256 amount) external {
+    function addToken(Props storage self, address token, uint256 amount) internal {
         addToken(self, token, amount, UpdateSource.DEFAULT);
     }
 
-    function addToken(Props storage self, address token, uint256 amount, UpdateSource source) public {
+    function addToken(Props storage self, address token, uint256 amount, UpdateSource source) internal {
         if (!self.tokens.contains(token)) {
             self.tokens.add(token);
         }
@@ -100,11 +101,11 @@ library Account {
         emit AccountTokenUpdateEvent(self.owner, token, preBalance, balance, source);
     }
 
-    function subToken(Props storage self, address token, uint256 amount) external {
+    function subToken(Props storage self, address token, uint256 amount) internal {
         subToken(self, token, amount, UpdateSource.DEFAULT);
     }
 
-    function subToken(Props storage self, address token, uint256 amount, UpdateSource source) public {
+    function subToken(Props storage self, address token, uint256 amount, UpdateSource source) internal {
         require(self.tokens.contains(token), "token not exists!");
         require(self.tokenBalances[token].amount >= amount, "token amount not enough!");
         require(
@@ -116,11 +117,11 @@ library Account {
         emit AccountTokenUpdateEvent(self.owner, token, preBalance, self.tokenBalances[token], source);
     }
 
-    function subTokenIgnoreUsedAmount(Props storage self, address token, uint256 amount) external {
+    function subTokenIgnoreUsedAmount(Props storage self, address token, uint256 amount) internal {
         subTokenIgnoreUsedAmount(self, token, amount, UpdateSource.DEFAULT);
     }
 
-    function subTokenIgnoreUsedAmount(Props storage self, address token, uint256 amount, UpdateSource source) public {
+    function subTokenIgnoreUsedAmount(Props storage self, address token, uint256 amount, UpdateSource source) internal {
         require(self.tokens.contains(token), "token not exists!");
         require(self.tokenBalances[token].amount >= amount, "token amount not enough!");
         TokenBalance memory preBalance = self.tokenBalances[token];
@@ -132,7 +133,7 @@ library Account {
         Props storage self,
         address token,
         uint256 amount
-    ) external returns (uint256 liability) {
+    ) internal returns (uint256 liability) {
         return subTokenWithLiability(self, token, amount, UpdateSource.DEFAULT);
     }
 
@@ -141,7 +142,7 @@ library Account {
         address token,
         uint256 amount,
         UpdateSource source
-    ) public returns (uint256 liability) {
+    ) internal returns (uint256 liability) {
         TokenBalance storage balance = self.tokenBalances[token];
         TokenBalance memory preBalance = balance;
         if (balance.amount >= amount) {
@@ -161,7 +162,7 @@ library Account {
         emit AccountTokenUpdateEvent(self.owner, token, preBalance, balance, source);
     }
 
-    function useToken(Props storage self, address token, uint256 amount) external returns (uint256 useFromBalance) {
+    function useToken(Props storage self, address token, uint256 amount) internal returns (uint256 useFromBalance) {
         return useToken(self, token, amount, false, UpdateSource.DEFAULT);
     }
 
@@ -171,7 +172,7 @@ library Account {
         uint256 amount,
         bool isCheck,
         UpdateSource source
-    ) public returns (uint256 useFromBalance) {
+    ) internal returns (uint256 useFromBalance) {
         if (!self.tokens.contains(token)) {
             self.tokens.add(token);
         }
@@ -191,11 +192,11 @@ library Account {
         emit AccountTokenUpdateEvent(self.owner, token, preBalance, balance, source);
     }
 
-    function unUseToken(Props storage self, address token, uint256 amount) public {
+    function unUseToken(Props storage self, address token, uint256 amount) internal {
         unUseToken(self, token, amount, UpdateSource.DEFAULT);
     }
 
-    function unUseToken(Props storage self, address token, uint256 amount, UpdateSource source) public {
+    function unUseToken(Props storage self, address token, uint256 amount, UpdateSource source) internal {
         require(self.tokens.contains(token), "token not exists!");
         require(self.tokenBalances[token].usedAmount >= amount, "unUse overflow!");
         TokenBalance memory preBalance = self.tokenBalances[token];
@@ -203,7 +204,7 @@ library Account {
         emit AccountTokenUpdateEvent(self.owner, token, preBalance, self.tokenBalances[token], source);
     }
 
-    function repayLiability(Props storage self, address token) external returns (uint256 repayAmount) {
+    function repayLiability(Props storage self, address token) internal returns (uint256 repayAmount) {
         return repayLiability(self, token, UpdateSource.DEFAULT);
     }
 
@@ -211,7 +212,7 @@ library Account {
         Props storage self,
         address token,
         UpdateSource source
-    ) public returns (uint256 repayAmount) {
+    ) internal returns (uint256 repayAmount) {
         TokenBalance storage balance = self.tokenBalances[token];
         if (balance.liability > 0 && balance.amount > 0) {
             TokenBalance memory preBalance = balance;
@@ -224,11 +225,11 @@ library Account {
         }
     }
 
-    function clearLiability(Props storage self, address token) external {
+    function clearLiability(Props storage self, address token) internal {
         clearLiability(self, token, UpdateSource.DEFAULT);
     }
 
-    function clearLiability(Props storage self, address token, UpdateSource source) public {
+    function clearLiability(Props storage self, address token, UpdateSource source) internal {
         TokenBalance storage balance = self.tokenBalances[token];
         TokenBalance memory preBalance = balance;
         CommonData.load().subTokenLiability(token, balance.liability);
@@ -237,47 +238,47 @@ library Account {
         emit AccountTokenUpdateEvent(self.owner, token, preBalance, balance, source);
     }
 
-    function addPosition(Props storage self, bytes32 position) external {
+    function addPosition(Props storage self, bytes32 position) internal {
         if (!self.positions.contains(position)) {
             self.positions.add(position);
         }
     }
 
-    function delPosition(Props storage self, bytes32 position) external {
+    function delPosition(Props storage self, bytes32 position) internal {
         self.positions.remove(position);
     }
 
-    function checkExists(Props storage self) external view {
+    function checkExists(Props storage self) internal view {
         if (self.owner == address(0)) {
             revert Errors.AccountNotExist();
         }
     }
 
-    function isExists(Props storage self) external view returns (bool) {
+    function isExists(Props storage self) internal view returns (bool) {
         return self.owner != address(0);
     }
 
-    function getAllPosition(Props storage self) external view returns (bytes32[] memory) {
+    function getAllPosition(Props storage self) internal view returns (bytes32[] memory) {
         return self.positions.values();
     }
 
-    function hasPosition(Props storage self) external view returns (bool) {
+    function hasPosition(Props storage self) internal view returns (bool) {
         return self.positions.length() > 0;
     }
 
-    function hasPosition(Props storage self, bytes32 key) external view returns (bool) {
+    function hasPosition(Props storage self, bytes32 key) internal view returns (bool) {
         return self.positions.contains(key);
     }
 
-    function getAllOrders(Props storage self) external view returns (uint256[] memory) {
+    function getAllOrders(Props storage self) internal view returns (uint256[] memory) {
         return self.orders.values();
     }
 
-    function hasOrder(Props storage self) external view returns (bool) {
+    function hasOrder(Props storage self) internal view returns (bool) {
         return self.orders.length() > 0;
     }
 
-    function hasOtherOrder(Props storage self, uint256 orderId) external view returns (bool) {
+    function hasOtherOrder(Props storage self, uint256 orderId) internal view returns (bool) {
         uint256[] memory orderIds = self.orders.values();
         for (uint256 i; i < orderIds.length; i++) {
             if (orderIds[i] != orderId) {
@@ -287,25 +288,25 @@ library Account {
         return false;
     }
 
-    function addOrder(Props storage self, uint256 orderId) external {
+    function addOrder(Props storage self, uint256 orderId) internal {
         if (!self.orders.contains(orderId)) {
             self.orders.add(orderId);
         }
     }
 
-    function delOrder(Props storage self, uint256 orderId) external {
+    function delOrder(Props storage self, uint256 orderId) internal {
         self.orders.remove(orderId);
     }
 
-    function getOrders(Props storage self) external view returns (uint256[] memory) {
+    function getOrders(Props storage self) internal view returns (uint256[] memory) {
         return self.orders.values();
     }
 
-    function getTokens(Props storage self) public view returns (address[] memory) {
+    function getTokens(Props storage self) internal view returns (address[] memory) {
         return self.tokens.values();
     }
 
-    function getSortedTokensByDiscount(Props storage self) external view returns (address[] memory) {
+    function getSortedTokensByDiscount(Props storage self) internal view returns (address[] memory) {
         address[] memory tokens = self.tokens.values();
         AppTradeTokenConfig.TradeTokenConfig[] memory tokenConfigs = new AppTradeTokenConfig.TradeTokenConfig[](
             tokens.length
@@ -328,26 +329,26 @@ library Account {
         return tokens;
     }
 
-    function getTokenBalance(Props storage self, address token) public view returns (TokenBalance memory) {
+    function getTokenBalance(Props storage self, address token) internal view returns (TokenBalance memory) {
         return self.tokenBalances[token];
     }
 
-    function getTokenAmount(Props storage self, address token) public view returns (uint256) {
+    function getTokenAmount(Props storage self, address token) internal view returns (uint256) {
         return self.tokenBalances[token].amount;
     }
 
-    function getAvailableTokenAmount(Props storage self, address token) public view returns (uint256) {
+    function getAvailableTokenAmount(Props storage self, address token) internal view returns (uint256) {
         if (self.tokenBalances[token].amount > self.tokenBalances[token].usedAmount) {
             return self.tokenBalances[token].amount - self.tokenBalances[token].usedAmount;
         }
         return 0;
     }
 
-    function getLiability(Props storage self, address token) external view returns (uint256) {
+    function getLiability(Props storage self, address token) internal view returns (uint256) {
         return self.tokenBalances[token].liability;
     }
 
-    function hasLiability(Props storage self) external view returns (bool) {
+    function hasLiability(Props storage self) internal view returns (bool) {
         address[] memory tokens = self.tokens.values();
         for (uint256 i; i < tokens.length; i++) {
             if (self.tokenBalances[tokens[i]].liability > 0) {

@@ -3,12 +3,13 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library TransferUtils {
     uint256 private constant TRANSFER_GAS_LIMIT = 200000;
 
     error TokenTransferError(address token, address receiver, uint256 amount);
 
-    function transfer(address token, address receiver, uint256 amount) external {
+    function transfer(address token, address receiver, uint256 amount) internal {
         if (amount == 0) {
             return;
         }

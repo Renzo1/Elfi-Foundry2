@@ -13,6 +13,7 @@ import "./GasProcess.sol";
 import "./AssetsProcess.sol";
 import "./FeeRewardsProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library ClaimRewardsProcess {
     using SafeMath for uint256;
     using SafeCast for uint256;
@@ -36,7 +37,7 @@ library ClaimRewardsProcess {
     );
     event CancelClaimRewardsEvent(uint256 indexed requestId, ClaimRewards.Request data, bytes32 reasonCode);
 
-    function createClaimRewards(address account, address claimUsdToken, uint256 executionFee) external {
+    function createClaimRewards(address account, address claimUsdToken, uint256 executionFee) internal {
         if (!UsdPool.isSupportStableToken(claimUsdToken)) {
             revert Errors.ClaimTokenNotSupported();
         }
@@ -60,7 +61,7 @@ library ClaimRewardsProcess {
         emit CreateClaimRewardsEvent(requestId, request);
     }
 
-    function claimRewards(uint256 requestId, ClaimRewards.Request memory request) external {
+    function claimRewards(uint256 requestId, ClaimRewards.Request memory request) internal {
         address account = request.account;
         address[] memory stakeTokens = CommonData.getAllStakeTokens();
         StakingAccount.Props storage stakingAccount = StakingAccount.load(account);
@@ -109,7 +110,7 @@ library ClaimRewardsProcess {
         emit ClaimRewardsSuccessEvent(requestId, request, allStakeTokens, claimStakeTokenRewards);
     }
 
-    function cancelClaimRewards(uint256 requestId, ClaimRewards.Request memory request, bytes32 reasonCode) external {
+    function cancelClaimRewards(uint256 requestId, ClaimRewards.Request memory request, bytes32 reasonCode) internal {
         ClaimRewards.remove(requestId);
         emit CancelClaimRewardsEvent(requestId, request, reasonCode);
     }

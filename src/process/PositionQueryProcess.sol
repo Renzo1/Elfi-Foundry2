@@ -11,6 +11,7 @@ import "../storage/Account.sol";
 import "../storage/AppConfig.sol";
 import "./MarketQueryProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library PositionQueryProcess {
     using Math for uint256;
     using SafeMath for uint256;
@@ -44,7 +45,7 @@ library PositionQueryProcess {
         bytes32 symbol,
         address marginToken,
         bool isCrossMargin
-    ) external view returns (bool) {
+    ) internal view returns (bool) {
         address[] memory stableTokens = UsdPool.getSupportedStableTokens();
         for (uint256 i; i < stableTokens.length; i++) {
             if (stableTokens[i] == marginToken) {
@@ -62,7 +63,7 @@ library PositionQueryProcess {
         Position.Props memory position,
         int256 computeIndexPrice,
         bool pnlToken
-    ) public view returns (int256) {
+    ) internal view returns (int256) {
         OracleProcess.OracleParam[] memory oracles;
         return getPositionUnPnl(position, oracles, computeIndexPrice, pnlToken);
     }
@@ -72,7 +73,7 @@ library PositionQueryProcess {
         OracleProcess.OracleParam[] memory oracles,
         int256 computeIndexPrice,
         bool pnlToken
-    ) public view returns (int256) {
+    ) internal view returns (int256) {
         (int256 pnlInToken, int256 pnlInUsd) = getPositionUnPnl(position, oracles, computeIndexPrice);
         return pnlToken ? pnlInToken : pnlInUsd;
     }
@@ -81,7 +82,7 @@ library PositionQueryProcess {
         Position.Props memory position,
         OracleProcess.OracleParam[] memory oracles,
         int256 computeIndexPrice
-    ) public view returns (int256, int256) {
+    ) internal view returns (int256, int256) {
         if (position.qty == 0) {
             return (0, 0);
         }
@@ -105,7 +106,7 @@ library PositionQueryProcess {
         }
     }
 
-    function getLiquidationPrice(Position.Props storage position) external view returns (uint256) {
+    function getLiquidationPrice(Position.Props storage position) internal view returns (uint256) {
         AppConfig.SymbolConfig memory symbolConfig = AppConfig.getSymbolConfig(position.symbol);
         uint256 mmInUsd = getMM(
             position.qty,
@@ -123,7 +124,7 @@ library PositionQueryProcess {
         return CalUtils.formatToTickSize(liquidationPrice, symbolConfig.tickSize, position.isLong);
     }
 
-    function getPositionMMRate(Position.Props memory position) public view returns (uint256) {
+    function getPositionMMRate(Position.Props memory position) internal view returns (uint256) {
         AppConfig.SymbolConfig memory symbolConfig = AppConfig.getSymbolConfig(position.symbol);
         return
             CalUtils.divRate(CalUtils.RATE_PRECISION, symbolConfig.maxLeverage.mul(2)).min(
@@ -131,11 +132,11 @@ library PositionQueryProcess {
             );
     }
 
-    function getMM(uint256 qty, uint256 leverage, uint256 maxMMRate) public pure returns (uint256) {
+    function getMM(uint256 qty, uint256 leverage, uint256 maxMMRate) internal pure returns (uint256) {
         return CalUtils.divRate(qty, leverage.mul(2)).min(CalUtils.mulRate(qty, maxMMRate));
     }
 
-    function getPositionMM(Position.Props memory position) public view returns (uint256) {
+    function getPositionMM(Position.Props memory position) internal view returns (uint256) {
         AppConfig.SymbolConfig memory symbolConfig = AppConfig.getSymbolConfig(position.symbol);
         uint256 maxMaintenanceMarginRate = AppTradeConfig.getTradeConfig().maxMaintenanceMarginRate;
         return getMM(position.qty, symbolConfig.maxLeverage, maxMaintenanceMarginRate);
@@ -144,7 +145,7 @@ library PositionQueryProcess {
     function getAllPosition(
         Account.Props storage accountProps,
         bool isCrossMargin
-    ) public view returns (Position.Props[] memory) {
+    ) internal view returns (Position.Props[] memory) {
         bytes32[] memory positionKeys = accountProps.getAllPosition();
         Position.Props[] memory positions = new Position.Props[](_getPositionIndex(positionKeys, isCrossMargin));
         uint256 positionIndex;
@@ -158,7 +159,7 @@ library PositionQueryProcess {
         return positions;
     }
 
-    function getUnRealisedBorrowingFee(Position.Props storage position) external view returns (uint256) {
+    function getUnRealisedBorrowingFee(Position.Props storage position) internal view returns (uint256) {
         uint256 cumulativeBorrowingFeePerToken;
         if (position.isLong) {
             LpPool.Props storage pool = LpPool.load(Symbol.load(position.symbol).stakeToken);
@@ -183,7 +184,7 @@ library PositionQueryProcess {
             );
     }
 
-    function getUnRealisedFundingFee(Position.Props storage position) external view returns (int256) {
+    function getUnRealisedFundingFee(Position.Props storage position) internal view returns (int256) {
         (, MarketQueryProcess.UpdateFundingCache memory cache) = MarketQueryProcess.getUpdateMarketFundingFeeRate(
             position.symbol
         );
@@ -198,7 +199,7 @@ library PositionQueryProcess {
             );
     }
 
-    function getPositionFee(Position.Props memory position) public view returns (int256) {
+    function getPositionFee(Position.Props memory position) internal view returns (int256) {
         OracleProcess.OracleParam[] memory oracles;
         return getPositionFee(position, oracles);
     }
@@ -206,7 +207,7 @@ library PositionQueryProcess {
     function getPositionFee(
         Position.Props memory position,
         OracleProcess.OracleParam[] memory oracles
-    ) public view returns (int256) {
+    ) internal view returns (int256) {
         ComputePositionFeeCache memory cache;
         cache.fundingFeePerQty = MarketQueryProcess.getFundingFeePerQty(position.symbol, position.isLong);
         cache.unRealizedFundingFeeDelta = CalUtils.mulIntSmallRate(
@@ -252,7 +253,7 @@ library PositionQueryProcess {
 
     function getAccountAllCrossPositionValue(
         Account.Props storage accountProps
-    ) public view returns (PositionStaticsCache memory) {
+    ) internal view returns (PositionStaticsCache memory) {
         OracleProcess.OracleParam[] memory cache;
         return getAccountAllCrossPositionValue(accountProps, cache);
     }
@@ -260,7 +261,7 @@ library PositionQueryProcess {
     function getAccountAllCrossPositionValue(
         Account.Props storage accountProps,
         OracleProcess.OracleParam[] memory oracles
-    ) public view returns (PositionStaticsCache memory cache) {
+    ) internal view returns (PositionStaticsCache memory cache) {
         accountProps.checkExists();
         Position.Props[] memory allCrossPositions = getAllPosition(accountProps, true);
 

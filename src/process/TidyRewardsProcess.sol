@@ -12,6 +12,7 @@ import "./LpPoolQueryProcess.sol";
 import "./GasProcess.sol";
 import "./AssetsProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library TidyRewardsProcess {
     using SafeMath for uint256;
     using SafeCast for uint256;
@@ -32,7 +33,7 @@ library TidyRewardsProcess {
         uint256 baseTokenSwapAmount;
     }
 
-    function tidyUnsettleRewards(FeeRewards.MarketRewards storage marketRewards, address stakeToken) external {
+    function tidyUnsettleRewards(FeeRewards.MarketRewards storage marketRewards, address stakeToken) internal {
         address[] memory tokens = marketRewards.getFeeTokens();
         for (uint256 i; i < tokens.length; i++) {
             uint256 unsettleAmount = marketRewards.getUnsettleFeeAmount(tokens[i]);
@@ -51,7 +52,7 @@ library TidyRewardsProcess {
         }
     }
 
-    function tidyTradingRewards(bytes32 symbol, address stakeToken) external {
+    function tidyTradingRewards(bytes32 symbol, address stakeToken) internal {
         FeeRewards.MarketRewards storage marketTradingRewardsProps = FeeRewards.loadMarketTradingRewards(symbol);
         TidyTradingRewardsCache memory tidyCache;
         tidyCache.totalFeeValueInUsd = _getTotalFeeValueInUsd(marketTradingRewardsProps);

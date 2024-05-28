@@ -12,6 +12,7 @@ import "./GasProcess.sol";
 import "./LpPoolProcess.sol";
 import "./FeeProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library OrderProcess {
     using Order for Order.Props;
     using Position for Position.Props;
@@ -47,9 +48,9 @@ library OrderProcess {
     // @audit added a return for orderId value for easy testing
     function createOrderRequest(
         Account.Props storage accountProps,
-        IOrder.PlaceOrderParams calldata params,
+        IOrder.PlaceOrderParams memory params,
         bool validateExecutionFee
-    ) external returns(uint256) {
+    ) internal returns(uint256) {
         _validatePlaceOrder(params);
         if (
             params.posSide == Order.PositionSide.INCREASE &&
@@ -101,7 +102,7 @@ library OrderProcess {
         return orderId;     // @audit added a return for orderId value for easy testing
     }
 
-    function executeOrder(uint256 orderId, Order.OrderInfo memory order) external {
+    function executeOrder(uint256 orderId, Order.OrderInfo memory order) internal {
         Symbol.Props memory symbolProps = Symbol.load(order.symbol);
 
         _validExecuteOrder(order, symbolProps);
@@ -362,7 +363,7 @@ library OrderProcess {
         return defaultLeverage;
     }
 
-    function _validatePlaceOrder(IOrder.PlaceOrderParams calldata params) internal view {
+    function _validatePlaceOrder(IOrder.PlaceOrderParams memory params) internal view {
         if (
             Order.Type.MARKET != params.orderType &&
             Order.Type.LIMIT != params.orderType &&
@@ -454,7 +455,7 @@ library OrderProcess {
 
     function _validateGasFeeLimitAndInitialMargin(
         Account.Props storage accountProps,
-        IOrder.PlaceOrderParams calldata params
+        IOrder.PlaceOrderParams memory params
     ) internal returns (uint256, bool) {
         AppConfig.ChainConfig memory chainConfig = AppConfig.getChainConfig();
         uint256 configGasFeeLimit = Order.PositionSide.INCREASE == params.posSide
@@ -484,7 +485,7 @@ library OrderProcess {
 
     function _validateBatchGasFeeLimit(
         Account.Props storage accountProps,
-        IOrder.PlaceOrderParams calldata params
+        IOrder.PlaceOrderParams memory params
     ) internal returns (uint256, bool) {
         AppConfig.ChainConfig memory chainConfig = AppConfig.getChainConfig();
         uint256 configGasFeeLimit = Order.PositionSide.INCREASE == params.posSide

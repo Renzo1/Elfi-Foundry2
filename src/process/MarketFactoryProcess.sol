@@ -8,6 +8,7 @@ import "../storage/CommonData.sol";
 import "../utils/Errors.sol";
 import "../vault/StakeToken.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library MarketFactoryProcess {
     using Market for Market.Props;
 
@@ -24,7 +25,7 @@ library MarketFactoryProcess {
         address baseToken;
     }
 
-    function createMarket(CreateMarketParams memory params) external returns (address stakeTokenAddr) {
+    function createMarket(CreateMarketParams memory params) internal returns (address stakeTokenAddr) {
         Symbol.Props storage symbolProps = Symbol.create(params.code);
         if (symbolProps.indexToken != address(0)) {
             revert Errors.CreateSymbolExists(params.code);
@@ -63,7 +64,7 @@ library MarketFactoryProcess {
     function createStakeUsdPool(
         string memory stakeTokenName,
         uint8 decimals
-    ) external returns (address stakeTokenAddr) {
+    ) internal returns (address stakeTokenAddr) {
         if (CommonData.getStakeUsdToken() != address(0)) {
             revert Errors.CreateStakePoolExists(CommonData.getStakeUsdToken());
         }

@@ -7,6 +7,7 @@ import "../storage/Position.sol";
 import "../storage/StakingAccount.sol";
 import "./MarketProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library FeeProcess {
     using SafeMath for uint256;
     using SafeCast for uint256;
@@ -73,7 +74,7 @@ library FeeProcess {
         uint256 fee
     );
 
-    function updateBorrowingFee(Position.Props storage position, address stakeToken) public {
+    function updateBorrowingFee(Position.Props storage position, address stakeToken) internal {
         uint256 cumulativeBorrowingFeePerToken = MarketQueryProcess.getCumulativeBorrowingFeePerToken(
             stakeToken,
             position.isLong,
@@ -99,7 +100,7 @@ library FeeProcess {
         );
     }
 
-    function updateFundingFee(Position.Props storage position) public {
+    function updateFundingFee(Position.Props storage position) internal {
         int256 fundingFeePerQty = MarketQueryProcess.getFundingFeePerQty(position.symbol, position.isLong);
         if (fundingFeePerQty == position.positionFee.openFundingFeePerQty) {
             return;
@@ -171,7 +172,7 @@ library FeeProcess {
         address account,
         bytes32 feeType,
         bool isCollateral
-    ) public {
+    ) internal {
         ChargeFeeCache memory cache;
         AppPoolConfig.StakeConfig memory stakeConfig = AppPoolConfig.getStakeConfig();
         if (feeType == FEE_MINT) {
@@ -215,7 +216,7 @@ library FeeProcess {
         address feeToken,
         address account,
         bytes32 feeType
-    ) public {
+    ) internal {
         FeeRewards.StakingRewards storage stakingRewardsProps = FeeRewards.loadStakingRewards();
         FeeRewards.MarketRewards storage poolRewardsProps = FeeRewards.loadPoolRewards(stakeToken);
         FeeRewards.StakingRewards storage daoRewardsProps = FeeRewards.loadDaoRewards();

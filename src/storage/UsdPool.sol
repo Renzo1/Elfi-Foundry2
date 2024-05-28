@@ -8,6 +8,7 @@ import "../utils/ChainUtils.sol";
 import "../utils/TokenUtils.sol";
 import "./AppPoolConfig.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library UsdPool {
     bytes32 private constant _KEY = keccak256(abi.encode("xyz.elfi.storage.UsdPool"));
 
@@ -60,7 +61,7 @@ library UsdPool {
 
     event UsdPoolBorrowingFeeUpdateEvent(BorrowingFee borrowingFee);
 
-    function load() public pure returns (Props storage self) {
+    function load() internal pure returns (Props storage self) {
         bytes32 s = _KEY;
 
         assembly {
@@ -72,7 +73,7 @@ library UsdPool {
         return AppPoolConfig.getUsdPoolConfig();
     }
 
-    function addStableToken(Props storage self, address stableToken, uint amount) external {
+    function addStableToken(Props storage self, address stableToken, uint amount) internal {
         require(self.stableTokens.contains(stableToken), "stable token not supported!");
         UsdPoolTokenUpdateCache memory cache = _convertBalanceToCache(
             stableToken,
@@ -83,7 +84,7 @@ library UsdPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function subStableToken(Props storage self, address stableToken, uint amount) external {
+    function subStableToken(Props storage self, address stableToken, uint amount) internal {
         require(isSubAmountAllowed(self, stableToken, amount), "sub failed with balance not enough");
         UsdPoolTokenUpdateCache memory cache = _convertBalanceToCache(
             stableToken,
@@ -94,7 +95,7 @@ library UsdPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function holdStableToken(Props storage self, address stableToken, uint amount) external {
+    function holdStableToken(Props storage self, address stableToken, uint amount) internal {
         require(
             isHoldAmountAllowed(self.stableTokenBalances[stableToken], getPoolLiquidityLimit(), amount),
             "hold failed with balance not enough"
@@ -108,7 +109,7 @@ library UsdPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function unHoldStableToken(Props storage self, address stableToken, uint256 amount) external {
+    function unHoldStableToken(Props storage self, address stableToken, uint256 amount) internal {
         require(self.stableTokenBalances[stableToken].holdAmount >= amount, "sub hold bigger than hold");
         UsdPoolTokenUpdateCache memory cache = _convertBalanceToCache(
             stableToken,
@@ -119,7 +120,7 @@ library UsdPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function addUnsettleStableToken(Props storage self, address stableToken, uint256 amount) external {
+    function addUnsettleStableToken(Props storage self, address stableToken, uint256 amount) internal {
         UsdPoolTokenUpdateCache memory cache = _convertBalanceToCache(
             stableToken,
             self.stableTokenBalances[stableToken]
@@ -129,7 +130,7 @@ library UsdPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function settleStableToken(Props storage self, address stableToken, uint256 amount, bool updateAmount) external {
+    function settleStableToken(Props storage self, address stableToken, uint256 amount, bool updateAmount) internal {
         if (!self.stableTokens.contains(stableToken)) {
             self.stableTokens.add(stableToken);
         }
@@ -145,34 +146,34 @@ library UsdPool {
         _emitPoolUpdateEvent(cache);
     }
 
-    function addSupportStableTokens(Props storage self, address[] memory stableTokens) external {
+    function addSupportStableTokens(Props storage self, address[] memory stableTokens) internal {
         for (uint256 i; i < stableTokens.length; i++) {
             self.stableTokens.add(stableTokens[i]);
         }
     }
 
-    function removeSupportStableToken(Props storage self, address stableToken) external {
+    function removeSupportStableToken(Props storage self, address stableToken) internal {
         self.stableTokens.remove(stableToken);
     }
 
-    function getPoolLiquidityLimit() public view returns (uint256) {
+    function getPoolLiquidityLimit() internal view returns (uint256) {
         return getUsdPoolConfig().poolLiquidityLimit;
     }
 
-    function getBorrowingFees(Props storage self, address stableToken) external view returns (BorrowingFee storage) {
+    function getBorrowingFees(Props storage self, address stableToken) internal view returns (BorrowingFee storage) {
         return self.borrowingFees[stableToken];
     }
 
-    function getStableTokens(Props storage self) external view returns (address[] memory) {
+    function getStableTokens(Props storage self) internal view returns (address[] memory) {
         return self.stableTokens.values();
     }
 
-    function getSupportedStableTokens() external view returns (address[] memory) {
+    function getSupportedStableTokens() internal view returns (address[] memory) {
         Props storage self = load();
         return self.stableTokens.values();
     }
 
-    function isSupportStableToken(address stableToken) external view returns (bool) {
+    function isSupportStableToken(address stableToken) internal view returns (bool) {
         Props storage self = load();
         return self.stableTokens.contains(stableToken);
     }
@@ -180,11 +181,11 @@ library UsdPool {
     function getStableTokenBalance(
         Props storage self,
         address stableToken
-    ) external view returns (TokenBalance memory) {
+    ) internal view returns (TokenBalance memory) {
         return self.stableTokenBalances[stableToken];
     }
 
-    function getStableTokenBalanceArray(Props storage self) external view returns (TokenBalance[] memory) {
+    function getStableTokenBalanceArray(Props storage self) internal view returns (TokenBalance[] memory) {
         address[] memory tokens = self.stableTokens.values();
         TokenBalance[] memory balances = new TokenBalance[](tokens.length);
         for (uint256 i; i < tokens.length; i++) {
@@ -193,7 +194,7 @@ library UsdPool {
         return balances;
     }
 
-    function getAllBorrowingFees(Props storage self) external view returns (BorrowingFee[] memory) {
+    function getAllBorrowingFees(Props storage self) internal view returns (BorrowingFee[] memory) {
         address[] memory tokens = self.stableTokens.values();
         BorrowingFee[] memory fees = new BorrowingFee[](tokens.length);
         for (uint256 i; i < tokens.length; i++) {
@@ -202,7 +203,7 @@ library UsdPool {
         return fees;
     }
 
-    function getMaxWithdrawArray(Props storage self) external view returns (uint256[] memory) {
+    function getMaxWithdrawArray(Props storage self) internal view returns (uint256[] memory) {
         address[] memory tokens = self.stableTokens.values();
         uint256[] memory maxWithdraws = new uint256[](tokens.length);
         for (uint256 i; i < tokens.length; i++) {
@@ -211,7 +212,7 @@ library UsdPool {
         return maxWithdraws;
     }
 
-    function getMaxWithdraw(Props storage self, address stableToken) public view returns (uint256) {
+    function getMaxWithdraw(Props storage self, address stableToken) internal view returns (uint256) {
         TokenBalance storage balance = self.stableTokenBalances[stableToken];
         uint256 poolLiquidityLimit = getPoolLiquidityLimit();
         if (poolLiquidityLimit == 0) {
@@ -222,7 +223,7 @@ library UsdPool {
         }
     }
 
-    function getMaxAmountStableToken(Props storage self) external view returns (address token) {
+    function getMaxAmountStableToken(Props storage self) internal view returns (address token) {
         address[] memory tokens = self.stableTokens.values();
         uint256 maxAmount;
         for (uint256 i; i < tokens.length; i++) {
@@ -238,7 +239,7 @@ library UsdPool {
         }
     }
 
-    function isSubAmountAllowed(Props storage self, address stableToken, uint256 amount) public view returns (bool) {
+    function isSubAmountAllowed(Props storage self, address stableToken, uint256 amount) internal view returns (bool) {
         TokenBalance storage balance = self.stableTokenBalances[stableToken];
         if (balance.amount < amount) {
             return false;
@@ -265,7 +266,7 @@ library UsdPool {
         }
     }
 
-    function emitPoolBorrowingFeeUpdateEvent(Props storage self, address stableToken) external {
+    function emitPoolBorrowingFeeUpdateEvent(Props storage self, address stableToken) internal {
         emit UsdPoolBorrowingFeeUpdateEvent(self.borrowingFees[stableToken]);
     }
 

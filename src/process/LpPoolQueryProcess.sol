@@ -16,6 +16,7 @@ import "../utils/CalUtils.sol";
 import "../utils/TokenUtils.sol";
 import "./OracleProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library LpPoolQueryProcess {
     using SafeMath for uint256;
     using SafeCast for uint256;
@@ -24,7 +25,7 @@ library LpPoolQueryProcess {
     using LpPool for LpPool.Props;
     using UsdPool for UsdPool.Props;
 
-    function getUsdPool() external view returns (IPool.UsdPoolInfo memory) {
+    function getUsdPool() internal view returns (IPool.UsdPoolInfo memory) {
         UsdPool.Props storage pool = UsdPool.load();
         if (pool.getStableTokens().length == 0) {
             IPool.UsdPoolInfo memory poolInfo;
@@ -52,8 +53,8 @@ library LpPoolQueryProcess {
     }
 
     function getUsdPoolWithOracle(
-        OracleProcess.OracleParam[] calldata oracles
-    ) external view returns (IPool.UsdPoolInfo memory) {
+        OracleProcess.OracleParam[] memory oracles
+    ) internal view returns (IPool.UsdPoolInfo memory) {
         UsdPool.Props storage pool = UsdPool.load();
         if (pool.getStableTokens().length == 0) {
             IPool.UsdPoolInfo memory poolInfo;
@@ -80,7 +81,7 @@ library LpPoolQueryProcess {
             );
     }
 
-    function getAllPools(OracleProcess.OracleParam[] calldata oracles) external view returns (IPool.PoolInfo[] memory) {
+    function getAllPools(OracleProcess.OracleParam[] memory oracles) internal view returns (IPool.PoolInfo[] memory) {
         address[] memory stakeTokens = CommonData.getAllStakeTokens();
         IPool.PoolInfo[] memory poolInfos = new IPool.PoolInfo[](stakeTokens.length);
         for (uint256 i; i < stakeTokens.length; i++) {
@@ -89,7 +90,7 @@ library LpPoolQueryProcess {
         return poolInfos;
     }
 
-    function getPoolValue(LpPool.Props storage pool) public view returns (uint256) {
+    function getPoolValue(LpPool.Props storage pool) internal view returns (uint256) {
         int256 poolValue = getPoolIntValue(pool);
         return poolValue <= 0 ? 0 : poolValue.toUint256();
     }
@@ -97,12 +98,12 @@ library LpPoolQueryProcess {
     function getPoolValue(
         LpPool.Props storage pool,
         OracleProcess.OracleParam[] memory oracles
-    ) public view returns (uint256) {
+    ) internal view returns (uint256) {
         int256 poolValue = getPoolIntValue(pool, oracles);
         return poolValue <= 0 ? 0 : poolValue.toUint256();
     }
 
-    function getPoolIntValue(LpPool.Props storage pool) public view returns (int256) {
+    function getPoolIntValue(LpPool.Props storage pool) internal view returns (int256) {
         OracleProcess.OracleParam[] memory oracles;
         return getPoolIntValue(pool, oracles);
     }
@@ -110,7 +111,7 @@ library LpPoolQueryProcess {
     function getPoolIntValue(
         LpPool.Props storage pool,
         OracleProcess.OracleParam[] memory oracles
-    ) public view returns (int256) {
+    ) internal view returns (int256) {
         int256 value = 0;
         if (pool.baseTokenBalance.amount > 0 || pool.baseTokenBalance.unsettledAmount > 0) {
             int256 unPnl = getMarketUnPnl(pool.symbol, oracles, true, pool.baseToken, true);
@@ -143,7 +144,7 @@ library LpPoolQueryProcess {
         return value;
     }
 
-    function getPoolAvailableLiquidity(LpPool.Props storage pool) external view returns (uint256) {
+    function getPoolAvailableLiquidity(LpPool.Props storage pool) internal view returns (uint256) {
         OracleProcess.OracleParam[] memory oracles;
         return getPoolAvailableLiquidity(pool, oracles);
     }
@@ -151,7 +152,7 @@ library LpPoolQueryProcess {
     function getPoolAvailableLiquidity(
         LpPool.Props storage pool,
         OracleProcess.OracleParam[] memory oracles
-    ) public view returns (uint256) {
+    ) internal view returns (uint256) {
         int256 baseTokenAmount = pool.baseTokenBalance.amount.toInt256() + pool.baseTokenBalance.unsettledAmount;
         if (baseTokenAmount < 0) {
             return 0;
@@ -190,14 +191,14 @@ library LpPoolQueryProcess {
                 : 0;
     }
 
-    function getUsdPoolAvailableLiquidity(UsdPool.Props storage pool, address token) public view returns (uint256) {
+    function getUsdPoolAvailableLiquidity(UsdPool.Props storage pool, address token) internal view returns (uint256) {
         UsdPool.TokenBalance memory tokenBalance = pool.getStableTokenBalance(token);
         uint256 totalAmount = tokenBalance.amount + tokenBalance.unsettledAmount;
         uint256 availableTokenAmount = CalUtils.mulRate(totalAmount, UsdPool.getPoolLiquidityLimit());
         return availableTokenAmount > tokenBalance.holdAmount ? availableTokenAmount - tokenBalance.holdAmount : 0;
     }
 
-    function getUsdPoolValue(UsdPool.Props storage pool) public view returns (uint256) {
+    function getUsdPoolValue(UsdPool.Props storage pool) internal view returns (uint256) {
         OracleProcess.OracleParam[] memory oracles;
         return getUsdPoolValue(pool, oracles);
     }
@@ -205,12 +206,12 @@ library LpPoolQueryProcess {
     function getUsdPoolValue(
         UsdPool.Props storage pool,
         OracleProcess.OracleParam[] memory oracles
-    ) public view returns (uint256) {
+    ) internal view returns (uint256) {
         int256 poolValue = getUsdPoolIntValue(pool, oracles);
         return poolValue <= 0 ? 0 : poolValue.toUint256();
     }
 
-    function getUsdPoolIntValue(UsdPool.Props storage pool) public view returns (int256) {
+    function getUsdPoolIntValue(UsdPool.Props storage pool) internal view returns (int256) {
         OracleProcess.OracleParam[] memory oracles;
         return getUsdPoolIntValue(pool, oracles);
     }
@@ -218,7 +219,7 @@ library LpPoolQueryProcess {
     function getUsdPoolIntValue(
         UsdPool.Props storage pool,
         OracleProcess.OracleParam[] memory oracles
-    ) public view returns (int256) {
+    ) internal view returns (int256) {
         int256 value = 0;
         address[] memory stableTokens = pool.getStableTokens();
         if (stableTokens.length > 0) {
@@ -244,7 +245,7 @@ library LpPoolQueryProcess {
         bool isLong,
         address marginToken,
         bool pnlToken
-    ) public view returns (int256) {
+    ) internal view returns (int256) {
         Market.Props storage market = Market.load(symbol);
         Symbol.Props memory symbolProps = Symbol.load(symbol);
         Market.MarketPosition storage position = isLong ? market.longPosition : market.shortPositionMap[marginToken];
@@ -281,7 +282,7 @@ library LpPoolQueryProcess {
     function getPool(
         address stakeToken,
         OracleProcess.OracleParam[] memory oracles
-    ) public view returns (IPool.PoolInfo memory) {
+    ) internal view returns (IPool.PoolInfo memory) {
         LpPool.Props storage pool = LpPool.load(stakeToken);
         IPool.PoolInfo memory result;
         if (!pool.isExists()) {

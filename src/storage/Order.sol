@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+// @audit change all functions to internal and param location to memory for easy testing
 library Order {
     bytes32 constant ORDER = keccak256(abi.encode("xyz.elfi.storage.Order"));
 
@@ -53,32 +54,32 @@ library Order {
         uint256 lastBlock;
     }
 
-    function load() public pure returns (Props storage self) {
+    function load() internal pure returns (Props storage self) {
         bytes32 s = ORDER;
         assembly {
             self.slot := s
         }
     }
 
-    function create(uint256 orderId) external view returns (OrderInfo storage) {
+    function create(uint256 orderId) internal view returns (OrderInfo storage) {
         Order.Props storage self = load();
         return self.orders[orderId];
     }
 
-    function get(Order.Props storage self, uint256 orderId) external view returns (OrderInfo storage) {
+    function get(Order.Props storage self, uint256 orderId) internal view returns (OrderInfo storage) {
         return self.orders[orderId];
     }
 
-    function get(uint256 orderId) external view returns (OrderInfo storage) {
+    function get(uint256 orderId) internal view returns (OrderInfo storage) {
         Order.Props storage self = load();
         return self.orders[orderId];
     }
 
-    function remove(Order.Props storage self, uint256 orderId) external {
+    function remove(Order.Props storage self, uint256 orderId) internal {
         delete self.orders[orderId];
     }
 
-    function remove(uint256 orderId) external {
+    function remove(uint256 orderId) internal {
         Order.Props storage self = load();
         delete self.orders[orderId];
     }
@@ -90,7 +91,7 @@ library Order {
         uint256 leverage,
         bool isLong,
         bool isCrossMargin
-    ) external {
+    ) internal {
         Order.Props storage self = load();
         for (uint256 i; i < orders.length; i++) {
             Order.OrderInfo storage orderInfo = self.orders[orders[i]];
@@ -112,7 +113,7 @@ library Order {
         bytes32 symbol,
         address marginToken,
         bool isCrossMargin
-    ) external view returns (bool) {
+    ) internal view returns (bool) {
         Order.Props storage self = load();
         for (uint256 i; i < orders.length; i++) {
             Order.OrderInfo storage orderInfo = self.orders[orders[i]];

@@ -5,6 +5,7 @@ import "../interfaces/IVault.sol";
 import "../storage/AppConfig.sol";
 import "../storage/CommonData.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library GasProcess {
     struct PayExecutionFeeParams {
         address from;
@@ -14,7 +15,7 @@ library GasProcess {
         address account;
     }
 
-    function processExecutionFee(PayExecutionFeeParams memory cache) external {
+    function processExecutionFee(PayExecutionFeeParams memory cache) internal {
         uint256 usedGas = cache.startGas - gasleft();
         uint256 executionFee = usedGas * tx.gasprice;
         uint256 refundFee;
@@ -40,7 +41,7 @@ library GasProcess {
         }
     }
 
-    function addLossExecutionFee(uint256 startGas) external {
+    function addLossExecutionFee(uint256 startGas) internal {
         uint256 usedGas = startGas - gasleft();
         uint256 executionFee = usedGas * tx.gasprice;
         if (executionFee > 0) {
@@ -48,7 +49,7 @@ library GasProcess {
         }
     }
 
-    function validateExecutionFeeLimit(uint256 executionFee, uint256 gasLimit) external view {
+    function validateExecutionFeeLimit(uint256 executionFee, uint256 gasLimit) internal view {
         if (executionFee < gasLimit * tx.gasprice) {
             revert Errors.ExecutionFeeNotEnough();
         }

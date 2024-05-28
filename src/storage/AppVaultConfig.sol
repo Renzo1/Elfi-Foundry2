@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import "./AppStorage.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library AppVaultConfig {
     using AppStorage for AppStorage.Props;
 
@@ -11,7 +12,7 @@ library AppVaultConfig {
     bytes32 public constant LP_VAULT = keccak256(abi.encode("LP_VAULT"));
     bytes32 public constant PORTFOLIO_VAULT = keccak256(abi.encode("PORTFOLIO_VAULT"));
 
-    function getTradeVault() public view returns (address) {
+    function getTradeVault() internal view returns (address) {
         AppStorage.Props storage app = AppStorage.load();
         return app.getAddressValue(keccak256(abi.encode(AppStorage.VAULT_CONFIG, TRADE_VAULT)));
     }
@@ -21,7 +22,7 @@ library AppVaultConfig {
         app.setAddressValue(keccak256(abi.encode(AppStorage.VAULT_CONFIG, TRADE_VAULT)), vault);
     }
 
-    function getLpVault() public view returns (address) {
+    function getLpVault() internal view returns (address) {
         AppStorage.Props storage app = AppStorage.load();
         return app.getAddressValue(keccak256(abi.encode(AppStorage.VAULT_CONFIG, LP_VAULT)));
     }
@@ -31,7 +32,7 @@ library AppVaultConfig {
         app.setAddressValue(keccak256(abi.encode(AppStorage.VAULT_CONFIG, LP_VAULT)), vault);
     }
 
-    function getPortfolioVault() public view returns (address) {
+    function getPortfolioVault() internal view returns (address) {
         AppStorage.Props storage app = AppStorage.load();
         return app.getAddressValue(keccak256(abi.encode(AppStorage.VAULT_CONFIG, PORTFOLIO_VAULT)));
     }

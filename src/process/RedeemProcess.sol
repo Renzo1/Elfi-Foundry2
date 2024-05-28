@@ -16,6 +16,7 @@ import "./AssetsProcess.sol";
 import "./MintProcess.sol";
 import "./FeeQueryProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library RedeemProcess {
     using LpPool for LpPool.Props;
     using LpPoolProcess for LpPool.Props;
@@ -51,7 +52,7 @@ library RedeemProcess {
         IStake.RedeemStakeTokenParams memory params,
         address account,
         uint256 unStakeAmount
-    ) external returns (uint256) {
+    ) internal returns (uint256) {
         uint256 requestId = UuidCreator.nextId(REDEEM_ID_KEY);
 
         Redeem.Request storage redeemRequest = Redeem.create(requestId);
@@ -67,7 +68,7 @@ library RedeemProcess {
         return requestId;
     }
 
-    function executeRedeemStakeToken(uint256 requestId, Redeem.Request memory redeemRequest) external {
+    function executeRedeemStakeToken(uint256 requestId, Redeem.Request memory redeemRequest) internal {
         uint256 redeemAmount;
         if (CommonData.getStakeUsdToken() == redeemRequest.stakeToken) {
             redeemAmount = _redeemStakeUsd(redeemRequest);
@@ -88,12 +89,12 @@ library RedeemProcess {
         uint256 requestId,
         Redeem.Request memory redeemRequest,
         bytes32 reasonCode
-    ) external {
+    ) internal {
         Redeem.remove(requestId);
         emit CancelRedeemEvent(requestId, redeemRequest, reasonCode);
     }
 
-    function validateAndDepositRedeemExecutionFee(address account, uint256 executionFee) external {
+    function validateAndDepositRedeemExecutionFee(address account, uint256 executionFee) internal {
         AppConfig.ChainConfig memory chainConfig = AppConfig.getChainConfig();
         GasProcess.validateExecutionFeeLimit(executionFee, chainConfig.redeemGasFeeLimit);
         require(msg.value == executionFee, "redeem with execution fee error!");

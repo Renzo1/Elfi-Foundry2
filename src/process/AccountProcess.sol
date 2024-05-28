@@ -6,6 +6,7 @@ import "../storage/Account.sol";
 import "./OracleProcess.sol";
 import "./PositionQueryProcess.sol";
 
+// @audit change all functions to internal for easy testing
 library AccountProcess {
     using SafeERC20 for IERC20;
     using Account for Account.Props;
@@ -20,7 +21,7 @@ library AccountProcess {
     function getCrossMMR(
         Account.Props storage accountProps,
         OracleProcess.OracleParam[] memory oracles
-    ) public view returns (int256, int256, uint256) {
+    ) internal view returns (int256, int256, uint256) {
         uint256 portfolioNetValue = getPortfolioNetValue(accountProps, oracles);
         uint256 totalUsedValue = getTotalUsedValue(accountProps, oracles);
         PositionQueryProcess.PositionStaticsCache memory cache = PositionQueryProcess.getAccountAllCrossPositionValue(
@@ -40,13 +41,13 @@ library AccountProcess {
         );
     }
 
-    function isCrossLiquidation(Account.Props storage accountProps) external view returns (bool) {
+    function isCrossLiquidation(Account.Props storage accountProps) internal view returns (bool) {
         OracleProcess.OracleParam[] memory oracles;
         (, int256 crossNetValue, uint256 totalMM) = getCrossMMR(accountProps, oracles);
         return crossNetValue <= 0 || crossNetValue.toUint256() <= totalMM;
     }
 
-    function getPortfolioNetValue(Account.Props storage accountProps) public view returns (uint256) {
+    function getPortfolioNetValue(Account.Props storage accountProps) internal view returns (uint256) {
         OracleProcess.OracleParam[] memory oracles;
         return getPortfolioNetValue(accountProps, oracles);
     }
@@ -54,7 +55,7 @@ library AccountProcess {
     function getPortfolioNetValue(
         Account.Props storage accountProps,
         OracleProcess.OracleParam[] memory oracles
-    ) public view returns (uint256) {
+    ) internal view returns (uint256) {
         uint256 totalNetValue;
         address[] memory tokens = accountProps.getTokens();
         for (uint256 i; i < tokens.length; i++) {
@@ -67,7 +68,7 @@ library AccountProcess {
         return totalNetValue;
     }
 
-    function getTotalUsedValue(Account.Props storage accountProps) public view returns (uint256) {
+    function getTotalUsedValue(Account.Props storage accountProps) internal view returns (uint256) {
         OracleProcess.OracleParam[] memory oracles;
         return getTotalUsedValue(accountProps, oracles);
     }
@@ -75,7 +76,7 @@ library AccountProcess {
     function getTotalUsedValue(
         Account.Props storage accountProps,
         OracleProcess.OracleParam[] memory oracles
-    ) public view returns (uint256) {
+    ) internal view returns (uint256) {
         uint256 totalUsedValue;
         address[] memory tokens = accountProps.getTokens();
         for (uint256 i; i < tokens.length; i++) {
@@ -91,7 +92,7 @@ library AccountProcess {
     function getCrossUsedValueAndBorrowingValue(
         Account.Props storage accountProps,
         OracleProcess.OracleParam[] memory oracles
-    ) public view returns (uint256, uint256) {
+    ) internal view returns (uint256, uint256) {
         uint256 totalUsedValue;
         uint256 totalBorrowingValue;
         address[] memory tokens = accountProps.getTokens();
@@ -109,7 +110,7 @@ library AccountProcess {
 
     function getCrossNetValueAndTotalQty(
         Account.Props storage accountProps
-    ) public view returns (int256 crossNetValue, int256 totalQty) {
+    ) internal view returns (int256 crossNetValue, int256 totalQty) {
         uint256 portfolioNetValue = getPortfolioNetValue(accountProps);
         uint256 totalUsedValue = getTotalUsedValue(accountProps);
         PositionQueryProcess.PositionStaticsCache memory cache = PositionQueryProcess.getAccountAllCrossPositionValue(
@@ -119,7 +120,7 @@ library AccountProcess {
         totalQty = cache.totalQty.toInt256();
     }
 
-    function getCrossAvailableValue(Account.Props storage accountProps) public view returns (int256) {
+    function getCrossAvailableValue(Account.Props storage accountProps) internal view returns (int256) {
         OracleProcess.OracleParam[] memory oracles;
         return getCrossAvailableValue(accountProps, oracles);
     }
@@ -127,7 +128,7 @@ library AccountProcess {
     function getCrossAvailableValue(
         Account.Props storage accountProps,
         OracleProcess.OracleParam[] memory oracles
-    ) public view returns (int256) {
+    ) internal view returns (int256) {
         uint256 totalNetValue = getPortfolioNetValue(accountProps, oracles);
         (uint256 totalUsedValue, uint256 totalBorrowingValue) = getCrossUsedValueAndBorrowingValue(
             accountProps,

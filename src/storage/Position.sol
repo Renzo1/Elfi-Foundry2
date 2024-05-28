@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "../utils/Errors.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library Position {
     using EnumerableSet for EnumerableSet.AddressSet;
     using SafeCast for uint256;
@@ -80,11 +81,11 @@ library Position {
         bytes32 symbol,
         address marginToken,
         bool isCrossMargin
-    ) public pure returns (Props storage position) {
+    ) internal pure returns (Props storage position) {
         return load(getPositionKey(account, symbol, marginToken, isCrossMargin));
     }
 
-    function load(bytes32 key) public pure returns (Props storage self) {
+    function load(bytes32 key) internal pure returns (Props storage self) {
         assembly {
             self.slot := key
         }
@@ -95,21 +96,21 @@ library Position {
         bytes32 symbol,
         address marginToken,
         bool isCrossMargin
-    ) public pure returns (bytes32) {
+    ) internal pure returns (bytes32) {
         return keccak256(abi.encode("xyz.elfi.storage.Position", account, symbol, marginToken, isCrossMargin));
     }
 
-    function hasPosition(Props storage self) external view returns (bool) {
+    function hasPosition(Props storage self) internal view returns (bool) {
         return self.qty > 0;
     }
 
-    function checkExists(Props storage self) external view {
+    function checkExists(Props storage self) internal view {
         if (self.qty == 0) {
             revert Errors.PositionNotExists();
         }
     }
 
-    function reset(Props storage self) external {
+    function reset(Props storage self) internal {
         self.qty = 0;
         self.entryPrice = 0;
         self.leverage = 0;
@@ -133,7 +134,7 @@ library Position {
         uint256 requestId,
         PositionUpdateFrom from,
         uint256 executePrice
-    ) external {
+    ) internal {
         emit PositionUpdateEvent(
             requestId,
             getPositionKey(self.account, self.symbol, self.marginToken, self.isCrossMargin),
@@ -148,7 +149,7 @@ library Position {
         uint256 requestId,
         PositionUpdateFrom from,
         SettleData memory settleData
-    ) external {
+    ) internal {
         emit PositionUpdateEvent(
             requestId,
             getPositionKey(self.account, self.symbol, self.marginToken, self.isCrossMargin),
@@ -164,7 +165,7 @@ library Position {
         PositionUpdateFrom from,
         uint256 executePrice,
         uint256 openFee
-    ) external {
+    ) internal {
         emit PositionUpdateEvent(
             requestId,
             getPositionKey(self.account, self.symbol, self.marginToken, self.isCrossMargin),

@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library FeeRewards {
     using EnumerableMap for EnumerableMap.AddressToUintMap;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -53,87 +54,87 @@ library FeeRewards {
         CumulativeRewardsPerStakeTokenData[] cumulativeRewardsPerStakeToken
     );
 
-    function load() public pure returns (Props storage self) {
+    function load() internal pure returns (Props storage self) {
         bytes32 s = FEE_REWARDS;
         assembly {
             self.slot := s
         }
     }
 
-    function loadPoolRewards(address stakeToken) public view returns (MarketRewards storage) {
+    function loadPoolRewards(address stakeToken) internal view returns (MarketRewards storage) {
         return load().poolRewards[stakeToken];
     }
 
-    function loadMarketTradingRewards(bytes32 symbol) public view returns (MarketRewards storage) {
+    function loadMarketTradingRewards(bytes32 symbol) internal view returns (MarketRewards storage) {
         return load().marketTradingRewards[symbol];
     }
 
-    function loadStakingRewards() public view returns (StakingRewards storage) {
+    function loadStakingRewards() internal view returns (StakingRewards storage) {
         return load().stakingRewards;
     }
 
-    function loadDaoRewards() public view returns (StakingRewards storage) {
+    function loadDaoRewards() internal view returns (StakingRewards storage) {
         return load().daoRewards;
     }
 
-    function addFeeAmount(MarketRewards storage self, address token, uint256 fee) external {
+    function addFeeAmount(MarketRewards storage self, address token, uint256 fee) internal {
         if (!self.tokens.contains(token)) {
             self.tokens.add(token);
         }
         self.feeAmount[token] = self.feeAmount[token] + fee;
     }
 
-    function subFeeAmount(MarketRewards storage self, address token, uint256 fee) external {
+    function subFeeAmount(MarketRewards storage self, address token, uint256 fee) internal {
         self.feeAmount[token] = self.feeAmount[token] - fee;
     }
 
-    function setFeeAmountZero(MarketRewards storage self, address token) external {
+    function setFeeAmountZero(MarketRewards storage self, address token) internal {
         self.feeAmount[token] = 0;
     }
 
-    function addUnsettleFeeAmount(MarketRewards storage self, address token, uint256 fee) external {
+    function addUnsettleFeeAmount(MarketRewards storage self, address token, uint256 fee) internal {
         if (!self.tokens.contains(token)) {
             self.tokens.add(token);
         }
         self.unsettledFeeAmount[token] = self.unsettledFeeAmount[token] + fee;
     }
 
-    function subUnsettleFeeAmount(MarketRewards storage self, address token, uint256 fee) external {
+    function subUnsettleFeeAmount(MarketRewards storage self, address token, uint256 fee) internal {
         self.unsettledFeeAmount[token] = self.unsettledFeeAmount[token] - fee;
     }
 
-    function addCollateralFeeAmount(MarketRewards storage self, address token, uint256 fee) external {
+    function addCollateralFeeAmount(MarketRewards storage self, address token, uint256 fee) internal {
         if (!self.collateralTokens.contains(token)) {
             self.collateralTokens.add(token);
         }
         self.collateralFeeAmount[token] = self.collateralFeeAmount[token] + fee;
     }
 
-    function subCollateralFeeAmount(MarketRewards storage self, address token, uint256 fee) external {
+    function subCollateralFeeAmount(MarketRewards storage self, address token, uint256 fee) internal {
         self.collateralFeeAmount[token] = self.collateralFeeAmount[token] - fee;
     }
 
-    function getFeeTokens(MarketRewards storage self) external view returns (address[] memory) {
+    function getFeeTokens(MarketRewards storage self) internal view returns (address[] memory) {
         return self.tokens.values();
     }
 
-    function getCollateralFeeTokens(MarketRewards storage self) external view returns (address[] memory) {
+    function getCollateralFeeTokens(MarketRewards storage self) internal view returns (address[] memory) {
         return self.collateralTokens.values();
     }
 
-    function getFeeAmount(MarketRewards storage self, address token) external view returns (uint256) {
+    function getFeeAmount(MarketRewards storage self, address token) internal view returns (uint256) {
         return self.feeAmount[token];
     }
 
-    function getUnsettleFeeAmount(MarketRewards storage self, address token) external view returns (uint256) {
+    function getUnsettleFeeAmount(MarketRewards storage self, address token) internal view returns (uint256) {
         return self.unsettledFeeAmount[token];
     }
 
-    function getCollateralFeeAmount(MarketRewards storage self, address token) external view returns (uint256) {
+    function getCollateralFeeAmount(MarketRewards storage self, address token) internal view returns (uint256) {
         return self.collateralFeeAmount[token];
     }
 
-    function getCumulativeRewardsPerStakeToken(MarketRewards storage self) external view returns (uint256) {
+    function getCumulativeRewardsPerStakeToken(MarketRewards storage self) internal view returns (uint256) {
         return self.cumulativeRewardsPerStakeToken;
     }
 
@@ -141,7 +142,7 @@ library FeeRewards {
         MarketRewards storage self,
         uint256 delta,
         uint256 maxIntervals
-    ) external {
+    ) internal {
         if (maxIntervals == 0) {
             return;
         }
@@ -153,13 +154,13 @@ library FeeRewards {
 
     function getPoolRewardsPerStakeTokenDeltaLimit(
         MarketRewards storage self
-    ) external view returns (uint256 deltaLimit) {
+    ) internal view returns (uint256 deltaLimit) {
         for (uint256 i; i < self.lastRewardsPerStakeTokenDeltas.length; i++) {
             deltaLimit += self.lastRewardsPerStakeTokenDeltas[i];
         }
     }
 
-    function addFeeAmount(StakingRewards storage self, address market, address token, uint256 fee) external {
+    function addFeeAmount(StakingRewards storage self, address market, address token, uint256 fee) internal {
         if (!self.tokens.contains(token)) {
             self.tokens.add(token);
         }
@@ -167,7 +168,7 @@ library FeeRewards {
         self.feeAmount[key] = self.feeAmount[key] + fee;
     }
 
-    function addUnsettleFeeAmount(StakingRewards storage self, address market, address token, uint256 fee) external {
+    function addUnsettleFeeAmount(StakingRewards storage self, address market, address token, uint256 fee) internal {
         if (!self.tokens.contains(token)) {
             self.tokens.add(token);
         }
@@ -175,7 +176,7 @@ library FeeRewards {
         self.unsettledFeeAmount[key] = self.unsettledFeeAmount[key] + fee;
     }
 
-    function addCollateralFeeAmount(StakingRewards storage self, address market, address token, uint256 fee) external {
+    function addCollateralFeeAmount(StakingRewards storage self, address market, address token, uint256 fee) internal {
         if (!self.collateralTokens.contains(token)) {
             self.collateralTokens.add(token);
         }
@@ -186,11 +187,11 @@ library FeeRewards {
     function emitUpdateFeeRewardsCumulativeEvent(
         address[] memory stakeTokens,
         CumulativeRewardsPerStakeTokenData[] memory cumulativeRewardsPerStakeToken
-    ) external {
+    ) internal {
         emit UpdateFeeRewardsCumulativeEvent(stakeTokens, cumulativeRewardsPerStakeToken);
     }
 
-    function getFeeAmount(StakingRewards storage self, address market, address token) external view returns (uint256) {
+    function getFeeAmount(StakingRewards storage self, address market, address token) internal view returns (uint256) {
         bytes32 key = generateFeeAmountKey(market, token);
         return self.feeAmount[key];
     }
@@ -199,7 +200,7 @@ library FeeRewards {
         StakingRewards storage self,
         address market,
         address token
-    ) external view returns (uint256) {
+    ) internal view returns (uint256) {
         bytes32 key = generateFeeAmountKey(market, token);
         return self.unsettledFeeAmount[key];
     }
@@ -208,7 +209,7 @@ library FeeRewards {
         StakingRewards storage self,
         address market,
         address token
-    ) external view returns (uint256) {
+    ) internal view returns (uint256) {
         bytes32 key = generateFeeAmountKey(market, token);
         return self.collateralFeeAmount[key];
     }

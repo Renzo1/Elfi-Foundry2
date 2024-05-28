@@ -6,6 +6,7 @@ import "./PositionQueryProcess.sol";
 import "./DecreasePositionProcess.sol";
 import "./CancelOrderProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library LiquidationProcess {
     using Math for uint256;
     using SafeMath for uint256;
@@ -25,7 +26,7 @@ library LiquidationProcess {
     bytes32 constant CLEAN_ID_KEY = keccak256("CLEAN_ID_KEY");
     bytes32 constant LIQUIDATION_ID_KEY = keccak256("LIQUIDATION_ID_KEY");
 
-    function liquidationCrossPositions(address account) external {
+    function liquidationCrossPositions(address account) internal {
         Account.Props storage accountProps = Account.load(account);
         Position.Props[] memory crossPositions = PositionQueryProcess.getAllPosition(accountProps, true);
         if (crossPositions.length == 0) {
@@ -107,7 +108,7 @@ library LiquidationProcess {
         _updateClean(accountProps);
     }
 
-    function liquidationIsolatePosition(bytes32 positionKey) external {
+    function liquidationIsolatePosition(bytes32 positionKey) internal {
         Position.Props storage position = Position.load(positionKey);
         position.checkExists();
         if (position.isCrossMargin) {
@@ -151,7 +152,7 @@ library LiquidationProcess {
         );
     }
 
-    function liquidationLiability(ILiquidation.CleanLiabilityParams calldata params) external {
+    function liquidationLiability(ILiquidation.CleanLiabilityParams memory params) internal {
         Account.Props storage accountProps = Account.load(params.account);
         accountProps.checkExists();
         uint256 cleanId = UuidCreator.nextId(CLEAN_ID_KEY);

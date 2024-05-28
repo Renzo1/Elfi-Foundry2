@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import "../storage/AppConfig.sol";
 import "./MarketQueryProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library MarketProcess {
     using SafeMath for uint256;
     using SafeCast for uint256;
@@ -26,7 +27,7 @@ library MarketProcess {
         bool isLong;
     }
 
-    function updateMarketFundingFeeRate(bytes32 symbol) external {
+    function updateMarketFundingFeeRate(bytes32 symbol) internal {
         (bool onlyUpdateTime, MarketQueryProcess.UpdateFundingCache memory cache) = MarketQueryProcess
             .getUpdateMarketFundingFeeRate(symbol);
         Market.Props storage market = Market.load(symbol);
@@ -51,7 +52,7 @@ library MarketProcess {
         market.emitFundingFeeEvent();
     }
 
-    function updatePoolBorrowingFeeRate(address stakeToken, bool isLong, address marginToken) external {
+    function updatePoolBorrowingFeeRate(address stakeToken, bool isLong, address marginToken) internal {
         if (isLong) {
             LpPool.Props storage pool = LpPool.load(stakeToken);
             uint256 borrowingFeeDurationInSecond = _getFeeDurations(pool.borrowingFee.lastUpdateTime);
@@ -78,7 +79,7 @@ library MarketProcess {
         address marginToken,
         int256 borrowingFee,
         int256 realizedBorrowingFee
-    ) external {
+    ) internal {
         if (isLong) {
             LpPool.Props storage pool = LpPool.load(stakeToken);
             pool.borrowingFee.totalBorrowingFee = borrowingFee > 0
@@ -107,7 +108,7 @@ library MarketProcess {
         bool isLong,
         bool needUpdateUnsettle,
         address marginToken
-    ) external {
+    ) internal {
         Market.Props storage market = Market.load(symbol);
         if (isLong) {
             market.fundingFee.totalLongFundingFee += realizedFundingFeeDelta;
@@ -126,7 +127,7 @@ library MarketProcess {
         }
     }
 
-    function updateMarketOI(UpdateOIParams memory params) external {
+    function updateMarketOI(UpdateOIParams memory params) internal {
         Market.Props storage market = Market.load(params.symbol);
         AppConfig.SymbolConfig memory symbolConfig = AppConfig.getSymbolConfig(params.symbol);
         if (params.isAdd && params.isLong) {

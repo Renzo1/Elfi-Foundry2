@@ -11,8 +11,9 @@ import "../utils/TokenUtils.sol";
 import "./VaultProcess.sol";
 import "./OracleProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library SwapProcess {
-    function swap(ISwap.SwapParams calldata params) external returns (ISwap.SwapResult memory result) {
+    function swap(ISwap.SwapParams memory params) internal returns (ISwap.SwapResult memory result) {
         result.fromTokens = params.fromTokens;
         result.toToken = params.toToken;
         result.expectToTokenAmount = params.toTokenAmount;
@@ -66,7 +67,7 @@ library SwapProcess {
         }
     }
 
-    function singleSwap(ISwap.SwapSingleParam calldata params) external returns (ISwap.SwapSingleResult memory result) {
+    function singleSwap(ISwap.SwapSingleParam memory params) internal returns (ISwap.SwapSingleResult memory result) {
         result.fromToken = params.fromToken;
         result.toToken = params.toToken;
         address uniswapRouter = AppConfig.getUniswapRouter();

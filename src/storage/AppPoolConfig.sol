@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import "./AppStorage.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library AppPoolConfig {
     using AppStorage for AppStorage.Props;
 
@@ -73,7 +74,7 @@ library AppPoolConfig {
         address[] assetTokens;
     }
 
-    function getStakeConfig() external view returns (StakeConfig memory config) {
+    function getStakeConfig() internal view returns (StakeConfig memory config) {
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = AppStorage.STAKE_CONFIG;
         config.collateralProtectFactor = app.getUintValue(keccak256(abi.encode(key, COLLATERAL_PROTECT_FACTOR)));
@@ -92,7 +93,7 @@ library AppPoolConfig {
         config.maxApr = app.getUintValue(keccak256(abi.encode(key, MAX_APR)));
     }
 
-    function setStakeConfig(StakeConfig memory config) external {
+    function setStakeConfig(StakeConfig memory config) internal {
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = AppStorage.STAKE_CONFIG;
         app.setUintValue(keccak256(abi.encode(key, COLLATERAL_PROTECT_FACTOR)), config.collateralProtectFactor);
@@ -110,7 +111,7 @@ library AppPoolConfig {
         app.setUintValue(keccak256(abi.encode(key, MAX_APR)), config.maxApr);
     }
 
-    function getUsdPoolConfig() external view returns (UsdPoolConfig memory config) {
+    function getUsdPoolConfig() internal view returns (UsdPoolConfig memory config) {
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = AppStorage.USD_POOL_CONFIG;
         config.poolLiquidityLimit = app.getUintValue(keccak256(abi.encode(key, POOL_LIQUIDITY_LIMIT)));
@@ -126,7 +127,7 @@ library AppPoolConfig {
         }
     }
 
-    function setUsdPoolConfig(UsdPoolConfig memory config) external {
+    function setUsdPoolConfig(UsdPoolConfig memory config) internal {
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = AppStorage.USD_POOL_CONFIG;
         app.setUintValue(keccak256(abi.encode(key, POOL_LIQUIDITY_LIMIT)), config.poolLiquidityLimit);
@@ -142,7 +143,7 @@ library AppPoolConfig {
         }
     }
 
-    function getLpPoolConfig(address stakeToken) external view returns (LpPoolConfig memory) {
+    function getLpPoolConfig(address stakeToken) internal view returns (LpPoolConfig memory) {
         LpPoolConfig memory config;
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = AppStorage.LP_POOL_CONFIG;
@@ -170,7 +171,7 @@ library AppPoolConfig {
         return config;
     }
 
-    function setLpPoolConfig(address stakeToken, LpPoolConfig memory config) external {
+    function setLpPoolConfig(address stakeToken, LpPoolConfig memory config) internal {
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = AppStorage.LP_POOL_CONFIG;
         app.addAddress(key, stakeToken);
@@ -198,7 +199,7 @@ library AppPoolConfig {
         app.setAddressArrayValues(keccak256(abi.encode(key, stakeToken, ASSET_TOKENS)), config.assetTokens);
     }
 
-    function getStableTokenBorrowingInterestRate(address stableToken) external view returns (uint256) {
+    function getStableTokenBorrowingInterestRate(address stableToken) internal view returns (uint256) {
         AppStorage.Props storage app = AppStorage.load();
         return
             app.getUintValue(

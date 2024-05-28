@@ -7,6 +7,7 @@ import "../storage/AppTradeConfig.sol";
 import "./OracleProcess.sol";
 import "./LpPoolQueryProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library MarketQueryProcess {
     using SafeMath for uint256;
     using SafeCast for uint256;
@@ -35,8 +36,8 @@ library MarketQueryProcess {
 
     function getMarketInfo(
         bytes32 symbol,
-        OracleProcess.OracleParam[] calldata oracles
-    ) external view returns (IMarket.MarketInfo memory) {
+        OracleProcess.OracleParam[] memory oracles
+    ) internal view returns (IMarket.MarketInfo memory) {
         Symbol.Props storage symbolProps = Symbol.load(symbol);
         if (!symbolProps.isExists()) {
             IMarket.MarketInfo memory result;
@@ -59,7 +60,7 @@ library MarketQueryProcess {
             );
     }
 
-    function getTradeTokenInfo(address token) external view returns (IMarket.TradeTokenInfo memory) {
+    function getTradeTokenInfo(address token) internal view returns (IMarket.TradeTokenInfo memory) {
         CommonData.Props storage commonData = CommonData.load();
         return
             IMarket.TradeTokenInfo(commonData.getTradeTokenCollateral(token), commonData.getTradeTokenLiability(token));
@@ -69,7 +70,7 @@ library MarketQueryProcess {
         address stakeToken,
         bool isLong,
         address marginToken
-    ) external view returns (uint256) {
+    ) internal view returns (uint256) {
         if (isLong) {
             LpPool.Props storage pool = LpPool.load(stakeToken);
             return pool.borrowingFee.cumulativeBorrowingFeePerToken;
@@ -79,7 +80,7 @@ library MarketQueryProcess {
         }
     }
 
-    function getLongBorrowingRatePerSecond(LpPool.Props storage pool) external view returns (uint256) {
+    function getLongBorrowingRatePerSecond(LpPool.Props storage pool) internal view returns (uint256) {
         if (pool.baseTokenBalance.amount == 0 && pool.baseTokenBalance.unsettledAmount == 0) {
             return 0;
         }
@@ -95,7 +96,7 @@ library MarketQueryProcess {
         return CalUtils.mulSmallRate(holdRate, AppPoolConfig.getLpPoolConfig(pool.stakeToken).baseInterestRate);
     }
 
-    function getShortBorrowingRatePerSecond(UsdPool.Props storage pool, address token) external view returns (uint256) {
+    function getShortBorrowingRatePerSecond(UsdPool.Props storage pool, address token) internal view returns (uint256) {
         if (pool.getStableTokenBalance(token).amount == 0 && pool.getStableTokenBalance(token).unsettledAmount == 0) {
             return 0;
         }
@@ -109,7 +110,7 @@ library MarketQueryProcess {
 
     function getUpdateMarketFundingFeeRate(
         bytes32 symbol
-    ) external view returns (bool onlyUpdateTime, UpdateFundingCache memory) {
+    ) internal view returns (bool onlyUpdateTime, UpdateFundingCache memory) {
         UpdateFundingCache memory cache;
         Market.Props storage market = Market.load(symbol);
         Symbol.Props storage symbolProps = Symbol.load(symbol);
@@ -160,7 +161,7 @@ library MarketQueryProcess {
         return (false, cache);
     }
 
-    function getFundingFeePerQty(bytes32 symbol, bool isLong) external view returns (int256) {
+    function getFundingFeePerQty(bytes32 symbol, bool isLong) internal view returns (int256) {
         Market.Props storage market = Market.load(symbol);
         return isLong ? market.fundingFee.longFundingFeePerQty : market.fundingFee.shortFundingFeePerQty;
     }

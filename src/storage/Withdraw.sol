@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-
+// @audit change all functions to internal and param location to memory for easy testing
 library Withdraw {
     bytes32 constant WITHDRAW_KEY = keccak256(abi.encode("xyz.elfi.storage.Withdraw"));
 
@@ -15,24 +15,24 @@ library Withdraw {
         uint256 amount;
     }
 
-    function load() public pure returns (Props storage self) {
+    function load() internal pure returns (Props storage self) {
         bytes32 s = WITHDRAW_KEY;
         assembly {
             self.slot := s
         }
     }
 
-    function create(uint256 requestId) external view returns (Request storage) {
+    function create(uint256 requestId) internal view returns (Request storage) {
         Props storage self = load();
         return self.requests[requestId];
     }
 
-    function get(uint256 requestId) external view returns (Request memory) {
+    function get(uint256 requestId) internal view returns (Request memory) {
         Props storage self = load();
         return self.requests[requestId];
     }
 
-    function remove(uint256 requestId) external {
+    function remove(uint256 requestId) internal {
         Props storage self = load();
         delete self.requests[requestId];
     }

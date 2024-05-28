@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import "./AppStorage.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library AppTradeTokenConfig {
     using AppStorage for AppStorage.Props;
 
@@ -29,7 +30,7 @@ library AppTradeTokenConfig {
         uint256 liquidationFactor;
     }
 
-    function getTradeTokenConfig(address token) public view returns (TradeTokenConfig memory) {
+    function getTradeTokenConfig(address token) internal view returns (TradeTokenConfig memory) {
         TradeTokenConfig memory tradeTokenConfig;
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = AppStorage.TRADE_TOKEN_CONFIG;

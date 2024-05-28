@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library AppStorage {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -38,89 +39,89 @@ library AppStorage {
         mapping(bytes32 => EnumerableSet.UintSet) uintSets;
     }
 
-    function load() public pure returns (Props storage self) {
+    function load() internal pure returns (Props storage self) {
         assembly {
             self.slot := 0
         }
     }
 
-    function setUintValue(Props storage self, bytes32 key, uint256 value) external {
+    function setUintValue(Props storage self, bytes32 key, uint256 value) internal {
         self.uintValues[key] = value;
     }
 
-    function deleteUintValue(Props storage self, bytes32 key) external {
+    function deleteUintValue(Props storage self, bytes32 key) internal {
         delete self.uintValues[key];
     }
 
-    function getUintValue(Props storage self, bytes32 key) external view returns (uint256) {
+    function getUintValue(Props storage self, bytes32 key) internal view returns (uint256) {
         return self.uintValues[key];
     }
 
-    function setIntValue(Props storage self, bytes32 key, int256 value) external {
+    function setIntValue(Props storage self, bytes32 key, int256 value) internal {
         self.intValues[key] = value;
     }
 
-    function deleteIntValue(Props storage self, bytes32 key) external {
+    function deleteIntValue(Props storage self, bytes32 key) internal {
         delete self.intValues[key];
     }
 
-    function getIntValue(Props storage self, bytes32 key) external view returns (int256) {
+    function getIntValue(Props storage self, bytes32 key) internal view returns (int256) {
         return self.intValues[key];
     }
 
-    function setAddressValue(Props storage self, bytes32 key, address value) external {
+    function setAddressValue(Props storage self, bytes32 key, address value) internal {
         self.addressValues[key] = value;
     }
 
-    function deleteAddressValue(Props storage self, bytes32 key) external {
+    function deleteAddressValue(Props storage self, bytes32 key) internal {
         delete self.addressValues[key];
     }
 
-    function getAddressValue(Props storage self, bytes32 key) external view returns (address) {
+    function getAddressValue(Props storage self, bytes32 key) internal view returns (address) {
         return self.addressValues[key];
     }
 
-    function setBoolValue(Props storage self, bytes32 key, bool value) external {
+    function setBoolValue(Props storage self, bytes32 key, bool value) internal {
         self.boolValues[key] = value;
     }
 
-    function deleteBoolValue(Props storage self, bytes32 key) external {
+    function deleteBoolValue(Props storage self, bytes32 key) internal {
         delete self.boolValues[key];
     }
 
-    function getBoolValue(Props storage self, bytes32 key) external view returns (bool) {
+    function getBoolValue(Props storage self, bytes32 key) internal view returns (bool) {
         return self.boolValues[key];
     }
 
-    function setAddressArrayValues(Props storage self, bytes32 key, address[] memory values) external {
+    function setAddressArrayValues(Props storage self, bytes32 key, address[] memory values) internal {
         self.addressArrayValues[key] = values;
     }
 
-    function getAddressArrayValues(Props storage self, bytes32 key) external view returns (address[] memory) {
+    function getAddressArrayValues(Props storage self, bytes32 key) internal view returns (address[] memory) {
         return self.addressArrayValues[key];
     }
 
-    function containsAddress(Props storage self, bytes32 key, address value) external view returns (bool) {
+    function containsAddress(Props storage self, bytes32 key, address value) internal view returns (bool) {
         return self.addressSets[key].contains(value);
     }
 
-    function addAddress(Props storage self, bytes32 key, address value) external {
+    function addAddress(Props storage self, bytes32 key, address value) internal {
         self.addressSets[key].add(value);
     }
 
-    function removeAddress(Props storage self, bytes32 key, address value) external {
+    function removeAddress(Props storage self, bytes32 key, address value) internal {
         self.addressSets[key].remove(value);
     }
 
-    function containsBytes32(Props storage self, bytes32 key, bytes32 value) external view returns (bool) {
+    function containsBytes32(Props storage self, bytes32 key, bytes32 value) internal view returns (bool) {
         return self.bytes32Sets[key].contains(value);
     }
 
-    function addBytes32(Props storage self, bytes32 key, bytes32 value) external {
+    function addBytes32(Props storage self, bytes32 key, bytes32 value) internal {
         self.bytes32Sets[key].add(value);
     }
 
-    function removeBytes32(Props storage self, bytes32 key, bytes32 value) external {
+    function removeBytes32(Props storage self, bytes32 key, bytes32 value) internal {
         self.bytes32Sets[key].remove(value);
     }
 }

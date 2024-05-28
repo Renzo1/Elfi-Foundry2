@@ -165,9 +165,9 @@ abstract contract Setup is BaseSetup {
   MockAggregatorV3 public usdcFeed;
   MockAggregatorV3 public btcFeed;
 
-  uint8 public constant wethFeedDecimals = 8; // Arb: 8, Base: 8
-  uint8 public constant usdcFeedDecimals = 8; // Arb: 8, Base: 8
-  uint8 public constant btcFeedDecimals = 8; // Arb: 8, Base: 8 // Try Testing with 6 to assess how the protocol behaves in this scenario
+  uint8 public wethFeedDecimals = 8; // Arb: 8, Base: 8
+  uint8 public usdcFeedDecimals = 8; // Arb: 8, Base: 8
+  uint8 public btcFeedDecimals = 8; // Arb: 8, Base: 8 // Try Testing with 6 to assess how the protocol behaves in this scenario
 
   ///////// Facets ////////
   AccountFacet accountFacet;
@@ -235,116 +235,116 @@ abstract contract Setup is BaseSetup {
   ///////// Network Configurations ////////
   
   /// Roles Configurations
-  bytes32 constant ROLE_ADMIN = "ADMIN";
-  bytes32 constant ROLE_UPGRADE = "UPGRADE";
-  bytes32 constant ROLE_CONFIG = "CONFIG";
-  bytes32 constant ROLE_KEEPER = "KEEPER";
+  bytes32 ROLE_ADMIN = "ADMIN";
+  bytes32 ROLE_UPGRADE = "UPGRADE";
+  bytes32 ROLE_CONFIG = "CONFIG";
+  bytes32 ROLE_KEEPER = "KEEPER";
 
 
   /// Pools Configurations
-  bytes32 constant codeHash1 = "WETHUSDC";
-  bytes32 constant codeHash2 = "WBTCUSDC";
-  string constant stakedWeth = "xETH";
-  string constant stakedWbtc = "xBTC";
-  string constant stakedUsdc = "xUSD";
+  bytes32 codeHash1 = "WETHUSDC";
+  bytes32 codeHash2 = "WBTCUSDC";
+  string stakedWeth = "xETH";
+  string stakedWbtc = "xBTC";
+  string stakedUsdc = "xUSD";
   
   /// Market Configurations
-  uint256 constant BASE_INTEREST_RATE = 6250000000;
-  uint256 constant POOL_LIQUIDITY_LIMIT = 8 * 1e4;
-  uint256 constant MINT_FEE_RATE = 120;
-  uint256 constant REDEEM_FEE_RATE = 150;
-  uint256 constant POOL_PNL_RATIO_LIMIT = 0;
-  uint256 constant UNSETTLED_BASE_TOKEN_RATIO_LIMIT = 0;
-  uint256 constant UNSETTLED_STABLE_TOKEN_RATIO_LIMIT = 0;
-  uint256 constant POOL_STABLE_TOKEN_RATIO_LIMIT = 0;
-  uint256 constant POOL_STABLE_TOKEN_LOSS_LIMIT = 0;
+  uint256 BASE_INTEREST_RATE = 6250000000;
+  uint256 POOL_LIQUIDITY_LIMIT = 8 * 1e4;
+  uint256 MINT_FEE_RATE = 120;
+  uint256 REDEEM_FEE_RATE = 150;
+  uint256 POOL_PNL_RATIO_LIMIT = 0;
+  uint256 UNSETTLED_BASE_TOKEN_RATIO_LIMIT = 0;
+  uint256 UNSETTLED_STABLE_TOKEN_RATIO_LIMIT = 0;
+  uint256 POOL_STABLE_TOKEN_RATIO_LIMIT = 0;
+  uint256 POOL_STABLE_TOKEN_LOSS_LIMIT = 0;
   
   
-  bytes32 constant WETH_SYMBOL = "WETHUSDC";
-  bytes32 constant WBTC_SYMBOL = "WBTCUSDC";
+  bytes32 WETH_SYMBOL = "WETHUSDC";
+  bytes32 WBTC_SYMBOL = "WBTCUSDC";
 
-  uint256 constant MAX_LEVERAGE = 20 * 1e5;
-  uint256 constant TICK_SIZE = 1_000_000;
-  uint256 constant ETH_OPEN_FEE_RATE = 110;
-  uint256 constant BTC_OPEN_FEE_RATE = 150;
-  uint256 constant ETH_CLOSE_FEE_RATE = 130;
-  uint256 constant BTC_CLOSE_FEE_RATE = 170;
-  uint256 constant MAX_LONG_OPEN_INTEREST_CAP = 10_000_000 * 1e18;
-  uint256 constant MAX_SHORT_OPEN_INTEREST_CAP = 10_000_000 * 1e18;
-  uint256 constant LONG_SHORT_RATIO_LIMIT = 5 * 1e4;
-  uint256 constant LONG_SHORT_OI_BOTTOM_LIMIT = 100_000 * 1e18;
+  uint256 MAX_LEVERAGE = 20 * 1e5;
+  uint256 TICK_SIZE = 1_000_000;
+  uint256 ETH_OPEN_FEE_RATE = 110;
+  uint256 BTC_OPEN_FEE_RATE = 150;
+  uint256 ETH_CLOSE_FEE_RATE = 130;
+  uint256 BTC_CLOSE_FEE_RATE = 170;
+  uint256 MAX_LONG_OPEN_INTEREST_CAP = 10_000_000 * 1e18;
+  uint256 MAX_SHORT_OPEN_INTEREST_CAP = 10_000_000 * 1e18;
+  uint256 LONG_SHORT_RATIO_LIMIT = 5 * 1e4;
+  uint256 LONG_SHORT_OI_BOTTOM_LIMIT = 100_000 * 1e18;
 
-  uint256 constant USDC_MINT_FEE_RATE = 10;
-  uint256 constant USDC_REDEEM_FEE_RATE = 10;
-  uint256 constant USDC_UNSETTLED_RATIO_LIMIT = 0;
+  uint256 USDC_MINT_FEE_RATE = 10;
+  uint256 USDC_REDEEM_FEE_RATE = 10;
+  uint256 USDC_UNSETTLED_RATIO_LIMIT = 0;
 
   /// Chain Configurations
-  uint256 constant MINT_GAS_FEE_LIMIT = 1_500_000;
-  uint256 constant REDEEM_GAS_FEE_LIMIT = 1_500_000;
-  uint256 constant PLACE_INCREASE_ORDER_GAS_FEE_LIMIT = 1_500_000;
-  uint256 constant PLACE_DECREASE_ORDER_GAS_FEE_LIMIT = 1_500_000;
-  uint256 constant POSITION_UPDATE_MARGIN_GAS_FEE_LIMIT = 1_500_000;
-  uint256 constant POSITION_UPDATE_LEVERAGE_GAS_FEE_LIMIT = 1_500_000;
-  uint256 constant WITHDRAW_GAS_FEE_LIMIT = 1_500_000;
-  uint256 constant CLAIM_REWARDS_GAS_FEE_LIMIT = 1_500_000;
+  uint256 MINT_GAS_FEE_LIMIT = 1_500_000;
+  uint256 REDEEM_GAS_FEE_LIMIT = 1_500_000;
+  uint256 PLACE_INCREASE_ORDER_GAS_FEE_LIMIT = 1_500_000;
+  uint256 PLACE_DECREASE_ORDER_GAS_FEE_LIMIT = 1_500_000;
+  uint256 POSITION_UPDATE_MARGIN_GAS_FEE_LIMIT = 1_500_000;
+  uint256 POSITION_UPDATE_LEVERAGE_GAS_FEE_LIMIT = 1_500_000;
+  uint256 WITHDRAW_GAS_FEE_LIMIT = 1_500_000;
+  uint256 CLAIM_REWARDS_GAS_FEE_LIMIT = 1_500_000;
 
   /// Stake Configurations
-  uint256 constant COLLATERAL_PROTECT_FACTOR = 5 * 1e2;
-  uint256 constant COLLATERAL_FACTOR = 5 * 1e3;
-  uint256 constant MIN_PRECISION_MULTIPLE = 11;
-  uint256 constant MINT_FEE_STAKING_REWARDS_RATIO = 27 * 1e3;
-  uint256 constant MINT_FEE_POOL_REWARDS_RATIO = 63 * 1e3;
-  uint256 constant REDEEM_FEE_STAKING_REWARDS_RATIO = 27 * 1e3;
-  uint256 constant REDEEM_FEE_POOL_REWARDS_RATIO = 63 * 1e3;
-  uint256 constant POOL_REWARDS_INTERVAL_LIMIT = 0;
-  uint256 constant MIN_APR = 2 * 1e4;
-  uint256 constant MAX_APR = 20 * 1e5;
+  uint256 COLLATERAL_PROTECT_FACTOR = 5 * 1e2;
+  uint256 COLLATERAL_FACTOR = 5 * 1e3;
+  uint256 MIN_PRECISION_MULTIPLE = 11;
+  uint256 MINT_FEE_STAKING_REWARDS_RATIO = 27 * 1e3;
+  uint256 MINT_FEE_POOL_REWARDS_RATIO = 63 * 1e3;
+  uint256 REDEEM_FEE_STAKING_REWARDS_RATIO = 27 * 1e3;
+  uint256 REDEEM_FEE_POOL_REWARDS_RATIO = 63 * 1e3;
+  uint256 POOL_REWARDS_INTERVAL_LIMIT = 0;
+  uint256 MIN_APR = 2 * 1e4;
+  uint256 MAX_APR = 20 * 1e5;
 
   /// Trade Configurations
-  bool constant USDC_IS_SUPPORT_COLLATERAL = true;
-  uint256 constant USDC_PRECISION = 2;
-  uint256 constant USDC_DISCOUNT = 99 * 1e3;
-  uint256 constant USDC_COLLATERAL_USER_CAP = 200_000 * 1e6;
-  uint256 constant USDC_COLLATERAL_TOTAL_CAP = 200_000_000 * 1e6;
-  uint256 constant USDC_LIABILITY_USER_CAP = 5_000 * 1e6;
-  uint256 constant USDC_LIABILITY_TOTAL_CAP = 1_000_000 * 1e6;
-  uint256 constant USDC_INTEREST_RATE_FACTOR = 10;
-  uint256 constant USDC_LIQUIDATION_FACTOR = 5 * 1e3;
+  bool USDC_IS_SUPPORT_COLLATERAL = true;
+  uint256 USDC_PRECISION = 2;
+  uint256 USDC_DISCOUNT = 99 * 1e3;
+  uint256 USDC_COLLATERAL_USER_CAP = 200_000 * 1e6;
+  uint256 USDC_COLLATERAL_TOTAL_CAP = 200_000_000 * 1e6;
+  uint256 USDC_LIABILITY_USER_CAP = 5_000 * 1e6;
+  uint256 USDC_LIABILITY_TOTAL_CAP = 1_000_000 * 1e6;
+  uint256 USDC_INTEREST_RATE_FACTOR = 10;
+  uint256 USDC_LIQUIDATION_FACTOR = 5 * 1e3;
 
-  bool constant WETH_IS_SUPPORT_COLLATERAL = true;
-  uint256 constant WETH_PRECISION = 6; 
-  uint256 constant WETH_DISCOUNT = 99 * 1e3; // TODO: change value to be different from wbtc values and test again
-  uint256 constant WETH_COLLATERAL_USER_CAP = 100 * 1e18;
-  uint256 constant WETH_COLLATERAL_TOTAL_CAP = 100_000 * 1e18; 
-  uint256 constant WETH_LIABILITY_USER_CAP = 1 * 1e18; 
-  uint256 constant WETH_LIABILITY_TOTAL_CAP = 50 * 1e18;
-  uint256 constant WETH_INTEREST_RATE_FACTOR = 10; // TODO: change value to be different from wbtc values and test again
-  uint256 constant WETH_LIQUIDATION_FACTOR = 5 * 1e3; // TODO: change value to be different from wbtc values and test again
+  bool WETH_IS_SUPPORT_COLLATERAL = true;
+  uint256 WETH_PRECISION = 6; 
+  uint256 WETH_DISCOUNT = 99 * 1e3; // TODO: change value to be different from wbtc values and test again
+  uint256 WETH_COLLATERAL_USER_CAP = 100 * 1e18;
+  uint256 WETH_COLLATERAL_TOTAL_CAP = 100_000 * 1e18; 
+  uint256 WETH_LIABILITY_USER_CAP = 1 * 1e18; 
+  uint256 WETH_LIABILITY_TOTAL_CAP = 50 * 1e18;
+  uint256 WETH_INTEREST_RATE_FACTOR = 10; // TODO: change value to be different from wbtc values and test again
+  uint256 WETH_LIQUIDATION_FACTOR = 5 * 1e3; // TODO: change value to be different from wbtc values and test again
 
-  bool constant WBTC_IS_SUPPORT_COLLATERAL = true;
-  uint256 constant WBTC_PRECISION = 6;
-  uint256 constant WBTC_DISCOUNT = 99 * 1e3;
-  uint256 constant WBTC_COLLATERAL_USER_CAP = 10 * 1e18;
-  uint256 constant WBTC_COLLATERAL_TOTAL_CAP = 10_000 * 1e18;
-  uint256 constant WBTC_LIABILITY_USER_CAP = 1 * 1e17;
-  uint256 constant WBTC_LIABILITY_TOTAL_CAP = 5 * 1e18;
-  uint256 constant WBTC_INTEREST_RATE_FACTOR = 10;
-  uint256 constant WBTC_LIQUIDATION_FACTOR = 5 * 1e3;
+  bool WBTC_IS_SUPPORT_COLLATERAL = true;
+  uint256 WBTC_PRECISION = 6;
+  uint256 WBTC_DISCOUNT = 99 * 1e3;
+  uint256 WBTC_COLLATERAL_USER_CAP = 10 * 1e18;
+  uint256 WBTC_COLLATERAL_TOTAL_CAP = 10_000 * 1e18;
+  uint256 WBTC_LIABILITY_USER_CAP = 1 * 1e17;
+  uint256 WBTC_LIABILITY_TOTAL_CAP = 5 * 1e18;
+  uint256 WBTC_INTEREST_RATE_FACTOR = 10;
+  uint256 WBTC_LIQUIDATION_FACTOR = 5 * 1e3;
 
-  uint256 constant MIN_ORDER_MARGIN_USD = 10 * 1e18; // 10$
-  uint256 constant AVAILABLE_COLLATERAL_RATIO = 12 * 1e4;
-  uint256 constant CROSS_LTV_LIMIT = 12 * 1e4;
-  uint256 constant MAX_MAINTENANCE_MARGIN_RATE = 1 * 1e3;
-  uint256 constant FUNDING_FEE_BASE_RATE = 20_000_000_000;
-  uint256 constant MAX_FUNDING_BASE_RATE = 200_000_000_000;
-  uint256 constant TRADING_FEE_STAKING_REWARDS_RATIO = 27 * 1e3;
-  uint256 constant TRADING_FEE_POOL_REWARDS_RATIO = 63 * 1e3;
-  uint256 constant TRADING_FEE_USD_POOL_REWARDS_RATIO = 1 * 1e4;
-  uint256 constant BORROWING_FEE_STAKING_REWARDS_RATIO = 27 * 1e3;
-  uint256 constant BORROWING_FEE_POOL_REWARDS_RATIO = 63 * 1e3;
-  uint256 constant AUTO_REDUCE_PROFIT_FACTOR = 0;
-  uint256 constant AUTO_REDUCE_LIQUIDITY_FACTOR = 0;
-  uint256 constant SWAP_SLIPPER_TOKEN_FACTOR = 5 * 1e3;
+  uint256 MIN_ORDER_MARGIN_USD = 10 * 1e18; // 10$
+  uint256 AVAILABLE_COLLATERAL_RATIO = 12 * 1e4;
+  uint256 CROSS_LTV_LIMIT = 12 * 1e4;
+  uint256 MAX_MAINTENANCE_MARGIN_RATE = 1 * 1e3;
+  uint256 FUNDING_FEE_BASE_RATE = 20_000_000_000;
+  uint256 MAX_FUNDING_BASE_RATE = 200_000_000_000;
+  uint256 TRADING_FEE_STAKING_REWARDS_RATIO = 27 * 1e3;
+  uint256 TRADING_FEE_POOL_REWARDS_RATIO = 63 * 1e3;
+  uint256 TRADING_FEE_USD_POOL_REWARDS_RATIO = 1 * 1e4;
+  uint256 BORROWING_FEE_STAKING_REWARDS_RATIO = 27 * 1e3;
+  uint256 BORROWING_FEE_POOL_REWARDS_RATIO = 63 * 1e3;
+  uint256 AUTO_REDUCE_PROFIT_FACTOR = 0;
+  uint256 AUTO_REDUCE_LIQUIDITY_FACTOR = 0;
+  uint256 SWAP_SLIPPER_TOKEN_FACTOR = 5 * 1e3;
 
 
   address internal BOB; // vm.addr(0x01); // 0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf  
@@ -353,10 +353,10 @@ abstract contract Setup is BaseSetup {
 
   address[] internal USERS;
 
-  uint256 constant  ETH_INITIAL_ALLOWANCE = 100e18;
-  uint256 constant USDC_INITIAL_BALANCE = 100_000;
-  uint256 constant  WETH_INITIAL_ALLOWANCE = 100;
-  uint256 constant  WBTC_INITIAL_ALLOWANCE = 10;
+  uint256  ETH_INITIAL_ALLOWANCE = 100e18;
+  uint256 USDC_INITIAL_BALANCE = 100_000;
+  uint256  WETH_INITIAL_ALLOWANCE = 100;
+  uint256  WBTC_INITIAL_ALLOWANCE = 10;
 
   ///////////////////////
   //// Setup Network ////

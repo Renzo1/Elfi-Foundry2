@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import "./AppStorage.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library Referral {
     using AppStorage for AppStorage.Props;
 
@@ -17,7 +18,7 @@ library Referral {
 
     event ReferralUpdateEvent(address account, bytes32 code, bytes32 referralCode);
 
-    function load(address account) public pure returns (Props storage self) {
+    function load(address account) internal pure returns (Props storage self) {
         bytes32 s = keccak256(abi.encode("xyz.elfi.storage.Referral", account));
 
         assembly {
@@ -25,7 +26,7 @@ library Referral {
         }
     }
 
-    function loadOrCreate(address account) public returns (Props storage self) {
+    function loadOrCreate(address account) internal returns (Props storage self) {
         bytes32 s = keccak256(abi.encode("xyz.elfi.storage.Referral", account));
 
         assembly {
@@ -37,7 +38,7 @@ library Referral {
         }
     }
 
-    function createCodeIfNotExists(Props storage self, bytes32 code) external {
+    function createCodeIfNotExists(Props storage self, bytes32 code) internal {
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = keccak256(abi.encode(AppStorage.REFERRAL, REFERRAL_CODE));
         if (app.containsBytes32(key, code)) {
@@ -51,7 +52,7 @@ library Referral {
         }
     }
 
-    function bindReferralCodeIfNotExists(Props storage self, bytes32 referralCode) external {
+    function bindReferralCodeIfNotExists(Props storage self, bytes32 referralCode) internal {
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = keccak256(abi.encode(AppStorage.REFERRAL, REFERRAL_CODE));
         if (app.containsBytes32(key, referralCode)) {
@@ -63,13 +64,13 @@ library Referral {
         }
     }
 
-    function isCodeExists(bytes32 code) external view returns (bool) {
+    function isCodeExists(bytes32 code) internal view returns (bool) {
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = keccak256(abi.encode(AppStorage.REFERRAL, REFERRAL_CODE));
         return app.containsBytes32(key, code);
     }
 
-    function getCodeAccount(bytes32 code) external view returns (address) {
+    function getCodeAccount(bytes32 code) internal view returns (address) {
         AppStorage.Props storage app = AppStorage.load();
         bytes32 key = keccak256(abi.encode(AppStorage.REFERRAL, REFERRAL_CODE));
         return app.getAddressValue(keccak256(abi.encode(key, code)));

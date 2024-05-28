@@ -8,6 +8,7 @@ import "./FeeProcess.sol";
 import "./AccountProcess.sol";
 import "./FeeQueryProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library IncreasePositionProcess {
     using SafeMath for uint256;
     using SafeCast for uint256;
@@ -34,8 +35,8 @@ library IncreasePositionProcess {
     function increasePosition(
         Position.Props storage position,
         Symbol.Props memory symbolProps,
-        IncreasePositionParams calldata params
-    ) external {
+        IncreasePositionParams memory params
+    ) internal {
         uint256 fee = FeeQueryProcess.calcOpenFee(params.increaseMargin, params.leverage, symbolProps.code);
         FeeProcess.chargeTradingFee(fee, symbolProps.code, FeeProcess.FEE_OPEN_POSITION, params.marginToken, position);
         if (params.isCrossMargin) {

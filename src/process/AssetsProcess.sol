@@ -10,6 +10,7 @@ import "../utils/TransferUtils.sol";
 import "./AccountProcess.sol";
 import "./PositionMarginProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library AssetsProcess {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
@@ -55,7 +56,7 @@ library AssetsProcess {
         uint256 amount;
     }
 
-    function depositToVault(DepositParams calldata params) public returns (address) {
+    function depositToVault(DepositParams memory params) internal returns (address) {
         IVault vault = IVault(address(this));
         address targetAddress;
         if (DepositFrom.MANUAL == params.from || DepositFrom.MINT_COLLATERAL == params.from) {
@@ -78,7 +79,7 @@ library AssetsProcess {
         return token;
     }
 
-    function deposit(DepositParams calldata params) external {
+    function deposit(DepositParams memory params) internal {
         address token = depositToVault(params);
         Account.Props storage accountProps = Account.loadOrCreate(params.account);
         if (DepositFrom.MANUAL == params.from) {
@@ -155,7 +156,7 @@ library AssetsProcess {
     }
 
     // @audit added a return for requestId value for easy testing
-    function createWithdrawRequest(address token, uint256 amount) external returns (uint256) {
+    function createWithdrawRequest(address token, uint256 amount) internal returns (uint256) {
         uint256 requestId = UuidCreator.nextId(WITHDRAW_ID_KEY);
         Withdraw.Request storage request = Withdraw.create(requestId);
         request.account = msg.sender;
@@ -166,19 +167,19 @@ library AssetsProcess {
         return requestId;
     }
 
-    function executeWithdraw(uint256 requestId, Withdraw.Request memory request) external {
+    function executeWithdraw(uint256 requestId, Withdraw.Request memory request) internal {
         withdraw(requestId, WithdrawParams(address(0), request.account, request.token, request.amount));
         Withdraw.remove(requestId);
 
         emit WithdrawSuccessEvent(requestId, request);
     }
 
-    function cancelWithdraw(uint256 requestId, Withdraw.Request memory request, bytes32 reasonCode) external {
+    function cancelWithdraw(uint256 requestId, Withdraw.Request memory request, bytes32 reasonCode) internal {
         Withdraw.remove(requestId);
         emit CancelWithdrawEvent(requestId, request, reasonCode);
     }
 
-    function updateAccountToken(UpdateAccountTokenParams calldata params) external {
+    function updateAccountToken(UpdateAccountTokenParams memory params) internal {
         Account.Props storage accountProps = Account.load(params.account);
         accountProps.checkExists();
         for (uint256 i; i < params.tokens.length; i++) {

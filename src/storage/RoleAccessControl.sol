@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library RoleAccessControl {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
@@ -20,7 +21,7 @@ library RoleAccessControl {
         mapping(address => EnumerableSet.Bytes32Set) accountRoles;
     }
 
-    function load() public pure returns (Props storage self) {
+    function load() internal pure returns (Props storage self) {
         bytes32 s = ACCESS_CONTROL_KEY;
         assembly {
             self.slot := s

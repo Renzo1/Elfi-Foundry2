@@ -10,6 +10,7 @@ import "./GasProcess.sol";
 import "./AssetsProcess.sol";
 import "./TidyRewardsProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library FeeRewardsProcess {
     using SafeMath for uint256;
     using SafeCast for uint256;
@@ -22,7 +23,7 @@ library FeeRewardsProcess {
     using FeeRewards for FeeRewards.MarketRewards;
     using FeeRewards for FeeRewards.StakingRewards;
 
-    function distributeFeeRewards(uint256 interval) external {
+    function distributeFeeRewards(uint256 interval) internal {
         bytes32[] memory symbols = CommonData.getAllSymbols();
         address[] memory stakeTokens = new address[](symbols.length + 1);
         _updateStableTokenRewardsToUsdPool();
@@ -53,7 +54,7 @@ library FeeRewardsProcess {
         FeeRewards.emitUpdateFeeRewardsCumulativeEvent(stakeTokens, cumulativeRewardsPerStakeTokens);
     }
 
-    function updateAccountFeeRewards(address account, address stakeToken) public {
+    function updateAccountFeeRewards(address account, address stakeToken) internal {
         StakingAccount.Props storage stakingAccount = StakingAccount.load(account);
         StakingAccount.FeeRewards storage accountFeeRewards = stakingAccount.getFeeRewards(stakeToken);
         FeeRewards.MarketRewards storage feeProps = FeeRewards.loadPoolRewards(stakeToken);

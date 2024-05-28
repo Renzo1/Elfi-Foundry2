@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library Market {
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -33,7 +34,7 @@ library Market {
 
     event MarketFundingFeeUpdateEvent(bytes32 symbol, FundingFee fundingFee);
 
-    function load(bytes32 symbol) public pure returns (Props storage self) {
+    function load(bytes32 symbol) internal pure returns (Props storage self) {
         bytes32 s = keccak256(abi.encode("xyz.elfi.storage.Market", symbol));
 
         assembly {
@@ -41,25 +42,25 @@ library Market {
         }
     }
 
-    function addShortToken(Props storage self, address token) external {
+    function addShortToken(Props storage self, address token) internal {
         if (!self.shortPositionTokens.contains(token)) {
             self.shortPositionTokens.add(token);
         }
     }
 
-    function emitFundingFeeEvent(Props storage self) external {
+    function emitFundingFeeEvent(Props storage self) internal {
         emit MarketFundingFeeUpdateEvent(self.symbol, self.fundingFee);
     }
 
-    function getShortPositionTokens(Props storage self) external view returns (address[] memory) {
+    function getShortPositionTokens(Props storage self) internal view returns (address[] memory) {
         return self.shortPositionTokens.values();
     }
 
-    function getShortPosition(Props storage self, address token) external view returns (MarketPosition memory) {
+    function getShortPosition(Props storage self, address token) internal view returns (MarketPosition memory) {
         return self.shortPositionMap[token];
     }
 
-    function getAllShortPositions(Props storage self) external view returns (MarketPosition[] memory) {
+    function getAllShortPositions(Props storage self) internal view returns (MarketPosition[] memory) {
         address[] memory tokens = self.shortPositionTokens.values();
         MarketPosition[] memory shortPositions = new MarketPosition[](tokens.length);
         for (uint256 i; i < tokens.length; i++) {
@@ -68,11 +69,11 @@ library Market {
         return shortPositions;
     }
 
-    function getLongOpenInterest(Props storage self) external view returns (uint256) {
+    function getLongOpenInterest(Props storage self) internal view returns (uint256) {
         return self.longPosition.openInterest;
     }
 
-    function getAllShortOpenInterest(Props storage self) external view returns (uint256) {
+    function getAllShortOpenInterest(Props storage self) internal view returns (uint256) {
         address[] memory tokens = self.shortPositionTokens.values();
         uint256 sum = 0;
         for (uint256 i; i < tokens.length; i++) {

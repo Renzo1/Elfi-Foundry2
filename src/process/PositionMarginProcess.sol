@@ -14,6 +14,7 @@ import "./FeeProcess.sol";
 import "./VaultProcess.sol";
 import "./AccountProcess.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library PositionMarginProcess {
     using SafeMath for uint256;
     using SafeCast for uint256;
@@ -53,7 +54,7 @@ library PositionMarginProcess {
         IPosition.UpdatePositionMarginParams memory params,
         uint256 updateMarginAmount,
         bool isExecutionFeeFromTradeVault
-    ) external returns(uint256) {
+    ) internal returns(uint256) {
         uint256 requestId = UuidCreator.nextId(UPDATE_MARGIN_ID_KEY);
         UpdatePositionMargin.Request storage request = UpdatePositionMargin.create(requestId);
         request.account = account;
@@ -74,7 +75,7 @@ library PositionMarginProcess {
         IPosition.UpdateLeverageParams memory params,
         uint256 addMarginAmount,
         bool isExecutionFeeFromTradeVault
-    ) external returns(uint256) {
+    ) internal returns(uint256) {
         uint256 requestId = UuidCreator.nextId(UPDATE_LEVERAGE_ID_KEY);
         UpdateLeverage.Request storage request = UpdateLeverage.create(requestId);
         request.account = account;
@@ -92,7 +93,7 @@ library PositionMarginProcess {
         return requestId;
     }
 
-    function updatePositionMargin(uint256 requestId, UpdatePositionMargin.Request memory request) external {
+    function updatePositionMargin(uint256 requestId, UpdatePositionMargin.Request memory request) internal {
         Position.Props storage position = Position.load(request.positionKey);
         position.checkExists();
         if (position.isCrossMargin) {
@@ -135,7 +136,7 @@ library PositionMarginProcess {
         emit UpdatePositionMarginSuccessEvent(requestId, request);
     }
 
-    function updatePositionLeverage(uint256 requestId, UpdateLeverage.Request memory request) external {
+    function updatePositionLeverage(uint256 requestId, UpdateLeverage.Request memory request) internal {
         bytes32 positionKey = Position.getPositionKey(
             request.account,
             request.symbol,
@@ -236,7 +237,7 @@ library PositionMarginProcess {
         uint256 requestId,
         UpdatePositionMargin.Request memory request,
         bytes32 reasonCode
-    ) external {
+    ) internal {
         if (request.isAdd) {
             VaultProcess.transferOut(
                 IVault(address(this)).getTradeVaultAddress(),
@@ -254,7 +255,7 @@ library PositionMarginProcess {
         uint256 requestId,
         UpdateLeverage.Request memory request,
         bytes32 reasonCode
-    ) external {
+    ) internal {
         bytes32 positionKey = Position.getPositionKey(
             request.account,
             request.symbol,
@@ -281,7 +282,7 @@ library PositionMarginProcess {
         address token,
         int256 amount,
         bytes32 originPositionKey
-    ) external {
+    ) internal {
         if (amount == 0) {
             return;
         }
@@ -309,7 +310,7 @@ library PositionMarginProcess {
         bool needSendEvent,
         uint256 requestId,
         int256 amount
-    ) public returns (uint256 changeAmount) {
+    ) internal returns (uint256 changeAmount) {
         if (position.initialMarginInUsd == position.initialMarginInUsdFromBalance || amount == 0) {
             changeAmount = 0;
             return 0;

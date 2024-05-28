@@ -10,6 +10,7 @@ import "../storage/StakingAccount.sol";
 import "../storage/CommonData.sol";
 import "../utils/CalUtils.sol";
 
+// @audit change all functions to internal and param location to memory for easy testing
 library FeeQueryProcess {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
@@ -18,24 +19,24 @@ library FeeQueryProcess {
     using FeeRewards for FeeRewards.StakingRewards;
     using StakingAccount for StakingAccount.Props;
 
-    function calcOpenFee(uint256 orderMargin, uint256 leverage, bytes32 symbol) public view returns (uint256) {
+    function calcOpenFee(uint256 orderMargin, uint256 leverage, bytes32 symbol) internal view returns (uint256) {
         AppConfig.SymbolConfig memory symbolConfig = AppConfig.getSymbolConfig(symbol);
         uint256 leverageMargin = CalUtils.mulRate(orderMargin, leverage);
         return CalUtils.mulRate(leverageMargin, symbolConfig.openFeeRate);
     }
 
-    function calcCloseFee(uint8 tokenDecimals, uint256 feeInUsd, uint256 tokenPrice) public pure returns (uint256) {
+    function calcCloseFee(uint8 tokenDecimals, uint256 feeInUsd, uint256 tokenPrice) internal pure returns (uint256) {
         return CalUtils.usdToToken(feeInUsd, tokenDecimals, tokenPrice);
     }
 
-    function calcMintOrRedeemFee(uint256 tokenAmount, uint256 feeRate) public pure returns (uint256) {
+    function calcMintOrRedeemFee(uint256 tokenAmount, uint256 feeRate) internal pure returns (uint256) {
         return CalUtils.mulRate(tokenAmount, feeRate);
     }
 
     function calcBorrowingFee(
         uint256 decreaseQty,
         Position.Props memory position
-    ) public pure returns (uint256 fee, uint256 feeInUsd) {
+    ) internal pure returns (uint256 fee, uint256 feeInUsd) {
         if (decreaseQty == position.qty) {
             return (position.positionFee.realizedBorrowingFee, position.positionFee.realizedBorrowingFeeInUsd);
         }
@@ -45,32 +46,32 @@ library FeeQueryProcess {
         );
     }
 
-    function getPoolTokenFeeAmount(address stakeToken, address token) external view returns (uint256) {
+    function getPoolTokenFeeAmount(address stakeToken, address token) internal view returns (uint256) {
         FeeRewards.MarketRewards storage poolRewardsProps = FeeRewards.loadPoolRewards(stakeToken);
         return poolRewardsProps.getFeeAmount(token);
     }
 
-    function getCumulativeRewardsPerStakeToken(address stakeToken) external view returns (uint256) {
+    function getCumulativeRewardsPerStakeToken(address stakeToken) internal view returns (uint256) {
         FeeRewards.MarketRewards storage poolRewardsProps = FeeRewards.loadPoolRewards(stakeToken);
         return poolRewardsProps.getCumulativeRewardsPerStakeToken();
     }
 
-    function getMarketTokenFeeAmount(bytes32 symbol, address token) external view returns (uint256) {
+    function getMarketTokenFeeAmount(bytes32 symbol, address token) internal view returns (uint256) {
         FeeRewards.MarketRewards storage marketTradingRewardsProps = FeeRewards.loadMarketTradingRewards(symbol);
         return marketTradingRewardsProps.getFeeAmount(token);
     }
 
-    function getStakingTokenFee(address stakeToken, address token) external view returns (uint256) {
+    function getStakingTokenFee(address stakeToken, address token) internal view returns (uint256) {
         FeeRewards.StakingRewards storage stakingRewards = FeeRewards.loadStakingRewards();
         return stakingRewards.getFeeAmount(stakeToken, token);
     }
 
-    function getDaoTokenFee(address stakeToken, address token) external view returns (uint256) {
+    function getDaoTokenFee(address stakeToken, address token) internal view returns (uint256) {
         FeeRewards.StakingRewards storage daoRewards = FeeRewards.loadDaoRewards();
         return daoRewards.getFeeAmount(stakeToken, token);
     }
 
-    function getAccountFeeRewards(address account) external view returns (IFee.AccountFeeRewards memory) {
+    function getAccountFeeRewards(address account) internal view returns (IFee.AccountFeeRewards memory) {
         StakingAccount.Props storage stakingAccount = StakingAccount.load(account);
         address[] memory stakeTokens = stakingAccount.getStakeTokens();
         IFee.AccountFeeRewards memory rewards;
@@ -103,7 +104,7 @@ library FeeQueryProcess {
         return rewards;
     }
 
-    function getAccountUsdFeeReward(address account) external view returns (IFee.AccountUsdFeeReward memory) {
+    function getAccountUsdFeeReward(address account) internal view returns (IFee.AccountUsdFeeReward memory) {
         StakingAccount.Props storage stakingAccount = StakingAccount.load(account);
         address stakeUsdToken = CommonData.getStakeUsdToken();
         StakingAccount.FeeRewards storage accountFeeRewards;
