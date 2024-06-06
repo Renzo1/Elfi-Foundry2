@@ -12,6 +12,35 @@ import "src/interfaces/IAccount.sol";
 
 
 abstract contract BeforeAfter is Setup {
+    // TODO add these to BeforeAfter
+    /*
+    - StakingAccountFacet
+    
+    AppTradeTokenConfig
+    struct TradeTokenConfig {
+            bool isSupportCollateral;
+            uint256 precision;
+            uint256 discount;
+            uint256 collateralUserCap;
+            uint256 collateralTotalCap;
+            uint256 liabilityUserCap;
+            uint256 liabilityTotalCap;
+            uint256 interestRateFactor;
+            uint256 liquidationFactor;
+        }
+
+    CommonData
+    struct Props {
+        address stakeUsdToken;
+        bytes32[] symbols;
+        EnumerableSet.AddressSet stakeTokens;
+        mapping(address => TokenData) tradeCollateralTokenDatas;
+        mapping(address => uint256) stakeCollateralAmount;
+        mapping(address => uint256) tokensTotalLiability;
+        uint256 totalLossExecutionFee;
+        EnumerableMap.AddressToUintMap cleanFunds;
+    }
+    */
 
     struct Vars {
 
