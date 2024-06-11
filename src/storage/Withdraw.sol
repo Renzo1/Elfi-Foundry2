@@ -3,7 +3,7 @@ pragma solidity ^0.8.18;
 
 // @audit change all functions to internal and param location to memory for easy testing
 library Withdraw {
-    bytes32 constant WITHDRAW_KEY = keccak256(abi.encode("xyz.elfi.storage.Withdraw"));
+    bytes32 internal constant WITHDRAW_KEY = keccak256(abi.encode("xyz.elfi.storage.Withdraw"));
 
     struct Props {
         mapping(uint256 => Request) requests;

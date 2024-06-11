@@ -22,19 +22,19 @@ library FeeProcess {
     using FeeRewards for FeeRewards.MarketRewards;
     using FeeRewards for FeeRewards.StakingRewards;
 
-    bytes32 public constant FEE_MINT = keccak256(abi.encode("FEE_MINT"));
+    bytes32 internal constant FEE_MINT = keccak256(abi.encode("FEE_MINT"));
 
-    bytes32 public constant FEE_REDEEM = keccak256(abi.encode("FEE_REDEEM"));
+    bytes32 internal constant FEE_REDEEM = keccak256(abi.encode("FEE_REDEEM"));
 
-    bytes32 public constant FEE_OPEN_POSITION = keccak256(abi.encode("FEE_OPEN_POSITION"));
+    bytes32 internal constant FEE_OPEN_POSITION = keccak256(abi.encode("FEE_OPEN_POSITION"));
 
-    bytes32 public constant FEE_CLOSE_POSITION = keccak256(abi.encode("FEE_CLOSE_POSITION"));
+    bytes32 internal constant FEE_CLOSE_POSITION = keccak256(abi.encode("FEE_CLOSE_POSITION"));
 
-    bytes32 public constant FEE_LIQUIDATION = keccak256(abi.encode("FEE_LIQUIDATION"));
+    bytes32 internal constant FEE_LIQUIDATION = keccak256(abi.encode("FEE_LIQUIDATION"));
 
-    bytes32 public constant FEE_BORROWING = keccak256(abi.encode("FEE_BORROWING"));
+    bytes32 internal constant FEE_BORROWING = keccak256(abi.encode("FEE_BORROWING"));
 
-    bytes32 public constant FEE_FUNDING = keccak256(abi.encode("FEE_FUNDING"));
+    bytes32 internal constant FEE_FUNDING = keccak256(abi.encode("FEE_FUNDING"));
 
     struct ChargeMintOrRedeemFeeEventParams {
         address stakeToken;

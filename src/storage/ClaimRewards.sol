@@ -3,7 +3,7 @@ pragma solidity ^0.8.18;
 
 // @audit change all functions to internal and param location to memory for easy testing
 library ClaimRewards {
-    bytes32 constant KEY = keccak256(abi.encode("xyz.elfi.storage.ClaimRewards"));
+    bytes32 internal constant KEY = keccak256(abi.encode("xyz.elfi.storage.ClaimRewards"));
 
     struct Props {
         mapping(uint256 => Request) requests;

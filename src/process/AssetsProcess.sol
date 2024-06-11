@@ -120,7 +120,7 @@ library AssetsProcess {
         emit Deposit(params);
     }
 
-    function withdraw(uint256 requestId, WithdrawParams memory params) public {
+    function withdraw(uint256 requestId, WithdrawParams memory params) internal {
         if (params.amount == 0) {
             revert Errors.AmountZeroNotAllowed();
         }

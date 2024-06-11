@@ -14,5 +14,6 @@ contract CryticToFoundry is Test, TargetFunctions, FoundryAsserts {
 
     function testDemo() public {
         // TODO: Given any target function and foundry assert, test your results
+        // alwaysPasss();
     }
 }

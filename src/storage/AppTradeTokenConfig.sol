@@ -8,15 +8,15 @@ library AppTradeTokenConfig {
     using AppStorage for AppStorage.Props;
 
     // -- trade token config keys --
-    bytes32 public constant IS_SUPPORT_COLLATERAL = keccak256(abi.encode("IS_SUPPORT_COLLATERAL"));
-    bytes32 public constant PRECISION = keccak256(abi.encode("PRECISION"));
-    bytes32 public constant DISCOUNT = keccak256(abi.encode("DISCOUNT"));
-    bytes32 public constant COLLATERAL_USER_CAP = keccak256(abi.encode("COLLATERAL_USER_CAP"));
-    bytes32 public constant COLLATERAL_TOTAL_CAP = keccak256(abi.encode("COLLATERAL_TOTAL_CAP"));
-    bytes32 public constant LIABILITY_USER_CAP = keccak256(abi.encode("LIABILITY_USER_CAP"));
-    bytes32 public constant LIABILITY_TOTAL_CAP = keccak256(abi.encode("LIABILITY_TOTAL_CAP"));
-    bytes32 public constant INTEREST_RATE_FACTOR = keccak256(abi.encode("INTEREST_RATE_FACTOR"));
-    bytes32 public constant LIQUIDATION_FACTOR = keccak256(abi.encode("LIQUIDATION_FACTOR"));
+    bytes32 internal constant IS_SUPPORT_COLLATERAL = keccak256(abi.encode("IS_SUPPORT_COLLATERAL"));
+    bytes32 internal constant PRECISION = keccak256(abi.encode("PRECISION"));
+    bytes32 internal constant DISCOUNT = keccak256(abi.encode("DISCOUNT"));
+    bytes32 internal constant COLLATERAL_USER_CAP = keccak256(abi.encode("COLLATERAL_USER_CAP"));
+    bytes32 internal constant COLLATERAL_TOTAL_CAP = keccak256(abi.encode("COLLATERAL_TOTAL_CAP"));
+    bytes32 internal constant LIABILITY_USER_CAP = keccak256(abi.encode("LIABILITY_USER_CAP"));
+    bytes32 internal constant LIABILITY_TOTAL_CAP = keccak256(abi.encode("LIABILITY_TOTAL_CAP"));
+    bytes32 internal constant INTEREST_RATE_FACTOR = keccak256(abi.encode("INTEREST_RATE_FACTOR"));
+    bytes32 internal constant LIQUIDATION_FACTOR = keccak256(abi.encode("LIQUIDATION_FACTOR"));
 
     struct TradeTokenConfig {
         bool isSupportCollateral;

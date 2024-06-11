@@ -3,7 +3,7 @@ pragma solidity ^0.8.18;
 
 // @audit change all functions to internal and param location to memory for easy testing
 library Mint {
-    bytes32 constant MINT_KEY = keccak256(abi.encode("xyz.elfi.storage.Mint"));
+    bytes32 internal constant MINT_KEY = keccak256(abi.encode("xyz.elfi.storage.Mint"));
 
     struct Props {
         mapping(uint256 => Request) requests;

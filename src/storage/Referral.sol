@@ -8,7 +8,7 @@ library Referral {
     using AppStorage for AppStorage.Props;
 
     // -- Referral keys --
-    bytes32 public constant REFERRAL_CODE = keccak256(abi.encode("REFERRAL_CODE"));
+    bytes32 internal constant REFERRAL_CODE = keccak256(abi.encode("REFERRAL_CODE"));
 
     struct Props {
         address account;

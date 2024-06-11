@@ -8,36 +8,36 @@ library AppPoolConfig {
     using AppStorage for AppStorage.Props;
 
     // -- stake config keys --
-    bytes32 public constant COLLATERAL_PROTECT_FACTOR = keccak256(abi.encode("COLLATERAL_PROTECT_FACTOR"));
-    bytes32 public constant COLLATERAL_FACTOR = keccak256(abi.encode("COLLATERAL_FACTOR"));
-    bytes32 public constant MIN_PRECISION_MULTIPLE = keccak256(abi.encode("MIN_PRECISION_MULTIPLE"));
-    bytes32 public constant MINT_FEE_STAKING_REWARDS_RATIO = keccak256(abi.encode("MINT_FEE_STAKING_REWARDS_RATIO"));
-    bytes32 public constant MINT_FEE_POOL_REWARDS_RATIO = keccak256(abi.encode("MINT_FEE_POOL_REWARDS_RATIO"));
-    bytes32 public constant REDEEM_FEE_STAKING_REWARDS_RATIO =
+    bytes32 internal constant COLLATERAL_PROTECT_FACTOR = keccak256(abi.encode("COLLATERAL_PROTECT_FACTOR"));
+    bytes32 internal constant COLLATERAL_FACTOR = keccak256(abi.encode("COLLATERAL_FACTOR"));
+    bytes32 internal constant MIN_PRECISION_MULTIPLE = keccak256(abi.encode("MIN_PRECISION_MULTIPLE"));
+    bytes32 internal constant MINT_FEE_STAKING_REWARDS_RATIO = keccak256(abi.encode("MINT_FEE_STAKING_REWARDS_RATIO"));
+    bytes32 internal constant MINT_FEE_POOL_REWARDS_RATIO = keccak256(abi.encode("MINT_FEE_POOL_REWARDS_RATIO"));
+    bytes32 internal constant REDEEM_FEE_STAKING_REWARDS_RATIO =
         keccak256(abi.encode("REDEEM_FEE_STAKING_REWARDS_RATIO"));
-    bytes32 public constant REDEEM_FEE_POOL_REWARDS_RATIO = keccak256(abi.encode("REDEEM_FEE_POOL_REWARDS_RATIO"));
-    bytes32 public constant POOL_REWARDS_INTERVAL_LIMIT = keccak256(abi.encode("POOL_REWARDS_INTERVAL_LIMIT"));
-    bytes32 public constant MIN_APR = keccak256(abi.encode("MIN_APR"));
-    bytes32 public constant MAX_APR = keccak256(abi.encode("MAX_APR"));
+    bytes32 internal constant REDEEM_FEE_POOL_REWARDS_RATIO = keccak256(abi.encode("REDEEM_FEE_POOL_REWARDS_RATIO"));
+    bytes32 internal constant POOL_REWARDS_INTERVAL_LIMIT = keccak256(abi.encode("POOL_REWARDS_INTERVAL_LIMIT"));
+    bytes32 internal constant MIN_APR = keccak256(abi.encode("MIN_APR"));
+    bytes32 internal constant MAX_APR = keccak256(abi.encode("MAX_APR"));
 
     // -- pool config keys --
-    bytes32 public constant POOL_LIQUIDITY_LIMIT = keccak256(abi.encode("POOL_LIQUIDITY_LIMIT"));
-    bytes32 public constant MINT_FEE_RATE = keccak256(abi.encode("MINT_FEE_RATE"));
-    bytes32 public constant REDEEM_FEE_RATE = keccak256(abi.encode("REDEEM_FEE_RATE"));
-    bytes32 public constant UNSETTLED_RATIO_LIMIT = keccak256(abi.encode("UNSETTLED_RATIO_LIMIT"));
-    bytes32 public constant SUPPORT_STABLE_TOKENS = keccak256(abi.encode("SUPPORT_STABLE_TOKENS"));
-    bytes32 public constant STABLE_TOKENS_BORROWING_INTEREST_RATE =
+    bytes32 internal constant POOL_LIQUIDITY_LIMIT = keccak256(abi.encode("POOL_LIQUIDITY_LIMIT"));
+    bytes32 internal constant MINT_FEE_RATE = keccak256(abi.encode("MINT_FEE_RATE"));
+    bytes32 internal constant REDEEM_FEE_RATE = keccak256(abi.encode("REDEEM_FEE_RATE"));
+    bytes32 internal constant UNSETTLED_RATIO_LIMIT = keccak256(abi.encode("UNSETTLED_RATIO_LIMIT"));
+    bytes32 internal constant SUPPORT_STABLE_TOKENS = keccak256(abi.encode("SUPPORT_STABLE_TOKENS"));
+    bytes32 internal constant STABLE_TOKENS_BORROWING_INTEREST_RATE =
         keccak256(abi.encode("STABLE_TOKENS_BORROWING_INTEREST_RATE"));
 
-    bytes32 public constant BASE_INTEREST_RATE = keccak256(abi.encode("BASE_INTEREST_RATE"));
-    bytes32 public constant POOL_PNL_RATIO_LIMIT = keccak256(abi.encode("POOL_PNL_RATIO_LIMIT"));
-    bytes32 public constant UNSETTLED_BASE_TOKEN_RATIO_LIMIT =
+    bytes32 internal constant BASE_INTEREST_RATE = keccak256(abi.encode("BASE_INTEREST_RATE"));
+    bytes32 internal constant POOL_PNL_RATIO_LIMIT = keccak256(abi.encode("POOL_PNL_RATIO_LIMIT"));
+    bytes32 internal constant UNSETTLED_BASE_TOKEN_RATIO_LIMIT =
         keccak256(abi.encode("UNSETTLED_BASE_TOKEN_RATIO_LIMIT"));
-    bytes32 public constant UNSETTLED_STABLE_TOKEN_RATIO_LIMIT =
+    bytes32 internal constant UNSETTLED_STABLE_TOKEN_RATIO_LIMIT =
         keccak256(abi.encode("UNSETTLED_STABLE_TOKEN_RATIO_LIMIT"));
-    bytes32 public constant POOL_STABLE_TOKEN_RATIO_LIMIT = keccak256(abi.encode("POOL_STABLE_TOKEN_RATIO_LIMIT"));
-    bytes32 public constant POOL_STABLE_TOKEN_LOSS_LIMIT = keccak256(abi.encode("POOL_STABLE_TOKEN_LOSS_LIMIT"));
-    bytes32 public constant ASSET_TOKENS = keccak256(abi.encode("ASSET_TOKENS"));
+    bytes32 internal constant POOL_STABLE_TOKEN_RATIO_LIMIT = keccak256(abi.encode("POOL_STABLE_TOKEN_RATIO_LIMIT"));
+    bytes32 internal constant POOL_STABLE_TOKEN_LOSS_LIMIT = keccak256(abi.encode("POOL_STABLE_TOKEN_LOSS_LIMIT"));
+    bytes32 internal constant ASSET_TOKENS = keccak256(abi.encode("ASSET_TOKENS"));
 
     struct StakeConfig {
         uint256 collateralProtectFactor;

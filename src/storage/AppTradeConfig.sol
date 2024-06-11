@@ -9,25 +9,25 @@ library AppTradeConfig {
     using AppStorage for AppStorage.Props;
 
     // -- trade config keys --
-    bytes32 public constant TRADE_TOKENS = keccak256(abi.encode("TRADE_TOKENS"));
-    bytes32 public constant MIN_ORDER_MARGIN_USD = keccak256(abi.encode("MIN_ORDER_MARGIN_USD"));
-    bytes32 public constant AVAILABLE_COLLATERAL_RATIO = keccak256(abi.encode("AVAILABLE_COLLATERAL_RATIO"));
-    bytes32 public constant CROSS_LTV_LIMIT = keccak256(abi.encode("CROSS_LTV_LIMIT"));
-    bytes32 public constant MAX_MAINTENANCE_MARGIN_RATE = keccak256(abi.encode("MAX_MAINTENANCE_MARGIN_RATE"));
-    bytes32 public constant FUNDING_FEE_BASE_RATE = keccak256(abi.encode("FUNDING_FEE_BASE_RATE"));
-    bytes32 public constant MAX_FUNDING_BASE_RATE = keccak256(abi.encode("MAX_FUNDING_BASE_RATE"));
-    bytes32 public constant TRADING_FEE_STAKING_REWARDS_RATIO =
+    bytes32 internal constant TRADE_TOKENS = keccak256(abi.encode("TRADE_TOKENS"));
+    bytes32 internal constant MIN_ORDER_MARGIN_USD = keccak256(abi.encode("MIN_ORDER_MARGIN_USD"));
+    bytes32 internal constant AVAILABLE_COLLATERAL_RATIO = keccak256(abi.encode("AVAILABLE_COLLATERAL_RATIO"));
+    bytes32 internal constant CROSS_LTV_LIMIT = keccak256(abi.encode("CROSS_LTV_LIMIT"));
+    bytes32 internal constant MAX_MAINTENANCE_MARGIN_RATE = keccak256(abi.encode("MAX_MAINTENANCE_MARGIN_RATE"));
+    bytes32 internal constant FUNDING_FEE_BASE_RATE = keccak256(abi.encode("FUNDING_FEE_BASE_RATE"));
+    bytes32 internal constant MAX_FUNDING_BASE_RATE = keccak256(abi.encode("MAX_FUNDING_BASE_RATE"));
+    bytes32 internal constant TRADING_FEE_STAKING_REWARDS_RATIO =
         keccak256(abi.encode("TRADING_FEE_STAKING_REWARDS_RATIO"));
-    bytes32 public constant TRADING_FEE_POOL_REWARDS_RATIO = keccak256(abi.encode("TRADING_FEE_POOL_REWARDS_RATIO"));
-    bytes32 public constant TRADING_FEE_USD_POOL_REWARDS_RATIO =
+    bytes32 internal constant TRADING_FEE_POOL_REWARDS_RATIO = keccak256(abi.encode("TRADING_FEE_POOL_REWARDS_RATIO"));
+    bytes32 internal constant TRADING_FEE_USD_POOL_REWARDS_RATIO =
         keccak256(abi.encode("TRADING_FEE_USD_POOL_REWARDS_RATIO"));
-    bytes32 public constant BORROWING_FEE_STAKING_REWARDS_RATIO =
+    bytes32 internal constant BORROWING_FEE_STAKING_REWARDS_RATIO =
         keccak256(abi.encode("BORROWING_FEE_STAKING_REWARDS_RATIO"));
-    bytes32 public constant BORROWING_FEE_POOL_REWARDS_RATIO =
+    bytes32 internal constant BORROWING_FEE_POOL_REWARDS_RATIO =
         keccak256(abi.encode("BORROWING_FEE_POOL_REWARDS_RATIO"));
-    bytes32 public constant AUTO_REDUCE_PROFIT_FACTOR = keccak256(abi.encode("AUTO_REDUCE_PROFIT_FACTOR"));
-    bytes32 public constant AUTO_REDUCE_LIQUIDITY_FACTOR = keccak256(abi.encode("AUTO_REDUCE_LIQUIDITY_FACTOR"));
-    bytes32 public constant SWAP_SLIPPER_TOKEN_FACTOR = keccak256(abi.encode("SWAP_SLIPPER_TOKEN_FACTOR"));
+    bytes32 internal constant AUTO_REDUCE_PROFIT_FACTOR = keccak256(abi.encode("AUTO_REDUCE_PROFIT_FACTOR"));
+    bytes32 internal constant AUTO_REDUCE_LIQUIDITY_FACTOR = keccak256(abi.encode("AUTO_REDUCE_LIQUIDITY_FACTOR"));
+    bytes32 internal constant SWAP_SLIPPER_TOKEN_FACTOR = keccak256(abi.encode("SWAP_SLIPPER_TOKEN_FACTOR"));
 
     struct TradeConfig {
         address[] tradeTokens;

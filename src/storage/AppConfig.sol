@@ -8,31 +8,31 @@ library AppConfig {
     using AppStorage for AppStorage.Props;
 
     // -- symbol config keys --
-    bytes32 public constant MAX_LEVERAGE = keccak256(abi.encode("MAX_LEVERAGE"));
-    bytes32 public constant TICK_SIZE = keccak256(abi.encode("TICK_SIZE"));
-    bytes32 public constant OPEN_FEE_RATE = keccak256(abi.encode("OPEN_FEE_RATE"));
-    bytes32 public constant CLOSE_FEE_RATE = keccak256(abi.encode("CLOSE_FEE_RATE"));
-    bytes32 public constant MAX_LONG_OPEN_INTEREST_CAP = keccak256(abi.encode("MAX_LONG_OPEN_INTEREST_CAP"));
-    bytes32 public constant MAX_SHORT_OPEN_INTEREST_CAP = keccak256(abi.encode("MAX_SHORT_OPEN_INTEREST_CAP"));
-    bytes32 public constant LONG_SHORT_RATIO_LIMIT = keccak256(abi.encode("LONG_SHORT_RATIO_LIMIT"));
-    bytes32 public constant LONG_SHORT_OI_BOTTOM_LIMIT = keccak256(abi.encode("LONG_SHORT_OI_BOTTOM_LIMIT"));
+    bytes32 internal constant MAX_LEVERAGE = keccak256(abi.encode("MAX_LEVERAGE"));
+    bytes32 internal constant TICK_SIZE = keccak256(abi.encode("TICK_SIZE"));
+    bytes32 internal constant OPEN_FEE_RATE = keccak256(abi.encode("OPEN_FEE_RATE"));
+    bytes32 internal constant CLOSE_FEE_RATE = keccak256(abi.encode("CLOSE_FEE_RATE"));
+    bytes32 internal constant MAX_LONG_OPEN_INTEREST_CAP = keccak256(abi.encode("MAX_LONG_OPEN_INTEREST_CAP"));
+    bytes32 internal constant MAX_SHORT_OPEN_INTEREST_CAP = keccak256(abi.encode("MAX_SHORT_OPEN_INTEREST_CAP"));
+    bytes32 internal constant LONG_SHORT_RATIO_LIMIT = keccak256(abi.encode("LONG_SHORT_RATIO_LIMIT"));
+    bytes32 internal constant LONG_SHORT_OI_BOTTOM_LIMIT = keccak256(abi.encode("LONG_SHORT_OI_BOTTOM_LIMIT"));
 
     // -- chain config keys --
-    bytes32 public constant WRAPPER_TOKEN = keccak256(abi.encode("WRAPPER_TOKEN"));
-    bytes32 public constant MINT_GAS_FEE_LIMIT = keccak256(abi.encode("MINT_GAS_FEE_LIMIT"));
-    bytes32 public constant REDEEM_GAS_FEE_LIMIT = keccak256(abi.encode("REDEEM_GAS_FEE_LIMIT"));
-    bytes32 public constant PLACE_INCREASE_ORDER_GAS_FEE_LIMIT =
+    bytes32 internal constant WRAPPER_TOKEN = keccak256(abi.encode("WRAPPER_TOKEN"));
+    bytes32 internal constant MINT_GAS_FEE_LIMIT = keccak256(abi.encode("MINT_GAS_FEE_LIMIT"));
+    bytes32 internal constant REDEEM_GAS_FEE_LIMIT = keccak256(abi.encode("REDEEM_GAS_FEE_LIMIT"));
+    bytes32 internal constant PLACE_INCREASE_ORDER_GAS_FEE_LIMIT =
         keccak256(abi.encode("PLACE_INCREASE_ORDER_GAS_FEE_LIMIT"));
-    bytes32 public constant PLACE_DECREASE_ORDER_GAS_FEE_LIMIT =
+    bytes32 internal constant PLACE_DECREASE_ORDER_GAS_FEE_LIMIT =
         keccak256(abi.encode("PLACE_DECREASE_ORDER_GAS_FEE_LIMIT"));
-    bytes32 public constant POSITION_UPDATE_MARGIN_GAS_FEE_LIMIT =
+    bytes32 internal constant POSITION_UPDATE_MARGIN_GAS_FEE_LIMIT =
         keccak256(abi.encode("POSITION_UPDATE_MARGIN_GAS_FEE_LIMIT"));
-    bytes32 public constant POSITION_UPDATE_LEVERAGE_GAS_FEE_LIMIT =
+    bytes32 internal constant POSITION_UPDATE_LEVERAGE_GAS_FEE_LIMIT =
         keccak256(abi.encode("POSITION_UPDATE_LEVERAGE_GAS_FEE_LIMIT"));
-    bytes32 public constant WITHDRAW_GAS_FEE_LIMIT = keccak256(abi.encode("WITHDRAW_GAS_FEE_LIMIT"));
-    bytes32 public constant CLAIM_REWARDS_GAS_FEE_LIMIT = keccak256(abi.encode("CLAIM_REWARDS_GAS_FEE_LIMIT"));
+    bytes32 internal constant WITHDRAW_GAS_FEE_LIMIT = keccak256(abi.encode("WITHDRAW_GAS_FEE_LIMIT"));
+    bytes32 internal constant CLAIM_REWARDS_GAS_FEE_LIMIT = keccak256(abi.encode("CLAIM_REWARDS_GAS_FEE_LIMIT"));
 
-    bytes32 public constant UNISWAP_ROUTER = keccak256(abi.encode("UNISWAP_ROUTER"));
+    bytes32 internal constant UNISWAP_ROUTER = keccak256(abi.encode("UNISWAP_ROUTER"));
 
     struct SymbolConfig {
         uint256 maxLeverage;

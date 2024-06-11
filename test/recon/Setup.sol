@@ -52,18 +52,8 @@ interface IHevm {
   // Set block.timestamp to newTimestamp
   function warp(uint256 newTimestamp) external;
 
-  // Set block.number to newNumber
-  function roll(uint256 newNumber) external;
-
-  // Add the condition b to the assumption base for the current branch
-  // This function is almost identical to require
-  function assume(bool b) external;
-
   // Sets the eth balance of usr to amt
   function deal(address usr, uint256 amt) external;
-
-  // Signs data (privateKey, digest) => (v, r, s)
-  function sign(uint256 privateKey, bytes32 digest) external returns (uint8 v, bytes32 r, bytes32 s);
 
   // Gets address for a given private key
   function addr(uint256 privateKey) external returns (address addr);
@@ -72,13 +62,13 @@ interface IHevm {
   function prank(address newSender) external;
 
   // Labels the address in traces
-  function label(address addr, string calldata label) external;
+  // function label(address addr, string calldata label) external;
 }
+
 abstract contract Setup is BaseSetup {
   IHevm hevm = IHevm(address(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D));
   
   ///////// Network Assets ////////
-  // TODO create a big ass struct for all state variables: struct SetupProps (only if library approach fails???)
   WETH weth;
   MockToken wbtc;
   MockToken usdc;
@@ -116,8 +106,6 @@ abstract contract Setup is BaseSetup {
 
 
   ///////// Router ////////
-  // DiamondInit diamondInit;
-  // Diamond diamond;
   address diamondAddress;
 
   ///////// Vault ////////
@@ -173,17 +161,64 @@ abstract contract Setup is BaseSetup {
 
     // Configure setVaultConfig
     setElfiVaultConfig();
+    assert(address(diamondVaultFacet.getLpVault()) == address(lpVault));
+    assert(address(diamondVaultFacet.getTradeVault()) == address(tradeVault));
+    assert(address(diamondVaultFacet.getPortfolioVault()) == address(portfolioVault));
 
     // Configure Markets
     createMarketsAndPools();
 
     setLpPoolConfig();
 
+    assert(diamondPoolFacet.getUsdPool().stableTokens[0] == address(usdc));
+    assert(diamondPoolFacet.getPool(stakedTokens[0]).baseToken == address(weth));
+    assert(diamondPoolFacet.getPool(stakedTokens[1]).baseToken == address(wbtc));
+
     setCommonConfig();
 
-    // TODO trade tokens are set correctly
-    // TODO chain config is set correctly
-    // TODO assert wrapper token is set to weth diamondConfigFacet.getChainConfig() == address(weth);
+    
+    IConfig.CommonConfigParams memory config = diamondConfigFacet.getConfig();
+
+    // chainConfig
+    assert(config.chainConfig.wrapperToken == address(weth));
+    assert(config.chainConfig.mintGasFeeLimit == ChainConfig.getMintGasFeeLimit());
+    assert(config.chainConfig.redeemGasFeeLimit == ChainConfig.getRedeemGasFeeLimit());
+    assert(config.chainConfig.placeIncreaseOrderGasFeeLimit == ChainConfig.getPlaceIncreaseOrderGasFeeLimit());
+    assert(config.chainConfig.placeDecreaseOrderGasFeeLimit == ChainConfig.getPlaceDecreaseOrderGasFeeLimit());
+    assert(config.chainConfig.positionUpdateMarginGasFeeLimit == ChainConfig.getPositionUpdateMarginGasFeeLimit());
+    assert(config.chainConfig.positionUpdateLeverageGasFeeLimit == ChainConfig.getPositionUpdateLeverageGasFeeLimit());
+    assert(config.chainConfig.withdrawGasFeeLimit == ChainConfig.getWithdrawGasFeeLimit());
+    assert(config.chainConfig.claimRewardsGasFeeLimit == ChainConfig.getClaimRewardsGasFeeLimit());
+
+    // tradeConfig
+    assert(config.tradeConfig.tradeTokens.length == 3);
+    assert(config.tradeConfig.tradeTokenConfigs.length == 3);
+    assert(config.tradeConfig.minOrderMarginUSD == TradeConfig.getMinOrderMarginUsd());
+    assert(config.tradeConfig.availableCollateralRatio == TradeConfig.getAvailableCollateralRatio());
+    assert(config.tradeConfig.crossLtvLimit == TradeConfig.getCrossLtvLimit());
+    assert(config.tradeConfig.maxMaintenanceMarginRate == TradeConfig.getMaxMaintenanceMarginRate());
+    assert(config.tradeConfig.fundingFeeBaseRate == TradeConfig.getFundingFeeBaseRate());
+    assert(config.tradeConfig.maxFundingBaseRate == TradeConfig.getMaxFundingBaseRate());
+    assert(config.tradeConfig.tradingFeeStakingRewardsRatio == TradeConfig.getTradingFeeStakingRewardsRatio());
+    assert(config.tradeConfig.tradingFeePoolRewardsRatio == TradeConfig.getTradingFeePoolRewardsRatio());
+    assert(config.tradeConfig.tradingFeeUsdPoolRewardsRatio == TradeConfig.getTradingFeeUsdPoolRewardsRatio());
+    assert(config.tradeConfig.borrowingFeeStakingRewardsRatio == TradeConfig.getBorrowingFeeStakingRewardsRatio());
+    assert(config.tradeConfig.borrowingFeePoolRewardsRatio == TradeConfig.getBorrowingFeePoolRewardsRatio());
+    assert(config.tradeConfig.autoReduceProfitFactor == TradeConfig.getAutoReduceProfitFactor());
+    assert(config.tradeConfig.autoReduceLiquidityFactor == TradeConfig.getAutoReduceLiquidityFactor());
+    assert(config.tradeConfig.swapSlipperTokenFactor == TradeConfig.getSwapSlipperTokenFactor());
+
+    // stakeConfig
+    assert(config.stakeConfig.collateralProtectFactor == StakeConfig.getCollateralProtectFactor());
+    assert(config.stakeConfig.collateralFactor == StakeConfig.getCollateralFactor());
+    assert(config.stakeConfig.minPrecisionMultiple == StakeConfig.getMinPrecisionMultiple());
+    assert(config.stakeConfig.mintFeeStakingRewardsRatio == StakeConfig.getMintFeeStakingRewardsRatio());
+    assert(config.stakeConfig.mintFeePoolRewardsRatio == StakeConfig.getMintFeePoolRewardsRatio());
+    assert(config.stakeConfig.redeemFeeStakingRewardsRatio == StakeConfig.getRedeemFeeStakingRewardsRatio());
+    assert(config.stakeConfig.redeemFeePoolRewardsRatio == StakeConfig.getRedeemFeePoolRewardsRatio());
+    assert(config.stakeConfig.poolRewardsIntervalLimit == StakeConfig.getPoolRewardsIntervalLimit());
+    assert(config.stakeConfig.minApr == StakeConfig.getMinApr());
+    assert(config.stakeConfig.maxApr == StakeConfig.getMaxApr());
 
     /// Setup Actors and deal them some tokens
     setupActors();
@@ -261,8 +296,8 @@ abstract contract Setup is BaseSetup {
 
     stakedTokens = new address[](3);
 
-    stakedTokens[0] = diamondMarketManagerFacet.createMarket(params1);
-    stakedTokens[1] = diamondMarketManagerFacet.createMarket(params2);
+    stakedTokens[0] = diamondMarketManagerFacet.createMarket(params1); // weth
+    stakedTokens[1] = diamondMarketManagerFacet.createMarket(params2); // wbtc
         
     stakedTokens[2] = diamondMarketManagerFacet.createStakeUsdPool(RolesAndPools.getStakedUsdc(), 18);
     // StakeToken stakedUSD = StakeToken(stakeUsdTokenAddress);
@@ -366,17 +401,6 @@ abstract contract Setup is BaseSetup {
     
     
     /// stakedUsd Pool Config
-    /*
-    struct UsdPoolConfig {
-        uint256 poolLiquidityLimit;
-        uint256 mintFeeRate;
-        uint256 redeemFeeRate;
-        uint256 unsettledRatioLimit;
-        address[] supportStableTokens;
-        uint256[] stableTokensBorrowingInterestRate;
-    }
-
-    */
 
     IConfig.UsdPoolConfigParams memory UsdParams;
 
@@ -514,9 +538,9 @@ abstract contract Setup is BaseSetup {
     address ALICE = hevm.addr(0x02); // 0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF  
     address JAKE = hevm.addr(0x03); // 0x6813Eb9362372EEF6200f3b1dbC3f819671cBA69  
     
-    hevm.label(BOB, "Bob");
-    hevm.label(ALICE, "Alice");
-    hevm.label(JAKE, "Jake");
+    // hevm.label(BOB, "Bob");
+    // hevm.label(ALICE, "Alice");
+    // hevm.label(JAKE, "Jake");
 
     USERS = new address[](3);
     USERS[0] = BOB;

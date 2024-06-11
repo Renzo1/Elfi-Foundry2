@@ -9,10 +9,10 @@ library RoleAccessControl {
 
     bytes32 internal constant ACCESS_CONTROL_KEY = keccak256(abi.encode("xyz.elfi.storage.AccessControl"));
 
-    bytes32 constant ROLE_ADMIN = "ADMIN";
-    bytes32 constant ROLE_UPGRADE = "UPGRADE";
-    bytes32 constant ROLE_CONFIG = "CONFIG";
-    bytes32 constant ROLE_KEEPER = "KEEPER";
+    bytes32 internal constant ROLE_ADMIN = "ADMIN";
+    bytes32 internal constant ROLE_UPGRADE = "UPGRADE";
+    bytes32 internal constant ROLE_CONFIG = "CONFIG";
+    bytes32 internal constant ROLE_KEEPER = "KEEPER";
 
     error InvalidRoleAccess(address account, bytes32 role);
     error InvalidRoleName(bytes32 role);

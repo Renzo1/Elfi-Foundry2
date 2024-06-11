@@ -9,17 +9,17 @@ library AppStorage {
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
 
-    bytes32 public constant COMMON_CONFIG = keccak256(abi.encode("COMMON_CONFIG"));
-    bytes32 public constant CHAIN_CONFIG = keccak256(abi.encode("CHAIN_CONFIG"));
-    bytes32 public constant STAKE_CONFIG = keccak256(abi.encode("STAKE_CONFIG"));
-    bytes32 public constant TRADE_CONFIG = keccak256(abi.encode("TRADE_CONFIG"));
-    bytes32 public constant TRADE_TOKEN_CONFIG = keccak256(abi.encode("TRADE_TOKEN_CONFIG"));
-    bytes32 public constant USD_POOL_CONFIG = keccak256(abi.encode("USD_POOL_CONFIG"));
-    bytes32 public constant LP_POOL_CONFIG = keccak256(abi.encode("LP_POOL_CONFIG"));
-    bytes32 public constant SYMBOL_CONFIG = keccak256(abi.encode("SYMBOL_CONFIG"));
-    bytes32 public constant VAULT_CONFIG = keccak256(abi.encode("VAULT_CONFIG"));
+    bytes32 internal constant COMMON_CONFIG = keccak256(abi.encode("COMMON_CONFIG"));
+    bytes32 internal constant CHAIN_CONFIG = keccak256(abi.encode("CHAIN_CONFIG"));
+    bytes32 internal constant STAKE_CONFIG = keccak256(abi.encode("STAKE_CONFIG"));
+    bytes32 internal constant TRADE_CONFIG = keccak256(abi.encode("TRADE_CONFIG"));
+    bytes32 internal constant TRADE_TOKEN_CONFIG = keccak256(abi.encode("TRADE_TOKEN_CONFIG"));
+    bytes32 internal constant USD_POOL_CONFIG = keccak256(abi.encode("USD_POOL_CONFIG"));
+    bytes32 internal constant LP_POOL_CONFIG = keccak256(abi.encode("LP_POOL_CONFIG"));
+    bytes32 internal constant SYMBOL_CONFIG = keccak256(abi.encode("SYMBOL_CONFIG"));
+    bytes32 internal constant VAULT_CONFIG = keccak256(abi.encode("VAULT_CONFIG"));
 
-    bytes32 public constant REFERRAL = keccak256(abi.encode("REFERRAL"));
+    bytes32 internal constant REFERRAL = keccak256(abi.encode("REFERRAL"));
 
     struct Props {
         mapping(bytes32 => uint256) uintValues;

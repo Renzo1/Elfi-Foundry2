@@ -11,9 +11,9 @@ library CancelOrderProcess {
     using Order for Order.Props;
     using Account for Account.Props;
 
-    bytes32 public constant CANCEL_ORDER_LIQUIDATION = bytes32(abi.encode("CANCEL_WITH_LIQUIDATION"));
-    bytes32 public constant CANCEL_ORDER_AUTO_REDUCE = bytes32(abi.encode("CANCEL_WITH_AUTO_REDUCE"));
-    bytes32 public constant CANCEL_ORDER_POSITION_CLOSE = bytes32(abi.encode("CANCEL_WITH_POSITION_CLOSE"));
+    bytes32 internal constant CANCEL_ORDER_LIQUIDATION = bytes32(abi.encode("CANCEL_WITH_LIQUIDATION"));
+    bytes32 internal constant CANCEL_ORDER_AUTO_REDUCE = bytes32(abi.encode("CANCEL_WITH_AUTO_REDUCE"));
+    bytes32 internal constant CANCEL_ORDER_POSITION_CLOSE = bytes32(abi.encode("CANCEL_WITH_POSITION_CLOSE"));
 
     event CancelOrderEvent(uint256 indexed orderId, Order.OrderInfo data, bytes32 reasonCode);
 

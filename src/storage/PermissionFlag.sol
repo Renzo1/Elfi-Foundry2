@@ -7,12 +7,12 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 // @audit change all functions to internal and param location to memory for easy testing
 library PermissionFlag {
 
-    bytes32 public constant ALL_PERMISSION_FLAG = keccak256("ALL_PERMISSION_FLAG");
-    bytes32 public constant MINT_PERMISSION_FLAG = keccak256("MINT_PERMISSION_FLAG");
-    bytes32 public constant BURN_PERMISSION_FLAG = keccak256("BURN_PERMISSION_FLAG");
-    bytes32 public constant DEPOSIT_PERMISSION_FLAG = keccak256("DEPOSIT_PERMISSION_FLAG");
-    bytes32 public constant WITHDRAW_PERMISSION_FLAG = keccak256("WITHDRAW_PERMISSION_FLAG");
-    bytes32 public constant ORDER_PERMISSION_FLAG = keccak256("ORDER_PERMISSION_FLAG");
+    bytes32 internal constant ALL_PERMISSION_FLAG = keccak256("ALL_PERMISSION_FLAG");
+    bytes32 internal constant MINT_PERMISSION_FLAG = keccak256("MINT_PERMISSION_FLAG");
+    bytes32 internal constant BURN_PERMISSION_FLAG = keccak256("BURN_PERMISSION_FLAG");
+    bytes32 internal constant DEPOSIT_PERMISSION_FLAG = keccak256("DEPOSIT_PERMISSION_FLAG");
+    bytes32 internal constant WITHDRAW_PERMISSION_FLAG = keccak256("WITHDRAW_PERMISSION_FLAG");
+    bytes32 internal constant ORDER_PERMISSION_FLAG = keccak256("ORDER_PERMISSION_FLAG");
 
     using EnumerableSet for EnumerableSet.AddressSet;
 

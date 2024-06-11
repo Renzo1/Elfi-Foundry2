@@ -3,7 +3,7 @@ pragma solidity ^0.8.18;
 
 // @audit change all functions to internal and param location to memory for easy testing
 library Order {
-    bytes32 constant ORDER = keccak256(abi.encode("xyz.elfi.storage.Order"));
+    bytes32 internal constant ORDER = keccak256(abi.encode("xyz.elfi.storage.Order"));
 
     enum PositionSide {
         NONE,

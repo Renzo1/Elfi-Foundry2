@@ -15,15 +15,15 @@ library CalUtils {
     using SignedMath for int256;
     using SignedSafeMath for int256;
 
-    uint256 public constant SMALL_RATE_PRECISION = 10 ** 18;
+    uint256 internal constant SMALL_RATE_PRECISION = 10 ** 18;
 
-    uint256 public constant RATE_PRECISION = 100000;
+    uint256 internal constant RATE_PRECISION = 100000;
 
-    uint256 public constant PRICE_PRECISION = 10 ** 8;
+    uint256 internal constant PRICE_PRECISION = 10 ** 8;
 
-    uint256 public constant PRICE_TO_WEI = 10 ** 10;
+    uint256 internal constant PRICE_TO_WEI = 10 ** 10;
 
-    uint256 public constant USD_PRECISION = 10 ** 18;
+    uint256 internal constant USD_PRECISION = 10 ** 18;
 
     function mul(uint256 a, uint256 b) internal pure returns (uint256) {
         return a.mul(b);
