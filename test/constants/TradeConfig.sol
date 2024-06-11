@@ -21,8 +21,8 @@ library TradeConfig {
   
     uint256 internal constant ETH_INITIAL_ALLOWANCE = 100e18;
     uint256 internal constant USDC_INITIAL_BALANCE = 100_000;
-    uint256 internal constant WETH_INITIAL_ALLOWANCE = 100;
-    uint256 internal constant WBTC_INITIAL_ALLOWANCE = 10;
+    uint256 internal constant WETH_INITIAL_ALLOWANCE = 10_000;
+    uint256 internal constant WBTC_INITIAL_ALLOWANCE = 10_000;
 
     
     function getMinOrderMarginUsd() internal pure returns (uint256) {

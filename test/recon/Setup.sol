@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import {BaseSetup} from "@chimera/BaseSetup.sol";
 import {MockAggregatorV3} from "../mocks/MockAggregatorV3.sol";
+import {EchidnaUtils} from "../utils/EchidnaUtils.sol";
 import "../constants/ChainConfig.sol";
 import "../constants/MarketConfig.sol";
 import "../constants/RolesAndPools.sol";
@@ -78,6 +79,7 @@ abstract contract Setup is BaseSetup {
   address[] internal stakedTokens;
 
   address[] internal USERS;
+  address public keeper = address(this);
 
   FacetDeployer facetDeployer;
 
@@ -126,8 +128,8 @@ abstract contract Setup is BaseSetup {
 
     tokens = new address[](3);
     tokens[0] = address(weth); 
-    tokens[1] = address(usdc); 
     tokens[2] = address(wbtc);
+    tokens[1] = address(usdc);
 
     /// Deploy Vaults
     tradeVault = new TradeVault(address(this));
@@ -551,9 +553,9 @@ abstract contract Setup is BaseSetup {
       address user = USERS[i];
 
       hevm.deal(user, TradeConfig.getEthInitialAllowance()); // Sets the eth balance of user to amt
-      usdc.mint(user, TradeConfig.getUsdcInitialBalance() * (10 ** usdc.decimals())); // Sets the usdc balance of user to amt
       weth.mint(user, TradeConfig.getWethInitialAllowance() * (10 ** weth.decimals())); // Sets the weth balance of user to amt
       wbtc.mint(user, TradeConfig.getWbtcInitialAllowance() * (10 ** wbtc.decimals())); // Sets the wbtc balance of user to amt
+      usdc.mint(user, TradeConfig.getUsdcInitialBalance() * (10 ** usdc.decimals())); // Sets the usdc balance of user to amt
 
       for (uint8 j = 0; j < tokens.length; j++) {
           hevm.prank(user);
@@ -565,18 +567,18 @@ abstract contract Setup is BaseSetup {
         IERC20(stakedTokens[j]).approve(diamondAddress, type(uint256).max);
       }
     }
-
-    assert(usdc.balanceOf(address(BOB)) == TradeConfig.getUsdcInitialBalance() * (10 ** usdc.decimals()));
-    assert(usdc.balanceOf(address(ALICE)) == TradeConfig.getUsdcInitialBalance() * (10 ** usdc.decimals()));
-    assert(usdc.balanceOf(address(JAKE)) == TradeConfig.getUsdcInitialBalance() * (10 ** usdc.decimals()));
-
+    
     assert(weth.balanceOf(address(BOB)) == TradeConfig.getWethInitialAllowance() * (10 ** weth.decimals()));
     assert(weth.balanceOf(address(ALICE)) == TradeConfig.getWethInitialAllowance() * (10 ** weth.decimals()));
     assert(weth.balanceOf(address(JAKE)) == TradeConfig.getWethInitialAllowance() * (10 ** weth.decimals()));
-
+    
     assert(wbtc.balanceOf(address(BOB)) == TradeConfig.getWbtcInitialAllowance() * (10 ** wbtc.decimals()));
     assert(wbtc.balanceOf(address(ALICE)) == TradeConfig.getWbtcInitialAllowance() * (10 ** wbtc.decimals()));
     assert(wbtc.balanceOf(address(JAKE)) == TradeConfig.getWbtcInitialAllowance() * (10 ** wbtc.decimals()));
+    
+    assert(usdc.balanceOf(address(BOB)) == TradeConfig.getUsdcInitialBalance() * (10 ** usdc.decimals()));
+    assert(usdc.balanceOf(address(ALICE)) == TradeConfig.getUsdcInitialBalance() * (10 ** usdc.decimals()));
+    assert(usdc.balanceOf(address(JAKE)) == TradeConfig.getUsdcInitialBalance() * (10 ** usdc.decimals()));
 
     assert(BOB.balance == TradeConfig.getEthInitialAllowance());
     assert(ALICE.balance == TradeConfig.getEthInitialAllowance());
@@ -586,13 +588,13 @@ abstract contract Setup is BaseSetup {
 
     ///////// OracleProcess /////////
 
-    function getOracleParam(uint16 _answer) internal view returns(OracleProcess.OracleParam[] memory) {
+    function getOracleParam(uint256 _answer) internal view returns(OracleProcess.OracleParam[] memory) {
 
       OracleProcess.OracleParam[] memory oracles;
         
       // use clamp to prevent overflow
-      uint256 wethPrice = uint256(((_answer % 5_000) + 900) * 1e8);
-      uint256 btcPrice = uint256(((_answer % 40_000) + 20_000) * 1e8);
+      uint256 wethPrice = EchidnaUtils.clampBetween(_answer, 900, 5_000) * 1e8;
+      uint256 btcPrice = EchidnaUtils.clampBetween(_answer, 10_000, 100_000) * 1e8;
       uint256 usdcPrice = 1e8;
 
       //   address[] memory tokens = new address[](2);
@@ -619,5 +621,7 @@ abstract contract Setup is BaseSetup {
 
       return oracles;
     }
+
+    receive() external payable {}
 
 }

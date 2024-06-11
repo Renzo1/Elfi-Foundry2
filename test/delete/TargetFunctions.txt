@@ -255,7 +255,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     /////////// executeOrder ///////////
 
-    function executeOrder(uint256 _answer) public {
+    function executeOrder(uint16 _answer) public {
         // Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         
@@ -326,7 +326,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     }
 
     /////////// cancelOrder ///////////
-    function orderFacet_cancelOrder(uint256 _requestIndex, uint256 _answer) public {
+    function orderFacet_cancelOrder(uint8 _requestIndex, uint16 _answer) public {
         /// Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         __before(msg.sender, oracles); // Update the contract state tracker
@@ -353,7 +353,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         }
 
         /// select a random request from the list
-        uint256 requestIndex = EchidnaUtils.clampBetween(_requestIndex, 0, openRequests.length - 1);
+        uint256 requestIndex = EchidnaUtils.clampBetween(uint256(_requestIndex), 0, openRequests.length - 1);
         OrderExecutions memory request = openRequests[requestIndex];
         requestId = request.orderId;
 
@@ -381,7 +381,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     }
 
     /////////// executeWithdraw ///////////
-    function accountFacet_executeWithdraw(uint256 _answer) public{
+    function accountFacet_executeWithdraw(uint16 _answer) public{
         // Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         
@@ -450,7 +450,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
   
     /////////// cancelWithdraw ///////////
 
-    function accountFacet_cancelWithdraw(uint256 _requestIndex, uint256 _answer) public {
+    function accountFacet_cancelWithdraw(uint8 _requestIndex, uint16 _answer) public {
         /// Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         __before(msg.sender, oracles); // Update the contract state tracker
@@ -477,7 +477,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         }
 
         /// select a random request from the list
-        uint256 requestIndex = EchidnaUtils.clampBetween(_requestIndex, 0, openRequests.length - 1);
+        uint256 requestIndex = EchidnaUtils.clampBetween(uint256(_requestIndex), 0, openRequests.length - 1);
         AccountWithdrawExecutions memory request = openRequests[requestIndex];
         requestId = request.requestId;
 
@@ -506,7 +506,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
 
     /////////// executeUpdatePositionMarginRequest ///////////
-    function positionFacet_executeUpdatePositionMarginRequest(uint256 _answer) public{
+    function positionFacet_executeUpdatePositionMarginRequest(uint16 _answer) public{
         // Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         
@@ -575,7 +575,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
 
     /////////// cancelUpdatePositionMarginRequest ///////////
-    function positionFacet_cancelUpdatePositionMarginRequest(uint256 _requestIndex, uint256 _answer) public {
+    function positionFacet_cancelUpdatePositionMarginRequest(uint8 _requestIndex, uint16 _answer) public {
         /// Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         __before(msg.sender, oracles); // Update the contract state tracker
@@ -602,7 +602,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         }
 
         /// select a random request from the list
-        uint256 requestIndex = EchidnaUtils.clampBetween(_requestIndex, 0, openRequests.length - 1);
+        uint256 requestIndex = EchidnaUtils.clampBetween(uint256(_requestIndex), 0, openRequests.length - 1);
         PositionMarginRequests memory request = openRequests[requestIndex];
         requestId = request.requestId;
 
@@ -640,7 +640,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
       }
 
     /////////// executeUpdateLeverageRequest ///////////
-    function positionFacet_executeUpdateLeverageRequest(uint256 _answer) public{
+    function positionFacet_executeUpdateLeverageRequest(uint16 _answer) public{
         // Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         
@@ -709,7 +709,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
       
   
     /////////// cancelUpdateLeverageRequest ///////////
-    function positionFacet_cancelUpdateLeverageRequest(uint256 _requestIndex, uint256 _answer) public {
+    function positionFacet_cancelUpdateLeverageRequest(uint8 _requestIndex, uint16 _answer) public {
         /// Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         __before(msg.sender, oracles); // Update the contract state tracker
@@ -736,7 +736,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         }
 
         /// select a random request from the list
-        uint256 requestIndex = EchidnaUtils.clampBetween(_requestIndex, 0, openRequests.length - 1);
+        uint256 requestIndex = EchidnaUtils.clampBetween(uint256(_requestIndex), 0, openRequests.length - 1);
         PositionLeverageRequests memory request = openRequests[requestIndex];
         requestId = request.requestId;
 
@@ -805,17 +805,17 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     // profits and losses, the Keeper will sort the existing positions based on the profit rate and automatically 
     // reduce the positions with higher profit rates until the risk rate is controllable.
 
-    modifier callAuto(uint256 _answer) {
+    modifier callAuto(uint16 _answer) {
         _;
         // if condition for autoReducePositions is met
         // call autoReducePositions
     }
     
-    function sortPositions(uint256 _answer) internal view returns (bytes32[] memory) {
+    function sortPositions(uint16 _answer) internal view returns (bytes32[] memory) {
         
     }
 
-    function positionFacet_autoReducePositions(uint256 _answer) internal {
+    function positionFacet_autoReducePositions(uint16 _answer) internal {
         /// Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         
@@ -854,7 +854,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     
     /////////// executeMintStakeToken ///////////
 
-    function stakeFacet_executeMintStakeToken(uint256 _answer) public{
+    function stakeFacet_executeMintStakeToken(uint16 _answer) public{
         // Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         
@@ -930,7 +930,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     /////////// cancelMintStakeToken ///////////
 
-    function stakeFacet_cancelMintStakeToken(uint256 _requestIndex, uint256 _answer) public {
+    function stakeFacet_cancelMintStakeToken(uint8 _requestIndex, uint16 _answer) public {
         /// Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         __before(msg.sender, oracles); // Update the contract state tracker
@@ -957,7 +957,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         }
 
         /// select a random request from the list
-        uint256 requestIndex = EchidnaUtils.clampBetween(_requestIndex, 0, openRequests.length - 1);
+        uint256 requestIndex = EchidnaUtils.clampBetween(uint256(_requestIndex), 0, openRequests.length - 1);
         MintStakeRequests memory request = openRequests[requestIndex];
         requestId = request.requestId;
 
@@ -998,7 +998,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     }
 
     /////////// executeRedeemStakeToken ///////////
-    function stakeFacet_executeRedeemStakeToken(uint256 _answer) public{
+    function stakeFacet_executeRedeemStakeToken(uint16 _answer) public{
             // Get oracles
             OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
             
@@ -1061,7 +1061,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     /////////// cancelRedeemStakeToken ///////////
 
-    function stakeFacet_cancelRedeemStakeToken(uint256 _requestIndex, uint256 _answer) public {
+    function stakeFacet_cancelRedeemStakeToken(uint8 _requestIndex, uint16 _answer) public {
         /// Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         __before(msg.sender, oracles); // Update the contract state tracker
@@ -1088,7 +1088,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         }
 
         /// select a random request from the list
-        uint256 requestIndex = EchidnaUtils.clampBetween(_requestIndex, 0, openRequests.length - 1);
+        uint256 requestIndex = EchidnaUtils.clampBetween(uint256(_requestIndex), 0, openRequests.length - 1);
         RedeemStakeTokenRequests memory request = openRequests[requestIndex];
         requestId = request.requestId;
 
@@ -1141,22 +1141,22 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     ////////// AccountFacet //////////
     
-    /// deposit ✅
-    function accountFacet_deposit(uint256 _tokenIndex, uint256 _amount, bool _sendEth, bool _onlyEth, uint256 _ethValue, uint256 _answer) public{
+    /// deposit
+    function accountFacet_deposit(uint8 _tokenIndex, uint96 _amount, bool _sendEth, bool _onlyEth, uint96 _ethValue, uint16 _answer) public{
         // Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         __before(msg.sender, oracles); // Update the contract state tracker
 
         // select a random token
-        uint256 tokenIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1);
+        uint256 tokenIndex = EchidnaUtils.clampBetween(uint256(_tokenIndex), 0, tokens.length - 1);
         address token = tokens[tokenIndex]; // select a random token
 
-        uint256 amount = EchidnaUtils.clampBetween(_amount, 0, IERC20(token).balanceOf(msg.sender));
+        uint256 amount = EchidnaUtils.clampBetween(uint256(_amount), 0, IERC20(token).balanceOf(msg.sender));
         
         uint256 ethValue;
         // _sendEth = false; // toggle this on for some jobs
         if(_sendEth){
-            ethValue = EchidnaUtils.clampBetween(_ethValue, 0, msg.sender.balance);
+            ethValue = EchidnaUtils.clampBetween(uint256(_ethValue), 0, msg.sender.balance);
             amount = ethValue;
 
             if (_onlyEth){ // to successfully deposit only eth
@@ -1200,23 +1200,23 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     }
 
 
-    /// createWithdrawRequest ✅
-    function accountFacet_createWithdrawRequest(uint256 _tokenIndex, uint256 _amount, uint256 _answer) public {
+    /// createWithdrawRequest
+    function accountFacet_createWithdrawRequest(uint8 _tokenIndex, uint96 _amount, uint16 _answer) public {
         // Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         __before(msg.sender, oracles); // Update the contract state tracker
 
         // select a random token
-        uint256 tokenIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1);
+        uint256 tokenIndex = EchidnaUtils.clampBetween(uint256(_tokenIndex), 0, tokens.length - 1);
         address token = tokens[tokenIndex]; // select a random token
         uint256 amount;
 
         if(token == address(usdc)){
-            amount = EchidnaUtils.clampBetween(_amount, 0, _before.portfolioVaultUsdcBalance);
+            amount = EchidnaUtils.clampBetween(uint256(_amount), 0, _before.portfolioVaultUsdcBalance);
         }else if(token == address(weth)){
-            amount = EchidnaUtils.clampBetween(_amount, 0, _before.portfolioVaultWethBalance);
+            amount = EchidnaUtils.clampBetween(uint256(_amount), 0, _before.portfolioVaultWethBalance);
         }else{ // wbtc
-            amount = EchidnaUtils.clampBetween(_amount, 0, _before.portfolioVaultBtcBalance);
+            amount = EchidnaUtils.clampBetween(uint256(_amount), 0, _before.portfolioVaultBtcBalance);
         }
 
         // vm.prank(msg.sender); // prolly redundant - can't be too safe ;
@@ -1240,7 +1240,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     /*
     /// batchUpdateAccountToken
     function accountFacet_batchUpdateAccountToken(
-        uint256 _answer, 
+        uint16 _answer, 
         uint96 _changedUsdc, 
         uint96 _changedWeth, 
         uint96 _changedBtc, 
@@ -1356,18 +1356,18 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     /// createOrderRequest
     function orderFacet_createOrderRequest(
-        uint256 _answer, 
+        uint16 _answer, 
         bool _isCrossMargin, 
         bool _isNativeToken,
-        uint256 _orderSide, 
-        uint256 _positionSide,
-        uint256 _orderType,
-        uint256 _stopType,
-        uint256 _marginTokenIndex,
-        uint256 _qty,
-        uint256 _orderMargin,
-        uint256 _leverage,
-        uint256 _triggerPrice
+        uint8 _orderSide, 
+        uint8 _positionSide,
+        uint8 _orderType,
+        uint8 _stopType,
+        uint8 _marginTokenIndex,
+        uint96 _qty,
+        uint96 _orderMargin,
+        uint96 _leverage,
+        uint64 _triggerPrice
     ) public {
         // Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
@@ -1381,7 +1381,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
 
 
-        orderParamsHelper.orderSide = EchidnaUtils.clampBetween(_orderSide, 0, 2);
+        orderParamsHelper.orderSide = EchidnaUtils.clampBetween(uint256(_orderSide), 0, 2);
         if(orderParamsHelper.orderSide == 0){
             params.orderSide = Order.Side.NONE;
         }else if(orderParamsHelper.orderSide == 1){
@@ -1390,7 +1390,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             params.orderSide = Order.Side.SHORT;
         }
 
-        uint256 positionSide = EchidnaUtils.clampBetween(_positionSide, 0, 2);
+        uint256 positionSide = EchidnaUtils.clampBetween(uint256(_positionSide), 0, 2);
         if(positionSide == 0){
             params.posSide = Order.PositionSide.NONE;
         }else if(positionSide == 1){
@@ -1399,7 +1399,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             params.posSide = Order.PositionSide.DECREASE;
         }
 
-        orderParamsHelper.orderType = EchidnaUtils.clampBetween(_orderType, 0, 3);
+        orderParamsHelper.orderType = EchidnaUtils.clampBetween(uint256(_orderType), 0, 3);
         if(orderParamsHelper.orderType == 0){
             params.orderType = Order.Type.NONE;
         }else if(orderParamsHelper.orderType == 1){
@@ -1410,7 +1410,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             params.orderType = Order.Type.STOP;
         }
 
-        orderParamsHelper.stopType = EchidnaUtils.clampBetween(_stopType, 0, 2);
+        orderParamsHelper.stopType = EchidnaUtils.clampBetween(uint256(_stopType), 0, 2);
         if(orderParamsHelper.stopType == 0){
             params.stopType = Order.StopType.NONE;
         }else if(orderParamsHelper.stopType == 1){
@@ -1419,7 +1419,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             params.stopType = Order.StopType.TAKE_PROFIT;
         }
 
-        orderParamsHelper.tokenIndex = EchidnaUtils.clampBetween(_marginTokenIndex, 0, 2);
+        orderParamsHelper.tokenIndex = EchidnaUtils.clampBetween(uint256(_marginTokenIndex), 0, 2);
         orderParamsHelper.token = tokens[orderParamsHelper.tokenIndex];
         params.marginToken = orderParamsHelper.token;
 
@@ -1435,19 +1435,19 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         for(uint256 i = 0; i < oracles.length; i++) {
             if(oracles[i].token == params.marginToken) {
-                params.triggerPrice = EchidnaUtils.clampBetween(_triggerPrice, uint256(oracles[i].maxPrice) / 5, uint256(oracles[i].maxPrice) * 5); 
+                params.triggerPrice = EchidnaUtils.clampBetween(uint256(_triggerPrice), uint256(oracles[i].maxPrice) / 5, uint256(oracles[i].maxPrice) * 5); 
                 params.acceptablePrice = uint256(oracles[i].maxPrice); // TODO revisit this - bounds on acceptablePrice
             }
         }
     
         
-        orderParamsHelper.tokenMargin = EchidnaUtils.clampBetween(_orderMargin, 0, IERC20(orderParamsHelper.token).balanceOf(msg.sender));
-        orderParamsHelper.ethMargin = EchidnaUtils.clampBetween(_orderMargin, 0, msg.sender.balance);
+        orderParamsHelper.tokenMargin = EchidnaUtils.clampBetween(uint256(_orderMargin), 0, IERC20(orderParamsHelper.token).balanceOf(msg.sender));
+        orderParamsHelper.ethMargin = EchidnaUtils.clampBetween(uint256(_orderMargin), 0, msg.sender.balance);
         
         params.orderMargin = orderParamsHelper.tokenMargin;
-        params.qty = EchidnaUtils.clampBetween(_qty, 0, (_before.portfolioVaultUsdcBalance + _before.tradeVaultUsdcBalance + _before.lpVaultUsdcBalance) * 100);
+        params.qty = EchidnaUtils.clampBetween(uint256(_qty), 0, (_before.portfolioVaultUsdcBalance + _before.tradeVaultUsdcBalance + _before.lpVaultUsdcBalance) * 100);
         // Consider a smaller bound on leverage to reduce revert cases that occurs when attempting to update a position with an unmatching leverage
-        params.leverage = EchidnaUtils.clampBetween(_leverage, 0, MarketConfig.getMaxLeverage() * 2);
+        params.leverage = EchidnaUtils.clampBetween(uint256(_leverage), 0, MarketConfig.getMaxLeverage() * 2);
         params.executionFee = (ChainConfig.getPlaceIncreaseOrderGasFeeLimit() * tx.gasprice) + 10_000; // extra 10k to account for margin of error
         params.placeTime = block.timestamp;
 
@@ -1494,23 +1494,16 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         }
     }
 
-
-    struct BatchCreateOrderParamsHelper{
-        bool _isCrossMargin;
-        uint256 _orderSide;
-        uint256 _orderType;
-        uint256 _stopType;
-        uint256 _marginTokenIndex;
-        uint256 _orderMargin;
-        uint256 _qty;
-        uint256 _leverage;
-        uint256 _triggerPrice;
-    }
-
     function _createBatchOrders(
         uint256 _numOrders, 
         OracleProcess.OracleParam[] memory oracles, 
-        BatchCreateOrderParamsHelper memory paramsHelper
+        bool _isCrossMargin, 
+        uint8 _orderSide,
+        uint8 _orderType,
+        uint8 _stopType,
+        uint8 _marginTokenIndex,
+        uint96 _orderMargin,
+        uint64 _triggerPrice
     ) internal returns(IOrder.PlaceOrderParams[] memory orderParams, uint256 totalEthValue) {
         /* Note 
         - You can't add INCREASE posSide to the batch, else it reverts --> 
@@ -1532,10 +1525,10 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         for (uint256 i = 0; i < _numOrders; i++) {
             
-            params.isCrossMargin = paramsHelper._isCrossMargin;
+            params.isCrossMargin = _isCrossMargin;
             params.isNativeToken = i % 2 == 0 ? true : false;
     
-            orderParamsHelper.orderSide = EchidnaUtils.clampBetween(paramsHelper._orderSide, 0, 2);
+            orderParamsHelper.orderSide = EchidnaUtils.clampBetween(uint256(_orderSide), 0, 2);
             if(orderParamsHelper.orderSide == 0){
                 params.orderSide = Order.Side.NONE;
             }else if(orderParamsHelper.orderSide == 1){
@@ -1546,7 +1539,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     
             params.posSide = i % 2 == 0 ? Order.PositionSide.DECREASE : Order.PositionSide.NONE;
     
-            orderParamsHelper.orderType = EchidnaUtils.clampBetween(paramsHelper._orderType, 0, 2);
+            orderParamsHelper.orderType = EchidnaUtils.clampBetween(uint256(_orderType), 0, 2);
             if(orderParamsHelper.orderType == 0){
                 params.orderType = Order.Type.MARKET;
             }else if(orderParamsHelper.orderType == 1){
@@ -1555,7 +1548,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
                 params.orderType = Order.Type.LIMIT;
             }
     
-            orderParamsHelper.stopType = EchidnaUtils.clampBetween(paramsHelper._stopType, 0, 2);
+            orderParamsHelper.stopType = EchidnaUtils.clampBetween(uint256(_stopType), 0, 2);
             if(orderParamsHelper.stopType == 0){
                 params.stopType = Order.StopType.NONE;
             }else if(orderParamsHelper.stopType == 1){
@@ -1568,7 +1561,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             orderParamsHelper.tokenAddresses[0] = address(weth);
             orderParamsHelper.tokenAddresses[1] = address(wbtc);
     
-            orderParamsHelper.tokenIndex = EchidnaUtils.clampBetween(paramsHelper._marginTokenIndex, 0, 1);
+            orderParamsHelper.tokenIndex = EchidnaUtils.clampBetween(uint256(_marginTokenIndex), 0, 1);
             orderParamsHelper.token = orderParamsHelper.tokenAddresses[orderParamsHelper.tokenIndex];
             params.marginToken = orderParamsHelper.token;
     
@@ -1581,18 +1574,18 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             for(uint256 j = 0; j < oracles.length; i++) {
                 if(oracles[j].token == params.marginToken) {
                     orderParamsHelper.maxPrice = oracles[j].maxPrice;
-                    params.triggerPrice = EchidnaUtils.clampBetween(paramsHelper._triggerPrice, uint256(orderParamsHelper.maxPrice) / 5, uint256(orderParamsHelper.maxPrice) * 10); 
+                    params.triggerPrice = EchidnaUtils.clampBetween(uint256(_triggerPrice), uint256(orderParamsHelper.maxPrice) / 5, uint256(orderParamsHelper.maxPrice) * 10); 
                 }
             }
         
             params.acceptablePrice = params.triggerPrice;
             
-            orderParamsHelper.tokenMargin = EchidnaUtils.clampBetween(paramsHelper._orderMargin, 0, IERC20(orderParamsHelper.token).balanceOf(msg.sender) / 2);
-            orderParamsHelper.ethMargin = EchidnaUtils.clampBetween(paramsHelper._orderMargin, 0, msg.sender.balance);
+            orderParamsHelper.tokenMargin = EchidnaUtils.clampBetween(uint256(_orderMargin), 0, IERC20(orderParamsHelper.token).balanceOf(msg.sender) / 2);
+            orderParamsHelper.ethMargin = EchidnaUtils.clampBetween(uint256(_orderMargin), 0, msg.sender.balance);
             
             params.orderMargin = orderParamsHelper.tokenMargin;
-            params.qty = EchidnaUtils.clampBetween(paramsHelper._qty, 0, (_before.portfolioVaultUsdcBalance + _before.tradeVaultUsdcBalance + _before.lpVaultUsdcBalance) * 100);
-            params.leverage = EchidnaUtils.clampBetween(paramsHelper._leverage, 0, MarketConfig.getMaxLeverage() * 2);
+            params.qty = EchidnaUtils.clampBetween(uint256(_orderMargin + 66), 0, (_before.portfolioVaultUsdcBalance + _before.tradeVaultUsdcBalance + _before.lpVaultUsdcBalance) * 100);
+            params.leverage = EchidnaUtils.clampBetween(uint256(_orderMargin + 77), 0, MarketConfig.getMaxLeverage() * 2);
             params.executionFee = (ChainConfig.getPlaceIncreaseOrderGasFeeLimit() * tx.gasprice) + 10_000; // extra 10k to account for margin of error
             params.placeTime = block.timestamp;
     
@@ -1610,20 +1603,17 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         }
     }
 
-
     /// batchCreateOrderRequest
     function orderFacet_batchCreateOrderRequest(
-        uint256 _answer,
-        uint256 _numOrders, 
+        uint16 _answer,
+        uint8 _numOrders, 
         bool _isCrossMargin, 
-        uint256 _orderSide, 
-        uint256 _orderType, 
-        uint256 _stopType,
-        uint256 _marginTokenIndex,
-        uint256 _orderMargin,
-        uint256 _qty,
-        uint256 _leverage,
-        uint256 _triggerPrice
+        uint8 _orderSide, 
+        uint8 _orderType, 
+        uint8 _stopType,
+        uint8 _marginTokenIndex,
+        uint96 _orderMargin,
+        uint64 _triggerPrice
     ) public {
         // Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
@@ -1631,23 +1621,12 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         IOrder.PlaceOrderParams[] memory params;
         OrderParamsHelper memory orderParamsHelper;
-        BatchCreateOrderParamsHelper memory paramsHelper;
-        
+
         // keep the numOrder value very low to reduce the chance of tx reverts
-        orderParamsHelper.numOrders =  EchidnaUtils.clampBetween(_numOrders, 1, 5);
-        
-        paramsHelper._isCrossMargin = _isCrossMargin;
-        paramsHelper._orderSide = _orderSide;
-        paramsHelper._orderType = _orderType;
-        paramsHelper._stopType = _stopType;
-        paramsHelper._marginTokenIndex = _marginTokenIndex;
-        paramsHelper._orderMargin = _orderMargin;
-        paramsHelper._qty = _qty;
-        paramsHelper._leverage = _leverage;
-        paramsHelper._triggerPrice = _triggerPrice;
-        
-        (params, orderParamsHelper.ethValue) = _createBatchOrders(orderParamsHelper.numOrders, oracles, paramsHelper);
-        
+        orderParamsHelper.numOrders =  EchidnaUtils.clampBetween(uint256(_numOrders), 1, 2);
+
+        (params, orderParamsHelper.ethValue) = _createBatchOrders(orderParamsHelper.numOrders, oracles, _isCrossMargin, _orderSide, _orderType, _stopType, _marginTokenIndex, _orderMargin, _triggerPrice);
+
         try diamondOrderFacet.batchCreateOrderRequest{value: orderParamsHelper.ethValue}(params)returns(uint256[] memory orderIds) {
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -1676,7 +1655,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     ////////// PositionFacet //////////
 
     /// createUpdatePositionMarginRequest
-    function positionFacet_createUpdatePositionMarginRequest(uint256 _answer, bool _isAdd, bool _isNativeToken, uint256 _tokenIndex, uint256 _updateMarginAmount) public {
+    function positionFacet_createUpdatePositionMarginRequest(uint16 _answer, bool _isAdd, bool _isNativeToken, uint8 _tokenIndex, uint96 _updateMarginAmount) public {
         // Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         __before(msg.sender, oracles); // Update the contract state tracker
@@ -1690,17 +1669,17 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         PositionParamsHelper memory positionParamsHelper;
         IPosition.UpdatePositionMarginParams memory params;
 
-        positionParamsHelper.keyIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, _before.positionKey.length - 1);
+        positionParamsHelper.keyIndex = EchidnaUtils.clampBetween(uint256(_tokenIndex), 0, _before.positionKey.length - 1);
 
         params.positionKey = _before.positionKey[positionParamsHelper.keyIndex];
         params.isAdd = _isAdd;
         params.isNativeToken = _isNativeToken;
 
-        positionParamsHelper.tokenIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1);
+        positionParamsHelper.tokenIndex = EchidnaUtils.clampBetween(uint256(_tokenIndex), 0, tokens.length - 1);
         positionParamsHelper.token = tokens[positionParamsHelper.tokenIndex]; // select a random token
         params.marginToken = positionParamsHelper.token;
 
-        positionParamsHelper.updateMarginAmount = EchidnaUtils.clampBetween(_updateMarginAmount, 0, IERC20(positionParamsHelper.token).balanceOf(msg.sender));
+        positionParamsHelper.updateMarginAmount = EchidnaUtils.clampBetween(uint256(_updateMarginAmount), 0, IERC20(positionParamsHelper.token).balanceOf(msg.sender));
         params.updateMarginAmount = positionParamsHelper.updateMarginAmount;
 
         params.executionFee = (ChainConfig.getPositionUpdateMarginGasFeeLimit() * tx.gasprice) + 10_000;
@@ -1708,7 +1687,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         positionParamsHelper.ethValue = params.executionFee;
 
         if(_isNativeToken){
-            params.updateMarginAmount = EchidnaUtils.clampBetween(_updateMarginAmount, 0, msg.sender.balance);
+            params.updateMarginAmount = EchidnaUtils.clampBetween(uint256(_updateMarginAmount), 0, msg.sender.balance);
             positionParamsHelper.ethValue = params.updateMarginAmount;
         }
 
@@ -1756,7 +1735,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     }
 
     /// createUpdateLeverageRequest
-    function positionFacet_createUpdateLeverageRequest(uint256 _answer, bool _isLong, bool _isNativeToken, uint256 _tokenIndex, uint256 _addMarginAmount, uint256 _leverage ) public {
+    function positionFacet_createUpdateLeverageRequest(uint16 _answer, bool _isLong, bool _isNativeToken, uint8 _tokenIndex, uint96 _addMarginAmount, uint96 _leverage ) public {
         // Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
         __before(msg.sender, oracles); // Update the contract state tracker
@@ -1764,21 +1743,21 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         PositionParamsHelper memory positionParamsHelper;
         IPosition.UpdateLeverageParams memory params;
 
-        positionParamsHelper.symbolIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, _before.positionSymbol.length - 1);
+        positionParamsHelper.symbolIndex = EchidnaUtils.clampBetween(uint256(_tokenIndex), 0, _before.positionSymbol.length - 1);
         positionParamsHelper.symbol = _before.positionSymbol[positionParamsHelper.symbolIndex];
         
         params.symbol = positionParamsHelper.symbol;
         params.isLong = _isLong;
         params.isNativeToken = _isNativeToken;
         
-        positionParamsHelper.leverage = EchidnaUtils.clampBetween(_leverage, 0, MarketConfig.getMaxLeverage() + 100);
+        positionParamsHelper.leverage = EchidnaUtils.clampBetween(uint256(_leverage), 0, MarketConfig.getMaxLeverage() + 100);
         params.leverage = positionParamsHelper.leverage;
 
-        positionParamsHelper.tokenIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1);
+        positionParamsHelper.tokenIndex = EchidnaUtils.clampBetween(uint256(_tokenIndex), 0, tokens.length - 1);
         positionParamsHelper.token = tokens[positionParamsHelper.tokenIndex]; // select a random token
         params.marginToken = positionParamsHelper.token;
 
-        positionParamsHelper.addMarginAmount = EchidnaUtils.clampBetween(_addMarginAmount, 0, IERC20(positionParamsHelper.token).balanceOf(msg.sender));
+        positionParamsHelper.addMarginAmount = EchidnaUtils.clampBetween(uint256(_addMarginAmount), 0, IERC20(positionParamsHelper.token).balanceOf(msg.sender));
         params.addMarginAmount = positionParamsHelper.addMarginAmount;
 
         params.executionFee = (ChainConfig.getPositionUpdateLeverageGasFeeLimit() * tx.gasprice) + 10_000;
@@ -1786,7 +1765,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         positionParamsHelper.ethValue = params.executionFee;
 
         if(_isNativeToken){
-            params.addMarginAmount = EchidnaUtils.clampBetween(_addMarginAmount, 0, msg.sender.balance);
+            params.addMarginAmount = EchidnaUtils.clampBetween(uint256(_addMarginAmount), 0, msg.sender.balance);
             positionParamsHelper.ethValue = params.addMarginAmount;
         }
 
@@ -1849,12 +1828,12 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     /// createMintStakeTokenRequest
 
     function stakeFacet_createMintStakeTokenRequest(
-        uint256 _answer, 
-        uint256 _stakeTokenIndex, 
-        uint256 _requestTokenIndex, 
+        uint16 _answer, 
+        uint8 _stakeTokenIndex, 
+        uint8 _requestTokenIndex, 
         uint256 _requestTokenAmount,
-        uint256 _walletRequestTokenAmount,
-        uint256 _minStakeAmount,
+        uint96 _walletRequestTokenAmount,
+        uint96 _minStakeAmount,
         bool _isCollateral,
         bool _isNativeToken
     ) public {
@@ -1865,18 +1844,18 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         StakeParamsHelper memory stakeParamsHelper;
         IStake.MintStakeTokenParams memory params;
 
-        stakeParamsHelper.stakeTokenIndex = EchidnaUtils.clampBetween(_stakeTokenIndex, 0, stakedTokens.length - 1);
+        stakeParamsHelper.stakeTokenIndex = EchidnaUtils.clampBetween(uint256(_stakeTokenIndex), 0, stakedTokens.length - 1);
         stakeParamsHelper.stakeToken = stakedTokens[stakeParamsHelper.stakeTokenIndex]; // select a random token
         params.stakeToken = stakeParamsHelper.stakeToken;
 
-        stakeParamsHelper.requestTokenIndex = EchidnaUtils.clampBetween(_requestTokenIndex, 0, tokens.length - 1);
+        stakeParamsHelper.requestTokenIndex = EchidnaUtils.clampBetween(uint256(_requestTokenIndex), 0, tokens.length - 1);
         stakeParamsHelper.requestToken = tokens[stakeParamsHelper.requestTokenIndex]; // select a random token
         params.requestToken = stakeParamsHelper.requestToken;
 
-        stakeParamsHelper.walletRequestTokenAmount = EchidnaUtils.clampBetween(_walletRequestTokenAmount, 0, IERC20(params.requestToken).balanceOf(msg.sender));
+        stakeParamsHelper.walletRequestTokenAmount = EchidnaUtils.clampBetween(uint256(_walletRequestTokenAmount), 0, IERC20(params.requestToken).balanceOf(msg.sender));
         params.walletRequestTokenAmount = stakeParamsHelper.walletRequestTokenAmount;
 
-        params.minStakeAmount = _minStakeAmount;
+        params.minStakeAmount = uint256(_minStakeAmount);
         params.executionFee = (ChainConfig.getMintGasFeeLimit() * tx.gasprice) + 10_000;
         stakeParamsHelper.ethValue = params.executionFee;
 
@@ -1884,12 +1863,12 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         params.isNativeToken = _isNativeToken;
 
         if(_isNativeToken){
-            stakeParamsHelper.ethValue = EchidnaUtils.clampBetween(_requestTokenAmount, 0, msg.sender.balance);
-            params.walletRequestTokenAmount = stakeParamsHelper.ethValue;
+            stakeParamsHelper.ethValue = EchidnaUtils.clampBetween(uint256(_requestTokenAmount), 0, msg.sender.balance);
+            params.walletRequestTokenAmount = stakeParamsHelper.ethValue; 
         }
 
         // Bound: requestTokenAmount >= walletRequestTokenAmount
-        params.requestTokenAmount = EchidnaUtils.clampBetween(_requestTokenAmount, params.walletRequestTokenAmount, _requestTokenAmount); 
+        params.requestTokenAmount = EchidnaUtils.clampBetween(uint256(_requestTokenAmount), params.walletRequestTokenAmount, uint256(_requestTokenAmount)); 
 
         try diamondStakeFacet.createMintStakeTokenRequest{value: stakeParamsHelper.ethValue}(params)returns(uint256 requestId) {
             __after(msg.sender, oracles); // Update the contract state tracker
@@ -1929,12 +1908,12 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     }
 
     function stakeFacet_createRedeemStakeTokenRequest(
-        uint256 _answer, 
-        uint256 _stakeTokenIndex, 
-        uint256 _redeemTokenIndex, 
+        uint16 _answer, 
+        uint8 _stakeTokenIndex, 
+        uint8 _redeemTokenIndex, 
         uint256 _requestTokenAmount,
-        uint256 _unStakeAmount,
-        uint256 _minRedeemAmount
+        uint96 _unStakeAmount,
+        uint96 _minRedeemAmount
     ) public {
         // Get oracles
         OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
@@ -1945,17 +1924,17 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         params.receiver = msg.sender;
 
-        stakeParamsHelper.stakeTokenIndex = EchidnaUtils.clampBetween(_stakeTokenIndex, 0, stakedTokens.length - 1);
+        stakeParamsHelper.stakeTokenIndex = EchidnaUtils.clampBetween(uint256(_stakeTokenIndex), 0, stakedTokens.length - 1);
         stakeParamsHelper.stakeToken = stakedTokens[stakeParamsHelper.stakeTokenIndex]; // select a random token
         params.stakeToken = stakeParamsHelper.stakeToken;
 
-        stakeParamsHelper.redeemTokenIndex = EchidnaUtils.clampBetween(_redeemTokenIndex, 0, tokens.length - 1);
+        stakeParamsHelper.redeemTokenIndex = EchidnaUtils.clampBetween(uint256(_redeemTokenIndex), 0, tokens.length - 1);
         stakeParamsHelper.redeemToken = tokens[stakeParamsHelper.redeemTokenIndex]; // select a random token
         params.redeemToken = stakeParamsHelper.redeemToken;
 
-        params.unStakeAmount = EchidnaUtils.clampBetween(_unStakeAmount, 0, IERC20(params.stakeToken).balanceOf(msg.sender));
+        params.unStakeAmount = EchidnaUtils.clampBetween(uint256(_unStakeAmount), 0, IERC20(params.stakeToken).balanceOf(msg.sender));
 
-        params.minRedeemAmount = _minRedeemAmount; 
+        params.minRedeemAmount = uint256(_minRedeemAmount); 
         params.executionFee = (ChainConfig.getRedeemGasFeeLimit() * tx.gasprice) + 10_000;
         stakeParamsHelper.ethValue = params.executionFee;
 
