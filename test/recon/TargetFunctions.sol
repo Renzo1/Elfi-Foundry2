@@ -434,12 +434,16 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             }
         }
 
+        if (openRequests.length == 0) {
+            return;
+        }
+
         /// select a random request from the list
         uint256 requestIndex = EchidnaUtils.clampBetween(_requestIndex, 0, openRequests.length - 1);
         OrderExecutions memory request = openRequests[requestIndex];
         requestId = request.orderId;
 
-        vm.prank(keeper); // prolly redundant
+        vm.prank(keeper); 
         try diamondOrderFacet.cancelOrder(requestId, ""){
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -589,12 +593,16 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             }
         }
 
+        if (openRequests.length == 0) {
+            return;
+        }
+
         /// select a random request from the list
         uint256 requestIndex = EchidnaUtils.clampBetween(_requestIndex, 0, openRequests.length - 1);
         AccountWithdrawExecutions memory request = openRequests[requestIndex];
         requestId = request.requestId;
 
-        vm.prank(keeper); // prolly redundant
+        vm.prank(keeper); 
         try diamondAccountFacet.cancelWithdraw(requestId, ""){
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -749,12 +757,16 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             }
         }
 
+        if (openRequests.length == 0) {
+            return;
+        }
+
         /// select a random request from the list
         uint256 requestIndex = EchidnaUtils.clampBetween(_requestIndex, 0, openRequests.length - 1);
         PositionMarginRequests memory request = openRequests[requestIndex];
         requestId = request.requestId;
 
-        vm.prank(keeper); // prolly redundant
+        vm.prank(keeper); 
         try diamondPositionFacet.cancelUpdatePositionMarginRequest(requestId, ""){
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -914,12 +926,16 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             }
         }
 
+        if (openRequests.length == 0) {
+            return;
+        }
+
         /// select a random request from the list
         uint256 requestIndex = EchidnaUtils.clampBetween(_requestIndex, 0, openRequests.length - 1);
         PositionLeverageRequests memory request = openRequests[requestIndex];
         requestId = request.requestId;
 
-        vm.prank(keeper); // prolly redundant
+        vm.prank(keeper); 
         try diamondPositionFacet.cancelUpdateLeverageRequest(requestId, ""){
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -1182,12 +1198,16 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             }
         }
 
+        if (openRequests.length == 0) {
+            return;
+        }
+
         /// select a random request from the list
         uint256 requestIndex = EchidnaUtils.clampBetween(_requestIndex, 0, openRequests.length - 1);
         MintStakeRequests memory request = openRequests[requestIndex];
         requestId = request.requestId;
 
-        vm.prank(keeper); // prolly redundant
+        vm.prank(keeper); 
         try diamondStakeFacet.cancelMintStakeToken(requestId, ""){
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -1340,12 +1360,16 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             }
         }
 
+        if (openRequests.length == 0) {
+            return;
+        }
+
         /// select a random request from the list
         uint256 requestIndex = EchidnaUtils.clampBetween(_requestIndex, 0, openRequests.length - 1);
         RedeemStakeTokenRequests memory request = openRequests[requestIndex];
         requestId = request.requestId;
 
-        vm.prank(keeper); // prolly redundant
+        vm.prank(keeper); 
         try diamondStakeFacet.cancelRedeemStakeToken(requestId, ""){
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -1430,7 +1454,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             ethValue = 0;
         }
 
-        // vm.prank(msg.sender); // prolly redundant - can't be too safe ;
+        vm.prank(msg.sender);  
         try diamondAccountFacet.deposit{value: ethValue}(token, amount){
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -1505,7 +1529,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             amount = EchidnaUtils.clampBetween(_amount, 0, _before.portfolioVaultBtcBalance);
         }
 
-        // vm.prank(msg.sender); // prolly redundant - can't be too safe ;
+        vm.prank(msg.sender);  
         try diamondAccountFacet.createWithdrawRequest(token, amount) returns(uint256 requestId){
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -1620,7 +1644,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             
         }
 
-        vm.prank(msg.sender); // prolly redundant - can't be too safe ;
+        vm.prank(msg.sender);  
         try diamondAccountFacet.batchUpdateAccountToken(params) {
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -1776,7 +1800,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             params.orderMargin = orderParamsHelper.ethMargin;
         }
 
-        // vm.prank(msg.sender); // prolly redundant - can't be too safe ;)
+        vm.prank(msg.sender);
         try diamondOrderFacet.createOrderRequest{value: orderParamsHelper.ethValue}(params)returns(uint256 orderId) {
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -1985,7 +2009,8 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         paramsHelper._triggerPrice = _triggerPrice;
         
         (params, orderParamsHelper.ethValue) = _createBatchOrders(orderParamsHelper.numOrders, oracles, paramsHelper);
-        
+
+        vm.prank(msg.sender); 
         try diamondOrderFacet.batchCreateOrderRequest{value: orderParamsHelper.ethValue}(params)returns(uint256[] memory orderIds) {
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -2062,7 +2087,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             positionParamsHelper.ethValue = params.updateMarginAmount;
         }
 
-
+        vm.prank(msg.sender); 
         try diamondPositionFacet.createUpdatePositionMarginRequest{value: positionParamsHelper.ethValue}(params)returns(uint256 requestId) {
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -2156,6 +2181,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             positionParamsHelper.ethValue = params.addMarginAmount;
         }
 
+        vm.prank(msg.sender); 
         try diamondPositionFacet.createUpdateLeverageRequest{value: positionParamsHelper.ethValue}(params)returns(uint256 requestId) {
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -2272,6 +2298,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         // Bound: requestTokenAmount >= walletRequestTokenAmount
         params.requestTokenAmount = EchidnaUtils.clampBetween(_requestTokenAmount, params.walletRequestTokenAmount, _requestTokenAmount); 
 
+        vm.prank(msg.sender); 
         try diamondStakeFacet.createMintStakeTokenRequest{value: stakeParamsHelper.ethValue}(params)returns(uint256 requestId) {
             __after(msg.sender, oracles); // Update the contract state tracker
 
@@ -2352,6 +2379,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         params.executionFee = (ChainConfig.getRedeemGasFeeLimit() * tx.gasprice) + 10_000;
         stakeParamsHelper.ethValue = params.executionFee;
 
+        vm.prank(msg.sender); 
         try diamondStakeFacet.createRedeemStakeTokenRequest{value: stakeParamsHelper.ethValue}(params)returns(uint256 requestId) {
             __after(msg.sender, oracles); // Update the contract state tracker
 

@@ -12,23 +12,8 @@ contract CryticToFoundry is Test, TargetFunctions, FoundryAsserts {
         setup();
     }
 
-    struct MintParams {
-        uint256 answer;
-        uint256 stakeTokenIndex;
-    }
-
-    // function testDemo(MintParams memory params, address[] memory tokens) public {
-    //     // TODO: Given any target function and foundry assert, test your results
-    //     params.answer = bound(params.answer, 0, type(uint128).max);
-    //     params.answer += 1000;
-
-    //     // console2.log("Answer: ", params.answer);
-    //     t(params.answer != 65000, "Struct Test passed!");
-    //     t(tokens.length > 10, "Array Test passed!");
-    // }
-
     /// Stakers Story
-    function testStakeAndRedeem() public {
+    function testStakeAndRedeemCoverage() public {
         // Create Mint Params
         uint256 _answer = 65000;
         uint256 _stakeTokenIndex = 0;
@@ -48,22 +33,17 @@ contract CryticToFoundry is Test, TargetFunctions, FoundryAsserts {
         uint256 _unStakeAmount = 50e18;
         uint256 _minRedeemAmount = 0;
 
-
         vm.prank(USERS[0]);
         stakeFacet_createMintStakeTokenRequest(_answer, _stakeTokenIndex, _requestTokenIndex, _requestTokenAmount, _walletRequestTokenAmount, _minStakeAmount, _isCollateral, _isNativeToken);
         vm.prank(USERS[1]);
         stakeFacet_createMintStakeTokenRequest(_answer, _stakeTokenIndex, _requestTokenIndex, _requestTokenAmount, _walletRequestTokenAmount, _minStakeAmount, _isCollateral, _isNativeToken);
-        vm.prank(keeper);
         stakeFacet_executeMintStakeToken(_answer);
-        // vm.prank(keeper);
-        // stakeFacet_cancelMintStakeToken(_requestIndex, _answer);
+        stakeFacet_cancelMintStakeToken(_requestIndex, _answer);
         
         vm.prank(USERS[0]);
         stakeFacet_createRedeemStakeTokenRequest(_answer, _stakeTokenIndex, _redeemTokenIndex, _redeemRequestTokenAmount, _unStakeAmount, _minRedeemAmount);
-        vm.prank(keeper);
         stakeFacet_executeRedeemStakeToken(_answer);
-        // vm.prank(keeper);
-        // stakeFacet_cancelRedeemStakeToken(_requestIndex, _answer);
+        stakeFacet_cancelRedeemStakeToken(_requestIndex, _answer);
 
         t(true, "passed");
     }
