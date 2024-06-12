@@ -44,8 +44,8 @@ contract CryticToFoundry is Test, TargetFunctions, FoundryAsserts {
 
         // Create Redeem Params
         uint256 _redeemTokenIndex = 0;
-        uint256 _redeemRequestTokenAmount = 500e18;
-        uint256 _unStakeAmount = 500e18;
+        uint256 _redeemRequestTokenAmount = 50e18;
+        uint256 _unStakeAmount = 50e18;
         uint256 _minRedeemAmount = 0;
 
 
@@ -55,15 +55,13 @@ contract CryticToFoundry is Test, TargetFunctions, FoundryAsserts {
         stakeFacet_createMintStakeTokenRequest(_answer, _stakeTokenIndex, _requestTokenIndex, _requestTokenAmount, _walletRequestTokenAmount, _minStakeAmount, _isCollateral, _isNativeToken);
         vm.prank(keeper);
         stakeFacet_executeMintStakeToken(_answer);
-        vm.prank(keeper);
-        stakeFacet_cancelMintStakeToken(_requestIndex, _answer);
-        
-        // vm.prank(USERS[0]);
-        // stakeFacet_createRedeemStakeTokenRequest(_answer, _stakeTokenIndex, _redeemTokenIndex, _redeemRequestTokenAmount, _unStakeAmount, _minRedeemAmount);
-        // vm.prank(USERS[1]);
-        // stakeFacet_createRedeemStakeTokenRequest(_answer, _stakeTokenIndex, _redeemTokenIndex, _redeemRequestTokenAmount, _unStakeAmount, _minRedeemAmount);
         // vm.prank(keeper);
-        // stakeFacet_executeRedeemStakeToken(_answer);
+        // stakeFacet_cancelMintStakeToken(_requestIndex, _answer);
+        
+        vm.prank(USERS[0]);
+        stakeFacet_createRedeemStakeTokenRequest(_answer, _stakeTokenIndex, _redeemTokenIndex, _redeemRequestTokenAmount, _unStakeAmount, _minRedeemAmount);
+        vm.prank(keeper);
+        stakeFacet_executeRedeemStakeToken(_answer);
         // vm.prank(keeper);
         // stakeFacet_cancelRedeemStakeToken(_requestIndex, _answer);
 
