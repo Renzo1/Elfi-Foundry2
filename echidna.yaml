@@ -8,6 +8,7 @@ balanceContract: 0x1043561a8829300000
 filterFunctions: []
 cryticArgs: ["--foundry-compile-all"]
 codeSize: 0xffffffff
+# maxGasprice: 1
 
 sender: [
   "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf",

@@ -7,6 +7,7 @@ import {BeforeAfter} from "./BeforeAfter.sol";
 import {Properties} from "./Properties.sol";
 import {vm} from "@chimera/Hevm.sol";
 import {EchidnaUtils} from "../utils/EchidnaUtils.sol";
+import {Debugger} from "../utils/Debugger.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "src/process/OracleProcess.sol";
@@ -311,9 +312,19 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     /////////// executeOrder ///////////
 
+    struct BeforeAfterParamHelper{
+        OracleProcess.OracleParam[] oracles;
+        address stakeToken;
+        address collateralToken;
+        address token; 
+        bytes32 code;
+    }
+
     function executeOrder(uint256 _answer) public {
         // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+
         
         OrderExecutions memory request;
         address account;
@@ -324,12 +335,13 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             account = request.account;
             requestId = request.orderId;
             
-            __before(account, oracles); // Update the contract state tracker
+            __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+            
 
             if(!request.executed){
                 vm.prank(keeper);
-                try diamondOrderFacet.executeOrder(requestId, oracles){
-                    __after(account, oracles); // Update the contract state tracker
+                try diamondOrderFacet.executeOrder(requestId, beAfParams.oracles){
+                    __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
                     _keeperExecutions.orderExecutions[i].executed = true;
     
                     
@@ -410,8 +422,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     /////////// cancelOrder ///////////
     function orderFacet_cancelOrder(uint256 _requestIndex, uint256 _answer) public {
         /// Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         uint256 requestId;
 
@@ -445,7 +460,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         vm.prank(keeper); 
         try diamondOrderFacet.cancelOrder(requestId, ""){
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add to canceledOrder Queue -- tracking canceledOrder requests is not critical, but is useful for debugging
             CanceledOrders memory execution = CanceledOrders(request.account, requestId, request.isNativeToken, request.marginToken, request.orderMargin,request.executionFee,false);
@@ -483,7 +498,10 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     /////////// executeWithdraw ///////////
     function accountFacet_executeWithdraw(uint256 _answer) public{
         // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
         
         AccountWithdrawExecutions memory request;
         address account;
@@ -498,12 +516,12 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             token = request.token;
             amount = request.amount;
             
-            __before(account, oracles); // Update the contract state tracker
+           __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             if(!request.executed){
                 vm.prank(keeper);
-                try diamondAccountFacet.executeWithdraw(requestId, oracles){
-                    __after(account, oracles); // Update the contract state tracker
+                try diamondAccountFacet.executeWithdraw(requestId, beAfParams.oracles){
+                    __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
                     _keeperExecutions.accountWithdrawExecutions[i].executed = true;
     
                     // Update the withdrawal tracker; Remember to factor in transaction fee when calculating with this
@@ -569,8 +587,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     function accountFacet_cancelWithdraw(uint256 _requestIndex, uint256 _answer) public {
         /// Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         uint256 requestId;
 
@@ -604,7 +625,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         vm.prank(keeper); 
         try diamondAccountFacet.cancelWithdraw(requestId, ""){
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add to cancelWithdrawRequest Queue -- tracking cancelWithdraw requests is not critical, but is useful for debugging
             CancelWithdrawExecutions memory execution = CancelWithdrawExecutions(request.account, requestId, request.token, request.amount,false);
@@ -644,7 +665,10 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     /////////// executeUpdatePositionMarginRequest ///////////
     function positionFacet_executeUpdatePositionMarginRequest(uint256 _answer) public{
         // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
         
         PositionMarginRequests memory request;
         address account;
@@ -655,12 +679,12 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             account = request.account;
             requestId = request.requestId;
             
-            __before(account, oracles); // Update the contract state tracker
+           __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             if(!request.executed){
                 vm.prank(keeper);
-                try diamondPositionFacet.executeUpdatePositionMarginRequest(requestId, oracles){
-                    __after(account, oracles); // Update the contract state tracker
+                try diamondPositionFacet.executeUpdatePositionMarginRequest(requestId, beAfParams.oracles){
+                    __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
                     _keeperExecutions.positionMarginRequests[i].executed = true;
     
                     
@@ -733,8 +757,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     /////////// cancelUpdatePositionMarginRequest ///////////
     function positionFacet_cancelUpdatePositionMarginRequest(uint256 _requestIndex, uint256 _answer) public {
         /// Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         uint256 requestId;
 
@@ -768,7 +795,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         vm.prank(keeper); 
         try diamondPositionFacet.cancelUpdatePositionMarginRequest(requestId, ""){
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add to canceledOrder Queue -- tracking canceledOrder requests is not critical, but is useful for debugging
             CanceledPositionMarginRequests memory execution = CanceledPositionMarginRequests(
@@ -816,7 +843,10 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     /////////// executeUpdateLeverageRequest ///////////
     function positionFacet_executeUpdateLeverageRequest(uint256 _answer) public{
         // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
         
         PositionLeverageRequests memory request;
         address account;
@@ -827,12 +857,12 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             account = request.account;
             requestId = request.requestId;
             
-            __before(account, oracles); // Update the contract state tracker
+           __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             if(!request.executed){
                 vm.prank(keeper);
-                try diamondPositionFacet.executeUpdateLeverageRequest(requestId, oracles){
-                    __after(account, oracles); // Update the contract state tracker
+                try diamondPositionFacet.executeUpdateLeverageRequest(requestId, beAfParams.oracles){
+                    __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
                     _keeperExecutions.positionLeverageRequests[i].executed = true;
     
                     
@@ -902,8 +932,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     /////////// cancelUpdateLeverageRequest ///////////
     function positionFacet_cancelUpdateLeverageRequest(uint256 _requestIndex, uint256 _answer) public {
         /// Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         uint256 requestId;
 
@@ -937,7 +970,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         vm.prank(keeper); 
         try diamondPositionFacet.cancelUpdateLeverageRequest(requestId, ""){
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add to canceledOrder Queue -- tracking canceledOrder requests is not critical, but is useful for debugging
             CanceledPositionLeverageRequests memory execution = CanceledPositionLeverageRequests(
@@ -1028,11 +1061,14 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     function positionFacet_autoReducePositions(uint256 _answer) internal {
         /// Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
         
         // collect all positionKeys for every users' position
         for(uint256 i = 0; i < USERS.length; i++) {
-            __before(USERS[i], oracles);
+            __before(USERS[i], beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code);
             
             // calculate the length of positionKeys
             for(uint256 j = 0; j < _before.positionKey.length; j++) {
@@ -1046,12 +1082,12 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         }
 
         // reset the _autoDecreasePositionParamsHelper.positionKeys array
-        _autoDecreasePositionParamsHelper.positionKeys = new bytes32[](0);
+        delete _autoDecreasePositionParamsHelper.positionKeys;
 
 
-        vm.prank(keeper); 
+        vm.prank(keeper);
         try diamondPositionFacet.autoReducePositions(positionKeys){
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
          
             /// Invariants assessment
@@ -1081,7 +1117,10 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     function stakeFacet_executeMintStakeToken(uint256 _answer) public{
         // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
         
         MintStakeRequests memory request;
         address account;
@@ -1092,12 +1131,12 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             account = request.account;
             requestId = request.requestId;
             
-            __before(account, oracles); // Update the contract state tracker
+           __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             if(!request.executed){
                 vm.prank(keeper);
-                try diamondStakeFacet.executeMintStakeToken(requestId, oracles){
-                    __after(account, oracles); // Update the contract state tracker
+                try diamondStakeFacet.executeMintStakeToken(requestId, beAfParams.oracles){
+                    __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
                     _keeperExecutions.mintStakeRequests[i].executed = true;
     
                     
@@ -1174,8 +1213,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     function stakeFacet_cancelMintStakeToken(uint256 _requestIndex, uint256 _answer) public {
         /// Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         uint256 requestId;
 
@@ -1209,7 +1251,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         vm.prank(keeper); 
         try diamondStakeFacet.cancelMintStakeToken(requestId, ""){
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add to canceledOrder Queue -- tracking canceledOrder requests is not critical, but is useful for debugging
             CanceledMintStakeRequests memory execution = CanceledMintStakeRequests(
@@ -1260,7 +1302,10 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     /////////// executeRedeemStakeToken ///////////
     function stakeFacet_executeRedeemStakeToken(uint256 _answer) public{
             // Get oracles
-            OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
+            BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
             
             RedeemStakeTokenRequests memory request;
             address account;
@@ -1271,12 +1316,13 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
                 account = request.account;
                 requestId = request.requestId;
                 
-                __before(account, oracles); // Update the contract state tracker
+               __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
     
                 if(!request.executed){
                     vm.prank(keeper);
-                    try diamondStakeFacet.executeMintStakeToken(requestId, oracles){
-                        __after(account, oracles); // Update the contract state tracker
+                    try diamondStakeFacet.executeMintStakeToken(requestId, beAfParams.oracles){
+                        __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+                        __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code);
                         _keeperExecutions.redeemStakeTokenRequests[i].executed = true;
         
                         
@@ -1336,8 +1382,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     function stakeFacet_cancelRedeemStakeToken(uint256 _requestIndex, uint256 _answer) public {
         /// Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         uint256 requestId;
 
@@ -1371,7 +1420,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         vm.prank(keeper); 
         try diamondStakeFacet.cancelRedeemStakeToken(requestId, ""){
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add to canceledOrder Queue -- tracking canceledOrder requests is not critical, but is useful for debugging
 
@@ -1432,8 +1481,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     /// deposit 
     function accountFacet_deposit(uint256 _tokenIndex, uint256 _amount, bool _sendEth, bool _onlyEth, uint256 _ethValue, uint256 _answer) public{
         // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         // select a random token
         uint256 tokenIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1);
@@ -1456,7 +1508,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         vm.prank(msg.sender);  
         try diamondAccountFacet.deposit{value: ethValue}(token, amount){
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Update the deposit tracker; Remember to factor in transaction fee when calculating with this
             _txsTracking.deposits[msg.sender][token] += amount;
@@ -1513,8 +1565,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     /// createWithdrawRequest 
     function accountFacet_createWithdrawRequest(uint256 _tokenIndex, uint256 _amount, uint256 _answer) public {
         // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         // select a random token
         uint256 tokenIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1);
@@ -1531,7 +1586,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         vm.prank(msg.sender);  
         try diamondAccountFacet.createWithdrawRequest(token, amount) returns(uint256 requestId){
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add to withdrawRequest Queue
             AccountWithdrawExecutions memory execution = AccountWithdrawExecutions(msg.sender, requestId, token, amount,false);
@@ -1575,8 +1630,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         bool _addBtc
     ) public {
         // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         AssetsProcess.UpdateAccountTokenParams memory params;
         params.account = msg.sender;
@@ -1646,7 +1704,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         vm.prank(msg.sender);  
         try diamondAccountFacet.batchUpdateAccountToken(params) {
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add to withdrawRequest Queue
             // AccountWithdrawExecutions memory execution = AccountWithdrawExecutions(msg.sender, requestId, token, amount,false);
@@ -1710,8 +1768,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         uint256 _triggerPrice
     ) public {
         // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         OrderParamsHelper memory orderParamsHelper;
 
@@ -1773,10 +1834,10 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             params.symbol = MarketConfig.getWethSymbol();
         }
 
-        for(uint256 i = 0; i < oracles.length; i++) {
-            if(oracles[i].token == params.marginToken) {
-                params.triggerPrice = EchidnaUtils.clampBetween(_triggerPrice, uint256(oracles[i].maxPrice) / 5, uint256(oracles[i].maxPrice) * 5); 
-                params.acceptablePrice = uint256(oracles[i].maxPrice); // TODO revisit this - bounds on acceptablePrice
+        for(uint256 i = 0; i < beAfParams.oracles.length; i++) {
+            if(beAfParams.oracles[i].token == params.marginToken) {
+                params.triggerPrice = EchidnaUtils.clampBetween(_triggerPrice, uint256(beAfParams.oracles[i].maxPrice) / 5, uint256(beAfParams.oracles[i].maxPrice) * 5); 
+                params.acceptablePrice = uint256(beAfParams.oracles[i].maxPrice); // TODO revisit this - bounds on acceptablePrice
             }
         }
     
@@ -1787,7 +1848,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         params.orderMargin = orderParamsHelper.tokenMargin;
         params.qty = EchidnaUtils.clampBetween(_qty, 0, (_before.portfolioVaultUsdcBalance + _before.tradeVaultUsdcBalance + _before.lpVaultUsdcBalance) * 100);
         // Consider a smaller bound on leverage to reduce revert cases that occurs when attempting to update a position with an unmatching leverage
-        params.leverage = EchidnaUtils.clampBetween(_leverage, 0, MarketConfig.getMaxLeverage() * 2);
+        params.leverage = EchidnaUtils.clampBetween(_leverage, 0, MarketConfig.getMaxLeverage());
         params.executionFee = (ChainConfig.getPlaceIncreaseOrderGasFeeLimit() * tx.gasprice) + 10_000; // extra 10k to account for margin of error
         params.placeTime = block.timestamp;
 
@@ -1802,7 +1863,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         vm.prank(msg.sender);
         try diamondOrderFacet.createOrderRequest{value: orderParamsHelper.ethValue}(params)returns(uint256 orderId) {
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add to orderRequest Queue
             OrderExecutions memory execution = OrderExecutions(
@@ -1947,6 +2008,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
                 }
             }
         
+            // TODO fix
             params.acceptablePrice = params.triggerPrice;
             
             orderParamsHelper.tokenMargin = EchidnaUtils.clampBetween(paramsHelper._orderMargin, 0, IERC20(orderParamsHelper.token).balanceOf(msg.sender) / 2);
@@ -1954,7 +2016,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             
             params.orderMargin = orderParamsHelper.tokenMargin;
             params.qty = EchidnaUtils.clampBetween(paramsHelper._qty, 0, (_before.portfolioVaultUsdcBalance + _before.tradeVaultUsdcBalance + _before.lpVaultUsdcBalance) * 100);
-            params.leverage = EchidnaUtils.clampBetween(paramsHelper._leverage, 0, MarketConfig.getMaxLeverage() * 2);
+            params.leverage = EchidnaUtils.clampBetween(paramsHelper._leverage, 0, MarketConfig.getMaxLeverage());
             params.executionFee = (ChainConfig.getPlaceIncreaseOrderGasFeeLimit() * tx.gasprice) + 10_000; // extra 10k to account for margin of error
             params.placeTime = block.timestamp;
     
@@ -1988,8 +2050,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         uint256 _triggerPrice
     ) public {
         // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         IOrder.PlaceOrderParams[] memory params;
         OrderParamsHelper memory orderParamsHelper;
@@ -2008,11 +2073,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         paramsHelper._leverage = _leverage;
         paramsHelper._triggerPrice = _triggerPrice;
         
-        (params, orderParamsHelper.ethValue) = _createBatchOrders(orderParamsHelper.numOrders, oracles, paramsHelper);
+        (params, orderParamsHelper.ethValue) = _createBatchOrders(orderParamsHelper.numOrders, beAfParams.oracles, paramsHelper);
 
         vm.prank(msg.sender); 
         try diamondOrderFacet.batchCreateOrderRequest{value: orderParamsHelper.ethValue}(params)returns(uint256[] memory orderIds) {
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add to orderRequest Queue
         
@@ -2053,8 +2118,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     /// createUpdatePositionMarginRequest
     function positionFacet_createUpdatePositionMarginRequest(uint256 _answer, bool _isAdd, bool _isNativeToken, uint256 _tokenIndex, uint256 _updateMarginAmount) public {
         // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         /**
         Questions
@@ -2064,6 +2132,10 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         PositionParamsHelper memory positionParamsHelper;
         IPosition.UpdatePositionMarginParams memory params;
+
+        if (_before.positionKey.length == 0) {
+            return;
+        }
 
         positionParamsHelper.keyIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, _before.positionKey.length - 1);
 
@@ -2089,7 +2161,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         vm.prank(msg.sender); 
         try diamondPositionFacet.createUpdatePositionMarginRequest{value: positionParamsHelper.ethValue}(params)returns(uint256 requestId) {
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add positionMarginRequest to Queue
             PositionMarginRequests memory execution = PositionMarginRequests(
@@ -2149,11 +2221,18 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     /// createUpdateLeverageRequest
     function positionFacet_createUpdateLeverageRequest(uint256 _answer, bool _isLong, bool _isNativeToken, uint256 _tokenIndex, uint256 _addMarginAmount, uint256 _leverage ) public {
         // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         PositionParamsHelper memory positionParamsHelper;
         IPosition.UpdateLeverageParams memory params;
+
+        if (_before.positionSymbol.length == 0) {
+            return;
+        }
 
         positionParamsHelper.symbolIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, _before.positionSymbol.length - 1);
         positionParamsHelper.symbol = _before.positionSymbol[positionParamsHelper.symbolIndex];
@@ -2162,7 +2241,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         params.isLong = _isLong;
         params.isNativeToken = _isNativeToken;
         
-        positionParamsHelper.leverage = EchidnaUtils.clampBetween(_leverage, 0, MarketConfig.getMaxLeverage() + 100);
+        positionParamsHelper.leverage = EchidnaUtils.clampBetween(_leverage, 0, MarketConfig.getMaxLeverage());
         params.leverage = positionParamsHelper.leverage;
 
         positionParamsHelper.tokenIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1);
@@ -2183,7 +2262,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         vm.prank(msg.sender); 
         try diamondPositionFacet.createUpdateLeverageRequest{value: positionParamsHelper.ethValue}(params)returns(uint256 requestId) {
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add positionMarginRequest to Queue
             PositionLeverageRequests memory execution = PositionLeverageRequests(
@@ -2266,8 +2345,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         bool _isNativeToken
     ) public {
         // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code);
 
         StakeParamsHelper memory stakeParamsHelper;
         IStake.MintStakeTokenParams memory params;
@@ -2280,11 +2362,14 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         stakeParamsHelper.requestToken = tokens[stakeParamsHelper.requestTokenIndex]; // select a random token
         params.requestToken = stakeParamsHelper.requestToken;
 
+        Debugger.log("Request Token Balance", IERC20(params.requestToken).balanceOf(msg.sender));
         stakeParamsHelper.walletRequestTokenAmount = EchidnaUtils.clampBetween(_walletRequestTokenAmount, 0, IERC20(params.requestToken).balanceOf(msg.sender));
         params.walletRequestTokenAmount = stakeParamsHelper.walletRequestTokenAmount;
+        Debugger.log("Wallet Request Token Amount 2", params.walletRequestTokenAmount);
 
         params.minStakeAmount = _minStakeAmount;
-        params.executionFee = (ChainConfig.getMintGasFeeLimit() * tx.gasprice) + 10_000;
+        // params.executionFee = (ChainConfig.getMintGasFeeLimit() * tx.gasprice);
+        params.executionFee = ChainConfig.getMintGasFeeLimit();
         stakeParamsHelper.ethValue = params.executionFee;
 
         params.isCollateral = _isCollateral;
@@ -2300,7 +2385,8 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         vm.prank(msg.sender); 
         try diamondStakeFacet.createMintStakeTokenRequest{value: stakeParamsHelper.ethValue}(params)returns(uint256 requestId) {
-            __after(msg.sender, oracles); // Update the contract state tracker
+            // assert(false);
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             MintStakeRequests memory execution = MintStakeRequests(
                 msg.sender, 
@@ -2357,8 +2443,11 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         uint256 _minRedeemAmount
     ) public {
         // Get oracles
-        OracleProcess.OracleParam[] memory oracles = getOracleParam(_answer);
-        __before(msg.sender, oracles); // Update the contract state tracker
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         StakeParamsHelper memory stakeParamsHelper;
         IStake.RedeemStakeTokenParams memory params;
@@ -2381,7 +2470,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         vm.prank(msg.sender); 
         try diamondStakeFacet.createRedeemStakeTokenRequest{value: stakeParamsHelper.ethValue}(params)returns(uint256 requestId) {
-            __after(msg.sender, oracles); // Update the contract state tracker
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             RedeemStakeTokenRequests memory execution = RedeemStakeTokenRequests(
                 msg.sender, 

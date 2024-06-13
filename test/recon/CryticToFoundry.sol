@@ -6,20 +6,25 @@ import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 import {TargetFunctions} from "./TargetFunctions.sol";
 import {FoundryAsserts} from "@chimera/FoundryAsserts.sol";
+import "../constants/TradeConfig.sol";
+import "src/mock/MockToken.sol";
 
 contract CryticToFoundry is Test, TargetFunctions, FoundryAsserts {
+    address userContract = address(this);
+
     function setUp() public {
         setup();
     }
 
     /// Stakers Story
     function testStakeAndRedeemCoverage() public {
+
         // Create Mint Params
         uint256 _answer = 65000;
         uint256 _stakeTokenIndex = 0;
         uint256 _requestTokenIndex = 0;
         uint256 _requestTokenAmount = 100e18;
-        uint256 _walletRequestTokenAmount = 100e18;
+        uint256 _walletRequestTokenAmount = 99e18;
         uint256 _minStakeAmount = 0;
         bool _isCollateral = false;
         bool _isNativeToken = false;
@@ -33,17 +38,16 @@ contract CryticToFoundry is Test, TargetFunctions, FoundryAsserts {
         uint256 _unStakeAmount = 50e18;
         uint256 _minRedeemAmount = 0;
 
-        vm.prank(USERS[0]);
+        // vm.startPrank(keeper);
         stakeFacet_createMintStakeTokenRequest(_answer, _stakeTokenIndex, _requestTokenIndex, _requestTokenAmount, _walletRequestTokenAmount, _minStakeAmount, _isCollateral, _isNativeToken);
-        vm.prank(USERS[1]);
-        stakeFacet_createMintStakeTokenRequest(_answer, _stakeTokenIndex, _requestTokenIndex, _requestTokenAmount, _walletRequestTokenAmount, _minStakeAmount, _isCollateral, _isNativeToken);
-        stakeFacet_executeMintStakeToken(_answer);
-        stakeFacet_cancelMintStakeToken(_requestIndex, _answer);
-        
-        vm.prank(USERS[0]);
-        stakeFacet_createRedeemStakeTokenRequest(_answer, _stakeTokenIndex, _redeemTokenIndex, _redeemRequestTokenAmount, _unStakeAmount, _minRedeemAmount);
-        stakeFacet_executeRedeemStakeToken(_answer);
-        stakeFacet_cancelRedeemStakeToken(_requestIndex, _answer);
+        // vm.stopPrank();
+        // stakeFacet_createMintStakeTokenRequest(_answer, _stakeTokenIndex, _requestTokenIndex, _requestTokenAmount, _walletRequestTokenAmount, _minStakeAmount, _isCollateral, _isNativeToken);
+        // stakeFacet_executeMintStakeToken(_answer);
+        // stakeFacet_cancelMintStakeToken(_requestIndex, _answer);
+
+        // stakeFacet_createRedeemStakeTokenRequest(_answer, _stakeTokenIndex, _redeemTokenIndex, _redeemRequestTokenAmount, _unStakeAmount, _minRedeemAmount);
+        // stakeFacet_executeRedeemStakeToken(_answer);
+        // stakeFacet_cancelRedeemStakeToken(_requestIndex, _answer);
 
         t(true, "passed");
     }

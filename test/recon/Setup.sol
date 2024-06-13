@@ -37,10 +37,10 @@ import "src/vault/PortfolioVault.sol";
 import "src/interfaces/IFaucet.sol";
 import "src/interfaces/IAccount.sol";
 import "src/interfaces/IStakingAccount.sol";
+import "src/interfaces/IFee.sol";
 import "src/interfaces/IDiamondCut.sol";
 import "src/router/Diamond.sol";
 import "src/interfaces/IDiamondLoupe.sol";
-import "src/interfaces/IFee.sol";
 import "src/interfaces/IMarket.sol";
 import "src/interfaces/ILiquidation.sol";
 import "src/mock/WETH.sol";
@@ -99,10 +99,11 @@ abstract contract Setup is BaseSetup {
   ILiquidation diamondLiquidationFacet;
   IMarket diamondMarketFacet;
   IDiamondCut diamondDiamondCutFacet;
+  IFee diamondFeeFacet;
+
   // IReferral diamondReferralFacet;
   // ISwap diamondSwapFacet;
   // IFaucet diamondFaucetFacet;
-  // IFee diamondFeeFacet;
   // IOracle diamondOracleFacet;
   // IDiamondLoupe diamondDiamondLoupeFacet;
 
@@ -241,11 +242,11 @@ abstract contract Setup is BaseSetup {
     diamondMarketFacet = IMarket(diamondAddress);
     diamondConfigFacet = ConfigFacet(diamondAddress);
     diamondDiamondCutFacet = IDiamondCut(diamondAddress);
+    diamondFeeFacet = IFee(diamondAddress);
 
     // diamondReferralFacet = IReferral(diamondAddress);
     // diamondSwapFacet = ISwap(diamondAddress);
     // diamondFaucetFacet = IFaucet(diamondAddress);
-    // diamondFeeFacet = IFee(diamondAddress);
     // diamondRebalanceFacet = IRebalance(diamondAddress);
     // diamondOracleFacet = IOracle(diamondAddress);
     // diamondDiamondLoupeFacet = IDiamondLoupe(diamondAddress);
@@ -568,6 +569,23 @@ abstract contract Setup is BaseSetup {
       }
     }
     
+    // Keeper balances
+    hevm.deal(keeper, TradeConfig.getEthInitialAllowance() * 1000); // Sets the eth balance of user to amt
+    weth.mint(keeper, (TradeConfig.getWethInitialAllowance() * 1000) * (10 ** weth.decimals())); // Sets the weth balance of user to amt
+    wbtc.mint(keeper, (TradeConfig.getWbtcInitialAllowance() * 1000) * (10 ** wbtc.decimals())); // Sets the wbtc balance of user to amt
+    usdc.mint(keeper, (TradeConfig.getUsdcInitialBalance() * 1000) * (10 ** usdc.decimals())); // Sets the usdc balance of user to amt
+
+    for (uint8 j = 0; j < tokens.length; j++) {
+        hevm.prank(keeper);
+        IERC20(tokens[j]).approve(diamondAddress, type(uint256).max);
+    }
+
+    for (uint8 j = 0; j < stakedTokens.length; j++) {
+      hevm.prank(keeper);
+      IERC20(stakedTokens[j]).approve(diamondAddress, type(uint256).max);
+    }
+
+
     assert(weth.balanceOf(address(BOB)) == TradeConfig.getWethInitialAllowance() * (10 ** weth.decimals()));
     assert(weth.balanceOf(address(ALICE)) == TradeConfig.getWethInitialAllowance() * (10 ** weth.decimals()));
     assert(weth.balanceOf(address(JAKE)) == TradeConfig.getWethInitialAllowance() * (10 ** weth.decimals()));
