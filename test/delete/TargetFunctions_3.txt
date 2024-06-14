@@ -1,0 +1,861 @@
+
+// SPDX-License-Identifier: GPL-2.0
+pragma solidity ^0.8.0;
+
+import {BaseTargetFunctions} from "@chimera/BaseTargetFunctions.sol";
+import {BeforeAfter} from "./BeforeAfter.sol";
+import {Properties} from "./Properties.sol";
+import {vm} from "@chimera/Hevm.sol";
+import {EchidnaUtils} from "../utils/EchidnaUtils.sol";
+import {Debugger} from "../utils/Debugger.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
+import "src/process/OracleProcess.sol";
+import "src/interfaces/IOrder.sol";
+import "src/storage/Order.sol";
+import "src/interfaces/IStake.sol";
+import "src/interfaces/IPosition.sol";
+import "src/mock/MockToken.sol";
+import "src/storage/RoleAccessControl.sol";
+import "src/utils/Errors.sol";
+import "src/utils/TransferUtils.sol";
+import "src/utils/CalUtils.sol";
+import "src/utils/AddressUtils.sol";
+import "src/vault/Vault.sol";
+
+import "../constants/ChainConfig.sol";
+import "../constants/MarketConfig.sol";
+import "../constants/RolesAndPools.sol";
+import "../constants/StakeConfig.sol";
+import "../constants/TradeConfig.sol";
+import "../constants/UsdcTradeConfig.sol";
+import "../constants/WbtcTradeConfig.sol";
+import "../constants/WethTradeConfig.sol";
+
+
+abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfter {
+    using Strings for string;
+
+    ///////// Conversion Functions /////////
+
+    // function ethToWethConverter(uint256 _amount) internal returns(uint256) {
+    //     uint256 wethDecimal = weth.decimals(); // 6 or 18
+    //     uint256 ethDecimal = 18;
+
+    //     return (_amount / (10 ** (ethDecimal - wethDecimal)));    
+    // }
+
+    // function wethToEthConverter(uint256 _amount) internal returns(uint256) {
+    //     uint256 wethDecimal = weth.decimals(); // 6 or 18
+    //     uint256 ethDecimal = 18;
+
+    //     return (_amount * (10 ** (ethDecimal - wethDecimal)));
+    // }
+
+    ///////// DoS Catcher /////////
+
+    // used to filter for allowed text errors during functions
+    // if a function fails with an error that is not allowed,
+    // this can indicate a potential DoS attack vector
+    event UnexpectedTextError(string);
+    function _assertTextErrorsAllowed(string memory err, string[] memory allowedErrors) private {
+        bool allowed;
+        uint256 allowedErrorsLength = allowedErrors.length;
+
+        for (uint256 i; i < allowedErrorsLength;) {
+            if (err.equal(allowedErrors[i])) {
+                allowed = true;
+                break;
+            }
+            unchecked {++i;}
+        }
+
+        if(!allowed) {
+            emit UnexpectedTextError(err);
+            assert(false);
+        }
+    }
+
+    // used to filter for allowed custom errors during functions
+    // if a function fails with an error that is not allowed,
+    // this can indicate a potential DoS attack vector
+    event UnexpectedCustomError(bytes);
+    function _assertCustomErrorsAllowed(bytes memory err, bytes4[] memory allowedErrors) private {
+        bool allowed;
+        bytes4 errorSelector = bytes4(err);
+        uint256 allowedErrorsLength = allowedErrors.length;
+
+        for (uint256 i; i < allowedErrorsLength;) {
+            if (errorSelector == allowedErrors[i]) {
+                allowed = true;
+                break;
+            }
+            unchecked {++i;}
+        }
+
+        if(!allowed) {
+            emit UnexpectedCustomError(err);
+            assert(false);
+        }
+    }
+
+    //////////////////////////////////////
+    //// Keeper Execution Modifiers //////
+    //////////////////////////////////////
+
+    struct AccountWithdrawExecutions {
+        address account;
+        uint256 requestId;
+        address token;
+        uint256 amount;
+        bool executed;
+    }
+
+    struct CancelWithdrawExecutions {
+        address account;
+        uint256 requestId;
+        address token;
+        uint256 amount;
+        bool executed;
+    }
+
+    struct OrderExecutions {
+        address account;
+        uint256 orderId;
+        bool isNativeToken;
+        address marginToken;
+        uint256 orderMargin;
+        uint256 executionFee;
+        bool executed;
+    }
+
+    struct CanceledOrders {
+        address account;
+        uint256 orderId;
+        bool isNativeToken;
+        address marginToken;
+        uint256 orderMargin;
+        uint256 executionFee;
+        bool executed;
+    }
+
+    struct PositionMarginRequests {
+        address account;
+        uint256 requestId;
+        uint256 positionKey;
+        bool isAdd;
+        bool isNativeToken;
+        uint256 updateMarginAmount;
+        uint256 executionFee;
+        bool executed;
+    }
+
+    struct CanceledPositionMarginRequests {
+        address account;
+        uint256 requestId;
+        uint256 positionKey;
+        bool isAdd;
+        bool isNativeToken;
+        uint256 updateMarginAmount;
+        uint256 executionFee;
+        bool executed;
+    }
+
+    struct PositionLeverageRequests {
+        address account;
+        uint256 requestId;
+        bytes32 symbol;
+        bool isLong;
+        bool isNativeToken;
+        bool isCrossMargin;
+        uint256 leverage;
+        address marginToken;
+        uint256 addMarginAmount;
+        uint256 executionFee;
+        bool executed;
+    }
+
+    struct CanceledPositionLeverageRequests {
+        address account;
+        uint256 requestId;
+        bytes32 symbol;
+        bool isLong;
+        bool isNativeToken;
+        bool isCrossMargin;
+        uint256 leverage;
+        address marginToken;
+        uint256 addMarginAmount;
+        uint256 executionFee;
+        bool executed;
+    }
+
+    struct MintStakeRequests {
+        address account;
+        uint256 requestId;
+        address stakeToken;
+        address requestToken;
+        uint256 requestTokenAmount;
+        uint256 walletRequestTokenAmount;
+        uint256 minStakeAmount;
+        uint256 executionFee;
+        bool isCollateral;
+        bool isNativeToken;
+        bool executed;
+    }
+
+    struct CanceledMintStakeRequests {
+        address account;
+        uint256 requestId;
+        address stakeToken;
+        address requestToken;
+        uint256 requestTokenAmount;
+        uint256 walletRequestTokenAmount;
+        uint256 minStakeAmount;
+        uint256 executionFee;
+        bool isCollateral;
+        bool isNativeToken;
+        bool executed;
+    }
+
+    struct RedeemStakeTokenRequests{
+        address account;
+        uint256 requestId;
+        address stakeToken;
+        address redeemToken;
+        uint256 unStakeAmount;
+        uint256 minRedeemAmount;
+        uint256 executionFee;
+        bool executed;
+    }
+
+    struct CanceledRedeemStakeTokenRequests{
+        address account;
+        uint256 requestId;
+        address stakeToken;
+        address redeemToken;
+        uint256 unStakeAmount;
+        uint256 minRedeemAmount;
+        uint256 executionFee;
+        bool executed;
+    }
+
+    struct KeeperExecutions {
+        AccountWithdrawExecutions[] accountWithdrawExecutions;
+        CancelWithdrawExecutions[] cancelWithdrawExecutions;
+        OrderExecutions[] orderExecutions;
+        CanceledOrders[] canceledOrders;
+        PositionMarginRequests[] positionMarginRequests;
+        PositionLeverageRequests[] positionLeverageRequests;
+        CanceledPositionMarginRequests[] canceledPositionMarginRequests;
+        CanceledPositionLeverageRequests[] canceledPositionLeverageRequests;
+        MintStakeRequests[] mintStakeRequests;
+        CanceledMintStakeRequests[] canceledMintStakeRequests;
+        RedeemStakeTokenRequests[] redeemStakeTokenRequests;
+        CanceledRedeemStakeTokenRequests[] canceledRedeemStakeTokenRequests;
+    }
+    
+    KeeperExecutions internal _keeperExecutions;
+
+    struct TxsTracking {
+        ////////// AccountFacet //////////
+        // mapping users to their deposits
+        // user -> token -> amount
+        mapping (address => mapping (address => uint256)) deposits;
+        
+        // mapping users to their withdrawals
+        // user -> token -> amount
+        mapping (address => mapping (address => uint256)) processedWithdrawals;
+    }
+
+    TxsTracking internal _txsTracking;
+
+    // TODO Liquidate once position passes maximum leverage
+
+    /////////// executeOrder ///////////
+
+    struct BeforeAfterParamHelper{
+        OracleProcess.OracleParam[] oracles;
+        address stakeToken;
+        address collateralToken;
+        address token; 
+        bytes32 code;
+    }
+
+    // function executeOrder(uint256 _answer) public {
+        
+    // }
+
+    // /////////// cancelOrder ///////////
+    // function orderFacet_cancelOrder(uint256 _requestIndex, uint256 _answer) public {
+        
+    // }
+
+    // /////////// executeWithdraw ///////////
+    // function accountFacet_executeWithdraw(uint256 _answer) public{
+        
+    // }
+  
+    // /////////// cancelWithdraw ///////////
+
+    // function accountFacet_cancelWithdraw(uint256 _requestIndex, uint256 _answer) public {
+        
+    // }
+
+
+    // /////////// executeUpdatePositionMarginRequest ///////////
+    // function positionFacet_executeUpdatePositionMarginRequest(uint256 _answer) public{
+        
+    // }
+
+
+    // /////////// cancelUpdatePositionMarginRequest ///////////
+    // function positionFacet_cancelUpdatePositionMarginRequest(uint256 _requestIndex, uint256 _answer) public {
+        
+    // }
+
+    // /////////// executeUpdateLeverageRequest ///////////
+    // function positionFacet_executeUpdateLeverageRequest(uint256 _answer) public{
+         
+    // }
+      
+  
+    // /////////// cancelUpdateLeverageRequest ///////////
+    // function positionFacet_cancelUpdateLeverageRequest(uint256 _requestIndex, uint256 _answer) public {
+        
+    // }
+
+    struct AutoDecreasePositionParamsHelper {
+        bytes32[] positionKeys;
+    }
+
+    AutoDecreasePositionParamsHelper _autoDecreasePositionParamsHelper;
+
+    /////////// autoReducePositions ///////////
+    // This is a part of the protocol's risk control design. When the pool is insufficient to cover all user positions' 
+    // profits and losses, the Keeper will sort the existing positions based on the profit rate and automatically 
+    // reduce the positions with higher profit rates until the risk rate is controllable.
+
+    modifier callAuto(uint256 _answer) {
+        _;
+        // if condition for autoReducePositions is met
+        // call autoReducePositions
+    }
+    
+    // function sortPositions(uint256 _answer) internal view returns (bytes32[] memory) {
+        
+    // }
+
+    // function positionFacet_autoReducePositions(uint256 _answer) internal {
+        
+    // }
+    
+    
+    // /////////// executeMintStakeToken ///////////
+
+    // function stakeFacet_executeMintStakeToken(uint256 _answer) public{
+        
+    // }
+
+    
+
+    // /////////// cancelMintStakeToken ///////////
+
+    // function stakeFacet_cancelMintStakeToken(uint256 _requestIndex, uint256 _answer) public {
+        
+    // }
+
+    // /////////// executeRedeemStakeToken ///////////
+    // function stakeFacet_executeRedeemStakeToken(uint256 _answer) public{
+        
+    // }
+
+
+    // /////////// cancelRedeemStakeToken ///////////
+
+    // function stakeFacet_cancelRedeemStakeToken(uint256 _requestIndex, uint256 _answer) public {
+        
+    // }  
+  
+    // /////////// Aux functions ///////////
+    // // Liquidation function that is called after every Tx
+    // // call this after every tx 
+
+    // function attemptLiquidation(address account) internal {
+
+    //     // Liquidate all positions under water
+    // }
+
+    ///////////////////////////////
+    //// User Facing functions ////
+    ///////////////////////////////
+
+    ////////// AccountFacet //////////
+    
+    /// deposit 
+    // TODO breakdown to depositNative, depositToken
+    function accountFacet_depositNative(uint256 _amount, uint256 _answer) public{
+        // Get oracles
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+        uint256 amount = EchidnaUtils.clampBetween(_amount, 0, msg.sender.balance);
+        address token;
+        
+        vm.prank(msg.sender);  
+        try diamondAccountFacet.deposit{value: amount}(token, amount){
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+            Update the deposit tracker; Remember to factor in transaction fee when calculating with this
+            _txsTracking.deposits[msg.sender][token] += amount;
+            _txsTracking.deposits[msg.sender][ETH_ADDRESS] += token;
+
+            /// Invariants assessment
+            /**
+            - deposited amount should only enter portfolioVault
+            */
+            // t(true, "accountFacet_deposit: test passed");
+
+        }
+        /// handle `require` text-based errors
+        catch Error(string memory err) {
+            string[] memory allowedErrors = new string[](1);
+            allowedErrors[0] = "First error";
+
+            _assertTextErrorsAllowed(err, allowedErrors);
+        }
+
+        /// handle custom errors
+        catch(bytes memory err) {
+            bytes4[] memory allowedErrors = new bytes4[](1);
+            allowedErrors[0] = ErrorRaiser.SecondError.selector;
+
+            _assertCustomErrorsAllowed(err, allowedErrors);
+        }
+    }
+
+
+    /// createWithdrawRequest 
+    function accountFacet_createWithdrawRequest(uint256 _tokenIndex, uint256 _amount, uint256 _answer) public {
+        // Get oracles
+        // BeforeAfterParamHelper memory beAfParams;
+        // beAfParams.oracles = getOracleParam(_answer);
+        // __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+
+        // select a random token
+        uint256 tokenIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1);
+        address token = tokens[tokenIndex]; // select a random token
+
+        vm.prank(msg.sender);  
+        try diamondAccountFacet.createWithdrawRequest(token, _amount) returns(uint256 requestId){
+            // __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+            // Add to withdrawRequest Queue
+            // AccountWithdrawExecutions memory execution = AccountWithdrawExecutions(msg.sender, requestId, token, amount,false);
+            // _keeperExecutions.accountWithdrawExecutions.push(execution);
+
+            /// Invariants assessment
+
+
+        }
+
+        catch {}
+    }
+
+    ////////// OrderFacet //////////
+    
+    struct OrderParamsHelper{
+        uint256 orderSide;
+        uint256 orderType;
+        uint256 stopType;
+        uint256 tokenIndex;
+        address token;
+        uint256 tokenMargin;
+        uint256 ethMargin;
+        uint256 ethValue;
+        address[] tokenAddresses;
+        uint256 numOrders;
+        int256 maxPrice;
+    }
+
+    /// createOrderRequest
+    // TODO Native And Token
+    function orderFacet_createOrderRequest(
+        IOrder.PlaceOrderParams calldata params,
+        uint256 _answer
+    ) public {
+        // Get oracles
+        // BeforeAfterParamHelper memory beAfParams;
+        // beAfParams.oracles = getOracleParam(_answer);
+        // __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+        // OrderParamsHelper memory orderParamsHelper;
+
+        // TODO bound token address
+
+        vm.prank(msg.sender);
+        try diamondOrderFacet.createOrderRequest{value: params.executionFee}(params)returns(uint256 orderId) {
+            // __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+            // // Add to orderRequest Queue
+            // OrderExecutions memory execution = OrderExecutions(
+            //     msg.sender, 
+            //     orderId,
+            //     params.isNativeToken,
+            //     params.marginToken,
+            //     params.orderMargin,
+            //     params.executionFee, 
+            //     false
+            // );
+            // _keeperExecutions.orderExecutions.push(execution);
+
+        }
+
+        catch {}
+    }
+
+
+    struct BatchCreateOrderParamsHelper{
+        bool _isCrossMargin;
+        uint256 _orderSide;
+        uint256 _orderType;
+        uint256 _stopType;
+        uint256 _marginTokenIndex;
+        uint256 _orderMargin;
+        uint256 _qty;
+        uint256 _leverage;
+        uint256 _triggerPrice;
+    }
+
+    // function _createBatchOrders(
+    //     uint256 _numOrders, 
+    //     OracleProcess.OracleParam[] memory oracles, 
+    //     BatchCreateOrderParamsHelper memory paramsHelper
+    // ) internal returns(IOrder.PlaceOrderParams[] memory orderParams, uint256 totalEthValue) {
+    //     /* Note 
+    //     - You can't add INCREASE posSide to the batch, else it reverts --> 
+    //     - There all have to be the same isCrossMargin, else it reverts  --> v
+    //     - If any of the orderType is NONE, it reverts  --> 
+    //     - reverts if any PositionSide is DECREASE and Qty is zero --> 
+    //     - reverts if any PositionSide is INCREASE and Qty is zero --> 
+    //     - reverts if OrderSide is NONE --> 
+    //     - reverts if OrderType is LIMIT and triggerPrice is zero --> 
+    //     - reverts if OrderType is LIMIT and OrderPositionSide is DECREASE --> 
+    //     - reverts if OrderType is STOP and (OrderStopType is NONE or triggerPrice is Zero) --> 
+    //     */
+        
+    //     orderParams = new IOrder.PlaceOrderParams[](_numOrders);
+    //     totalEthValue;
+        
+    //     OrderParamsHelper memory orderParamsHelper;
+    //     IOrder.PlaceOrderParams memory params;
+
+    //     for (uint256 i = 0; i < _numOrders; i++) {
+            
+    //         params.isCrossMargin = paramsHelper._isCrossMargin;
+    //         params.isNativeToken = i % 2 == 0 ? true : false;
+    
+    //         orderParamsHelper.orderSide = EchidnaUtils.clampBetween(paramsHelper._orderSide, 0, 2);
+    //         if(orderParamsHelper.orderSide == 0){
+    //             params.orderSide = Order.Side.NONE;
+    //         }else if(orderParamsHelper.orderSide == 1){
+    //             params.orderSide = Order.Side.LONG;
+    //         }else{
+    //             params.orderSide = Order.Side.SHORT;
+    //         }
+    
+    //         params.posSide = i % 2 == 0 ? Order.PositionSide.DECREASE : Order.PositionSide.NONE;
+    
+    //         orderParamsHelper.orderType = EchidnaUtils.clampBetween(paramsHelper._orderType, 0, 2);
+    //         if(orderParamsHelper.orderType == 0){
+    //             params.orderType = Order.Type.MARKET;
+    //         }else if(orderParamsHelper.orderType == 1){
+    //             params.orderType = Order.Type.STOP;
+    //         }else{
+    //             params.orderType = Order.Type.LIMIT;
+    //         }
+    
+    //         orderParamsHelper.stopType = EchidnaUtils.clampBetween(paramsHelper._stopType, 0, 2);
+    //         if(orderParamsHelper.stopType == 0){
+    //             params.stopType = Order.StopType.NONE;
+    //         }else if(orderParamsHelper.stopType == 1){
+    //             params.stopType = Order.StopType.STOP_LOSS;
+    //         }else{
+    //             params.stopType = Order.StopType.TAKE_PROFIT;
+    //         }
+
+    //         orderParamsHelper.tokenAddresses = new address[](2);
+    //         orderParamsHelper.tokenAddresses[0] = address(weth);
+    //         orderParamsHelper.tokenAddresses[1] = address(wbtc);
+    
+    //         orderParamsHelper.tokenIndex = EchidnaUtils.clampBetween(paramsHelper._marginTokenIndex, 0, 1);
+    //         orderParamsHelper.token = orderParamsHelper.tokenAddresses[orderParamsHelper.tokenIndex];
+    //         params.marginToken = orderParamsHelper.token;
+    
+    //         if(params.marginToken == address(weth)){
+    //             params.symbol = MarketConfig.getWethSymbol();
+    //         }else{
+    //             params.symbol = MarketConfig.getWbtcSymbol();
+    //         }
+
+    //         for(uint256 j = 0; j < oracles.length; i++) {
+    //             if(oracles[j].token == params.marginToken) {
+    //                 orderParamsHelper.maxPrice = oracles[j].maxPrice;
+    //                 params.triggerPrice = EchidnaUtils.clampBetween(paramsHelper._triggerPrice, uint256(orderParamsHelper.maxPrice) / 5, uint256(orderParamsHelper.maxPrice) * 10); 
+    //             }
+    //         }
+        
+    //         // TODO fix
+    //         params.acceptablePrice = params.triggerPrice;
+            
+    //         orderParamsHelper.tokenMargin = EchidnaUtils.clampBetween(paramsHelper._orderMargin, 0, IERC20(orderParamsHelper.token).balanceOf(msg.sender) / 2);
+    //         orderParamsHelper.ethMargin = EchidnaUtils.clampBetween(paramsHelper._orderMargin, 0, msg.sender.balance);
+            
+    //         params.orderMargin = orderParamsHelper.tokenMargin;
+    //         params.qty = EchidnaUtils.clampBetween(paramsHelper._qty, 0, (_before.portfolioVaultUsdcBalance + _before.tradeVaultUsdcBalance + _before.lpVaultUsdcBalance) * 100);
+    //         params.leverage = EchidnaUtils.clampBetween(paramsHelper._leverage, 0, MarketConfig.getMaxLeverage());
+    //         params.executionFee = (ChainConfig.getPlaceIncreaseOrderGasFeeLimit() * tx.gasprice) + 10_000; // extra 10k to account for margin of error
+    //         params.placeTime = block.timestamp;
+    
+    //         orderParamsHelper.ethValue = params.executionFee;
+    
+    //         if(params.isNativeToken){
+    //             // open position with native token
+    //             // and match orderMargin to ethValue, else Tx reverts
+    //             // orderParamsHelper.ethValue = orderParamsHelper.ethMargin;
+    //             params.orderMargin = orderParamsHelper.ethMargin;
+    //         }
+
+    //         orderParams[i] = params;
+    //         totalEthValue += params.executionFee;
+    //     }
+    // }
+
+
+    /// batchCreateOrderRequest
+    function orderFacet_batchCreateOrderRequest(
+        IOrder.PlaceOrderParams[] calldata params,
+        uint256 _ethValue,
+        uint256 _answer
+    ) public {
+        // Get oracles
+        // BeforeAfterParamHelper memory beAfParams;
+        // beAfParams.oracles = getOracleParam(_answer);
+        // __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+        // OrderParamsHelper memory orderParamsHelper;
+        // BatchCreateOrderParamsHelper memory paramsHelper;
+        
+        // // keep the numOrder value very low to reduce the chance of tx reverts
+        // orderParamsHelper.numOrders =  EchidnaUtils.clampBetween(_numOrders, 1, 5);
+        
+        // (params, orderParamsHelper.ethValue) = _createBatchOrders(orderParamsHelper.numOrders, beAfParams.oracles, paramsHelper);
+
+        vm.prank(msg.sender); 
+        try diamondOrderFacet.batchCreateOrderRequest{value: _ethValue}(params)returns(uint256[] memory orderIds) {
+            // __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+            // // Add to orderRequest Queue
+        
+            // OrderExecutions memory execution;
+            // for(uint256 i = 0; i < orderIds.length; i++) {
+            //     execution = OrderExecutions(
+            //         msg.sender, 
+            //         orderIds[i], 
+            //         params[i].isNativeToken, 
+            //         params[i].marginToken, 
+            //         params[i].orderMargin, 
+            //         params[i].executionFee,
+            //         false);
+            //     _keeperExecutions.orderExecutions.push(execution);
+            // }
+            
+        }                            
+        /// handle `require` text-based errors
+        catch{}
+    }
+
+
+    ////////// PositionFacet //////////
+    // TODO Native and Token: value: params.executionFee && value: param.updateMarginAmount
+    /// createUpdatePositionMarginRequest
+    function positionFacet_createUpdatePositionMarginRequest(IPosition.UpdatePositionMarginParams calldata params, uint256 _answer) public {
+        // // Get oracles
+        // BeforeAfterParamHelper memory beAfParams;
+        // beAfParams.oracles = getOracleParam(_answer);
+        // __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+
+        PositionParamsHelper memory positionParamsHelper;
+
+        // positionParamsHelper.keyIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, _before.positionKey.length - 1);
+
+        vm.prank(msg.sender);
+        try diamondPositionFacet.createUpdatePositionMarginRequest{value: params.executionFee}(params)returns(uint256 requestId) {
+            // __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+            // // Add positionMarginRequest to Queue
+            // PositionMarginRequests memory execution = PositionMarginRequests(
+            //     msg.sender, 
+            //     requestId, 
+            //     positionParamsHelper.keyIndex,
+            //     params.isAdd,
+            //     params.isNativeToken,
+            //     params.updateMarginAmount,
+            //     params.executionFee,
+            //     false);
+            // _keeperExecutions.positionMarginRequests.push(execution);
+
+            // /// Invariants assessment
+        }
+        catch{}
+    }
+
+
+    struct PositionParamsHelper{
+        uint256 tokenIndex;
+        address token;
+        uint256 updateMarginAmount;
+        uint256 ethValue;
+        uint256 keyIndex;
+        uint256 addMarginAmount;
+        bytes32 symbol;
+        uint256 symbolIndex;
+        uint256 leverage;
+    }
+
+    // TODO Native and Token: value: params.executionFee && value: param.updateMarginAmount
+    /// createUpdateLeverageRequest
+    function positionFacet_createUpdateLeverageRequest(IPosition.UpdateLeverageParams calldata params, uint256 _answer) public {
+        // // Get oracles
+        // BeforeAfterParamHelper memory beAfParams;
+        // beAfParams.oracles = getOracleParam(_answer);
+        // __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+        // PositionParamsHelper memory positionParamsHelper;
+
+
+        vm.prank(msg.sender); 
+        try diamondPositionFacet.createUpdateLeverageRequest{value: params.executionFee}(params)returns(uint256 requestId) {
+            // __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+            // // Add positionMarginRequest to Queue
+            // PositionLeverageRequests memory execution = PositionLeverageRequests(
+            //     msg.sender, 
+            //     requestId,
+            //     params.symbol,
+            //     params.isLong,
+            //     params.isNativeToken,
+            //     params.isCrossMargin,
+            //     params.leverage,
+            //     params.marginToken,
+            //     params.addMarginAmount,
+            //     params.executionFee,
+            //     false);
+            // _keeperExecutions.positionLeverageRequests.push(execution);
+
+            // /// Invariants assessment
+
+            
+        }
+        catch {}
+    }
+
+
+    ////////// StakeFacet //////////
+    // struct MintStakeTokenParams {
+    //     address stakeToken;
+    //     address requestToken;
+    //     uint256 requestTokenAmount;
+    //     uint256 walletRequestTokenAmount;
+    //     uint256 minStakeAmount;
+    //     uint256 executionFee;
+    //     bool isCollateral;
+    //     bool isNativeToken;
+    // }
+
+    /// createMintStakeTokenRequest
+    // TODO Native and Token: value: params.executionFee && value: param.updateMarginAmount
+    function stakeFacet_createMintStakeTokenRequest(
+        IStake.MintStakeTokenParams calldata params,
+        uint256 _answer
+    ) public {
+        // // Get oracles
+        // BeforeAfterParamHelper memory beAfParams;
+        // beAfParams.oracles = getOracleParam(_answer);
+        // __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code);
+
+        StakeParamsHelper memory stakeParamsHelper;
+
+
+        vm.prank(msg.sender); 
+        try diamondStakeFacet.createMintStakeTokenRequest{value: params.executionFee}(params)returns(uint256 requestId) {
+            // assert(false);
+            // __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+            // MintStakeRequests memory execution = MintStakeRequests(
+            //     msg.sender, 
+            //     requestId,
+            //     params.stakeToken,
+            //     params.requestToken,
+            //     params.requestTokenAmount,
+            //     params.walletRequestTokenAmount,
+            //     params.minStakeAmount,
+            //     params.executionFee,
+            //     params.isCollateral,
+            //     params.isNativeToken,
+            //     false);
+            // _keeperExecutions.mintStakeRequests.push(execution);
+
+            // /// Invariants assessment
+        }                            
+        catch {}
+    }
+
+    struct StakeParamsHelper{
+        uint256 requestTokenIndex;
+        uint256 stakeTokenIndex;
+        uint256 redeemTokenIndex;
+        address stakeToken;
+        address requestToken;
+        address redeemToken;
+        uint256 walletRequestTokenAmount;
+        uint256 ethValue;
+    }
+
+    // TODO Native and Token: value: params.executionFee && value: param.updateMarginAmount
+    function stakeFacet_createRedeemStakeTokenRequest(
+        IStake.RedeemStakeTokenParams calldata params,
+        uint256 _answer
+    ) public {
+        // // Get oracles
+        // BeforeAfterParamHelper memory beAfParams;
+        // beAfParams.oracles = getOracleParam(_answer);
+        // __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+        // StakeParamsHelper memory stakeParamsHelper;
+
+        vm.prank(msg.sender); 
+        try diamondStakeFacet.createRedeemStakeTokenRequest{value: params.executionFee}(params)returns(uint256 requestId) {
+            // __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+            // RedeemStakeTokenRequests memory execution = RedeemStakeTokenRequests(
+            //     msg.sender, 
+            //     requestId,
+            //     params.stakeToken,
+            //     params.redeemToken,
+            //     params.unStakeAmount,
+            //     params.minRedeemAmount,
+            //     params.executionFee,
+            //     false);
+            // _keeperExecutions.redeemStakeTokenRequests.push(execution);
+
+            // /// Invariants assessment
+
+            
+        }
+        catch {}
+    }
+
+}

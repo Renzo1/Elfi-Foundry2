@@ -353,35 +353,54 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
                 
                 /// handle `require` text-based errors
                 catch Error(string memory err) {
+                    _keeperExecutions.orderExecutions[i].executed = true;
                     
-                    string[] memory allowedErrors = new string[](1);
-                    allowedErrors[0] = "STE";
+                    // require(self.orderHoldInUsd >= holdInUsd, "orderHoldInUsd is smaller than holdInUsd");
+                    // require(!isCheck || balance.amount >= balance.usedAmount + amount, "use token failed with amount not enough");
+                    // require(self.tokens.contains(token), "token not exists!");
+                    // require(self.tokenBalances[token].usedAmount >= amount, "unUse overflow!");
+
+                    string[] memory allowedErrors = new string[](4);
+                    allowedErrors[0] = "orderHoldInUsd is smaller than holdInUsd";
+                    allowedErrors[1] = "unUse overflow!";
+                    allowedErrors[2] = "use token failed with amount not enough";
+                    allowedErrors[3] = "token not exists!";
 
                     _assertTextErrorsAllowed(err, allowedErrors);
-                    _keeperExecutions.orderExecutions[i].executed = true;
                 }
 
                 /// handle custom errors
                 catch(bytes memory err) {
+                    _keeperExecutions.orderExecutions[i].executed = true;
 
-                    bytes4[] memory allowedErrors = new bytes4[](13);
-                    allowedErrors[0] = RoleAccessControl.InvalidRoleAccess.selector;
-                    allowedErrors[1] = Errors.OrderNotExists.selector;
-                    allowedErrors[2] = Errors.SymbolStatusInvalid.selector;
-                    allowedErrors[3] = Errors.TokenInvalid.selector;
-                    allowedErrors[4] = Errors.LeverageInvalid.selector;
-                    allowedErrors[5] = Errors.OnlyOneShortPositionSupport.selector;
-                    allowedErrors[6] = Errors.DecreaseOrderSideInvalid.selector;
-                    allowedErrors[7] = Errors.ExecutionPriceInvalid.selector;
-                    allowedErrors[8] = Errors.PositionShouldBeLiquidation.selector;
-                    allowedErrors[9] = Errors.TransferErrorWithVaultBalanceNotEnough.selector;
-                    allowedErrors[10] = Vault.AddressSelfNotSupported.selector;
-                    allowedErrors[11] = TransferUtils.TokenTransferError.selector;
-                    allowedErrors[12] = Errors.PriceIsZero.selector;
+                    // revert Errors.OrderNotExists(orderId);
+                    // revert Errors.SymbolStatusInvalid(order.symbol);
+                    // revert Errors.TokenInvalid(order.symbol, order.marginToken);
+                    // revert Errors.LeverageInvalid(order.symbol, order.leverage);
+                    // revert Errors.OnlyOneShortPositionSupport(order.symbol);
+                    // revert Errors.ExecutionPriceInvalid();
+                    // revert Errors.BalanceNotEnough(account, marginToken);
+                    // revert Errors.OrderMarginTooSmall();
+                    // revert Errors.UpdateLeverageError()
+                    // revert Errors.DecreaseOrderSideInvalid();
+                    // revert Errors.PositionNotExists();
+                    // revert Errors.PositionShouldBeLiquidation();
+
+                    bytes4[] memory allowedErrors = new bytes4[](12);
+                    allowedErrors[0] = Errors.OrderNotExists.selector;
+                    allowedErrors[1] = Errors.SymbolStatusInvalid.selector;
+                    allowedErrors[2] = Errors.TokenInvalid.selector;
+                    allowedErrors[3] = Errors.LeverageInvalid.selector;
+                    allowedErrors[4] = Errors.OnlyOneShortPositionSupport.selector;
+                    allowedErrors[5] = Errors.ExecutionPriceInvalid.selector;
+                    allowedErrors[6] = Errors.BalanceNotEnough.selector;
+                    allowedErrors[7] = Errors.OrderMarginTooSmall.selector;
+                    allowedErrors[8] = Errors.UpdateLeverageError.selector;
+                    allowedErrors[91] = Errors.DecreaseOrderSideInvalid.selector;
+                    allowedErrors[10] = Errors.PositionNotExists.selector;
+                    allowedErrors[11] = Errors.PositionShouldBeLiquidation.selector;
 
                     _assertCustomErrorsAllowed(err, allowedErrors);
-
-                    _keeperExecutions.orderExecutions[i].executed = true;
                 }
             }
         }
@@ -439,7 +458,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         OrderExecutions memory request = openRequests[requestIndex];
         requestId = request.orderId;
 
-        vm.prank(msg.sender); 
+        vm.prank(keeper); 
         try diamondOrderFacet.cancelOrder(requestId, ""){
             __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
@@ -458,24 +477,21 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
 
         }   
-        
+
         /// handle `require` text-based errors
         catch Error(string memory err) {
             string[] memory allowedErrors = new string[](1);
-            allowedErrors[0] = "orderHoldInUsd is smaller than holdInUsd";
+            allowedErrors[0] = "First error";
 
             _assertTextErrorsAllowed(err, allowedErrors);
         }
 
         /// handle custom errors
         catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](4);
-            allowedErrors[0] = Errors.OrderNotExists.selector;
-            allowedErrors[1] = Errors.TransferErrorWithVaultBalanceNotEnough.selector;
-            allowedErrors[2] = Vault.AddressSelfNotSupported.selector;
-            allowedErrors[3] = TransferUtils.TokenTransferError.selector;
+            // bytes4[] memory allowedErrors = new bytes4[](0);
+            // allowedErrors[0] = ErrorRaiser.SecondError.selector;
 
-            _assertCustomErrorsAllowed(err, allowedErrors);
+            // _assertCustomErrorsAllowed(err, allowedErrors);
         }
     }
 
@@ -534,17 +550,17 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
                 /// handle custom errors
                 catch(bytes memory err) {
                     
+                    // revert Errors.WithdrawRequestNotExists();
+                    // revert Errors.AmountZeroNotAllowed();
+                    // revert Errors.OnlyCollateralSupported();
+                    // revert Errors.WithdrawWithNoEnoughAmount();
+                    // revert Errors.PriceIsZero();
                     bytes4[] memory allowedErrors = new bytes4[](5);
                     allowedErrors[0] = Errors.WithdrawRequestNotExists.selector;
-                    allowedErrors[1] = RoleAccessControl.InvalidRoleAccess.selector;
-                    allowedErrors[2] = Errors.AmountZeroNotAllowed.selector;
-                    allowedErrors[3] = Errors.OnlyCollateralSupported.selector;
-                    allowedErrors[4] = Errors.WithdrawWithNoEnoughAmount.selector;
-                    allowedErrors[5] = Errors.TransferErrorWithVaultBalanceNotEnough.selector;
-                    allowedErrors[6] = Vault.AddressSelfNotSupported.selector;
-                    allowedErrors[7] = TransferUtils.TokenTransferError.selector;
-                    allowedErrors[8] = Errors.PriceIsZero.selector;
-
+                    allowedErrors[1] = Errors.AmountZeroNotAllowed.selector;
+                    allowedErrors[2] = Errors.OnlyCollateralSupported.selector;
+                    allowedErrors[3] = Errors.WithdrawWithNoEnoughAmount.selector;
+                    allowedErrors[4] = Errors.PriceIsZero.selector;
                     
                     _assertCustomErrorsAllowed(err, allowedErrors);
                     _keeperExecutions.accountWithdrawExecutions[i].executed = true;
@@ -628,21 +644,20 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         }
                      
-        // /// handle `require` text-based errors
-        // catch Error(string memory err) {
-        //     string[] memory allowedErrors = new string[](1);
-        //     allowedErrors[0] = "First error";
+        /// handle `require` text-based errors
+        catch Error(string memory err) {
+            string[] memory allowedErrors = new string[](1);
+            allowedErrors[0] = "First error";
 
-        //     _assertTextErrorsAllowed(err, allowedErrors);
-        // }
+            _assertTextErrorsAllowed(err, allowedErrors);
+        }
 
         /// handle custom errors
         catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](2);
-            allowedErrors[0] = RoleAccessControl.InvalidRoleAccess.selector;
-            allowedErrors[1] = Errors.WithdrawRequestNotExists.selector;
+            // bytes4[] memory allowedErrors = new bytes4[](0);
+            // allowedErrors[0] = ErrorRaiser.SecondError.selector;
 
-            _assertCustomErrorsAllowed(err, allowedErrors);
+            // _assertCustomErrorsAllowed(err, allowedErrors);
         }
     }
 
@@ -680,24 +695,35 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     
                 } 
 
-
-
+                
                 /// handle `require` text-based errors
                 catch Error(string memory err) {
                     
-                    string[] memory allowedErrors = new string[](3);
+                    // require(isHoldAmountAllowed(self.baseTokenBalance, getPoolLiquidityLimit(self), amount),"hold failed with balance not enough");
+                    // require(self.baseTokenBalance.holdAmount >= amount, "sub hold bigger than hold");
+                    // require(self.stableTokenBalances[stableToken].holdAmount >= amount, "sub hold bigger than hold");
+                    string[] memory allowedErrors = new string[](2);
                     allowedErrors[0] = "hold failed with balance not enough";
                     allowedErrors[1] = "sub hold bigger than hold";
-                    allowedErrors[2] = "STE";
-
+                    
+                    
                     _assertTextErrorsAllowed(err, allowedErrors);
                     _keeperExecutions.positionMarginRequests[i].executed = true;
                 }
-
+                
                 /// handle custom errors
                 catch(bytes memory err) {
                     
-                    bytes4[] memory allowedErrors = new bytes4[](12);
+                    
+                    // revert Errors.UpdatePositionMarginRequestNotExists();
+                    // revert Errors.OnlyIsolateSupported();
+                    // revert Errors.TokenIsNotSupport();
+                    // revert Errors.AddMarginTooBig();
+                    // revert Errors.TransferErrorWithVaultBalanceNotEnough(vault, token, receiver, amount);
+                    // revert Vault.AddressSelfNotSupported(receiver);
+                    // revert Errors.ReduceMarginTooBig();
+                    // revert Errors.PoolAmountNotEnough(stakeToken, token);
+                    bytes4[] memory allowedErrors = new bytes4[](8);
                     allowedErrors[0] = Errors.UpdatePositionMarginRequestNotExists.selector;
                     allowedErrors[1] = Errors.OnlyIsolateSupported.selector;
                     allowedErrors[2] = Errors.TokenIsNotSupport.selector;
@@ -705,11 +731,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
                     allowedErrors[4] = Errors.TransferErrorWithVaultBalanceNotEnough.selector;
                     allowedErrors[5] = Vault.AddressSelfNotSupported.selector;
                     allowedErrors[6] = Errors.ReduceMarginTooBig.selector;
-                    allowedErrors[7] = Errors.PoolAmountNotEnough.selector;
-                    allowedErrors[8] = RoleAccessControl.InvalidRoleAccess.selector;
-                    allowedErrors[9] = Errors.PositionNotExists.selector;
-                    allowedErrors[10] = Errors.PriceIsZero.selector;
-                    allowedErrors[11] = TransferUtils.TokenTransferError.selector;
+                    allowedErrors[8] = Errors.PoolAmountNotEnough.selector;
                     
                     _assertCustomErrorsAllowed(err, allowedErrors);
                     _keeperExecutions.positionMarginRequests[i].executed = true;
@@ -801,24 +823,20 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         }
                      
-        // /// handle `require` text-based errors
-        // catch Error(string memory err) {
-        //     string[] memory allowedErrors = new string[](1);
-        //     allowedErrors[0] = "First error";
+        /// handle `require` text-based errors
+        catch Error(string memory err) {
+            string[] memory allowedErrors = new string[](1);
+            allowedErrors[0] = "First error";
 
-        //     _assertTextErrorsAllowed(err, allowedErrors);
-        // }
+            _assertTextErrorsAllowed(err, allowedErrors);
+        }
 
         /// handle custom errors
         catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](5);
-            allowedErrors[0] = RoleAccessControl.InvalidRoleAccess.selector;
-            allowedErrors[1] = Errors.UpdatePositionMarginRequestNotExists.selector;
-            allowedErrors[2] = Errors.TransferErrorWithVaultBalanceNotEnough.selector;
-            allowedErrors[3] = Vault.AddressSelfNotSupported.selector;
-            allowedErrors[4] = TransferUtils.TokenTransferError.selector;
+            // bytes4[] memory allowedErrors = new bytes4[](1);
+            // allowedErrors[0] = ErrorRaiser.SecondError.selector;
 
-            _assertCustomErrorsAllowed(err, allowedErrors);
+            // _assertCustomErrorsAllowed(err, allowedErrors);
         }
     }
 
@@ -858,15 +876,16 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
                 
                 /// handle `require` text-based errors
                 catch Error(string memory err) {
-
-                    string[] memory allowedErrors = new string[](7);
+                    
+                    // require(self.tokens.contains(token), "token not exists!");
+                    // require(self.tokenBalances[token].usedAmount >= amount, "unUse overflow!");
+                    // require(isHoldAmountAllowed(self.stableTokenBalances[stableToken], getPoolLiquidityLimit(), amount),"hold failed with balance not enough");
+                    // require(success, "STE");
+                    string[] memory allowedErrors = new string[](4);
                     allowedErrors[0] = "token not exists!";
                     allowedErrors[1] = "unUse overflow!";
                     allowedErrors[2] = "hold failed with balance not enough";
                     allowedErrors[3] = "STE";
-                    allowedErrors[4] = "sub hold bigger than hold";
-                    allowedErrors[5] = "base token amount less than sub amount!";
-                    allowedErrors[6] = "stable token not supported!";
                     
                     _assertTextErrorsAllowed(err, allowedErrors);
                     _keeperExecutions.positionLeverageRequests[i].executed = true;
@@ -874,7 +893,13 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
                 
                 /// handle custom errors
                 catch(bytes memory err) {
-           
+                    
+                    // revert Errors.UpdateLeverageRequestNotExists();
+                    // revert Errors.UpdateLeverageWithNoChange();
+                    // revert Errors.BalanceNotEnough(request.account, position.marginToken);
+                    // revert Errors.ReduceMarginTooBig();
+                    // revert Errors.PoolAmountNotEnough(stakeToken, token);
+                    // revert Errors.TransferErrorWithVaultBalanceNotEnough(vault, token, receiver, amount);
                     bytes4[] memory allowedErrors = new bytes4[](11);
                     allowedErrors[0] = Errors.UpdateLeverageRequestNotExists.selector;
                     allowedErrors[1] = Errors.UpdateLeverageWithNoChange.selector;
@@ -882,11 +907,6 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
                     allowedErrors[3] = Errors.PoolAmountNotEnough.selector;
                     allowedErrors[4] = Errors.TransferErrorWithVaultBalanceNotEnough.selector;
                     allowedErrors[5] = Errors.ReduceMarginTooBig.selector;
-                    allowedErrors[6] = RoleAccessControl.InvalidRoleAccess.selector;
-                    allowedErrors[7] = Errors.PriceIsZero.selector;
-                    allowedErrors[8] = Errors.AddMarginTooBig.selector;
-                    allowedErrors[9] = TransferUtils.TokenTransferError.selector;
-                    allowedErrors[10] = Vault.AddressSelfNotSupported.selector;
 
                     _assertCustomErrorsAllowed(err, allowedErrors);
                     _keeperExecutions.positionLeverageRequests[i].executed = true;
@@ -977,27 +997,27 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             /// Invariants assessment
 
 
-        }
+        }     
+        
+        
         
         /// handle `require` text-based errors
-        // catch Error(string memory err) {
-        //     string[] memory allowedErrors = new string[](1);
-        //     allowedErrors[0] = "First error";
+        catch Error(string memory err) {
+            // string[] memory allowedErrors = new string[](1);
+            // allowedErrors[0] = "First error";
             
-        //     _assertTextErrorsAllowed(err, allowedErrors);
-        // }
+            // _assertTextErrorsAllowed(err, allowedErrors);
+        }
         
-        // revert Vault.AddressSelfNotSupported(receiver);
-        // revert TransferUtils.TokenTransferError(token, receiver, amount);
-        
+        // revert InvalidRoleAccess(msg.sender, role);
+        // revert Errors.UpdateLeverageRequestNotExists();
+        // revert Errors.TransferErrorWithVaultBalanceNotEnough(vault, token, receiver, amount);
         /// handle custom errors
         catch(bytes memory err) {
             bytes4[] memory allowedErrors = new bytes4[](3);
             allowedErrors[0] = RoleAccessControl.InvalidRoleAccess.selector;
             allowedErrors[1] = Errors.UpdateLeverageRequestNotExists.selector;
             allowedErrors[2] = Errors.TransferErrorWithVaultBalanceNotEnough.selector;
-            allowedErrors[3] = Vault.AddressSelfNotSupported.selector;
-            allowedErrors[4] = TransferUtils.TokenTransferError.selector;
 
             _assertCustomErrorsAllowed(err, allowedErrors);
         }
@@ -1074,37 +1094,21 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
 
         }
-
+                     
         /// handle `require` text-based errors
         catch Error(string memory err) {
-            // string[] memory allowedErrors = new string[](5);
-            // allowedErrors[0] = "token not exists!";
-            // allowedErrors[1] = "unUse overflow!";
-            // allowedErrors[2] = "base token amount less than sub amount!";
-            // allowedErrors[3] = "sub hold bigger than hold";
-            // allowedErrors[4] = "sub failed with balance not enough";
+            // string[] memory allowedErrors = new string[](1);
+            // allowedErrors[0] = "First error";
 
             // _assertTextErrorsAllowed(err, allowedErrors);
-
-            emit UnexpectedTextError(err);
-            assert(false);
         }
 
         /// handle custom errors
         catch(bytes memory err) {
-            // bytes4[] memory allowedErrors = new bytes4[](7);
-            // allowedErrors[0] = RoleAccessControl.InvalidRoleAccess.selector;
-            // allowedErrors[1] = Errors.PositionNotExists.selector;
-            // allowedErrors[2] = Errors.PriceIsZero.selector;
-            // allowedErrors[3] = Errors.PositionShouldBeLiquidation.selector;
-            // allowedErrors[4] = Errors.TransferErrorWithVaultBalanceNotEnough.selector;
-            // allowedErrors[5] = Vault.AddressSelfNotSupported.selector;
-            // allowedErrors[6] = TransferUtils.TokenTransferError.selector;
+            // bytes4[] memory allowedErrors = new bytes4[](1);
+            // allowedErrors[0] = ErrorRaiser.SecondError.selector;
 
             // _assertCustomErrorsAllowed(err, allowedErrors);
-
-            emit UnexpectedCustomError(err);
-            assert(false);
         }
     }
     
@@ -1115,6 +1119,8 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         // Get oracles
         BeforeAfterParamHelper memory beAfParams;
         beAfParams.oracles = getOracleParam(_answer);
+        
+        
         
         MintStakeRequests memory request;
         address account;
@@ -1149,7 +1155,10 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
                     
                     /// handle `require` text-based errors
                 catch Error(string memory err) {
-                    
+                    // require(self.tokens.contains(token), "token not exists!");
+                    // require(self.tokenBalances[token].amount >= amount, "token amount not enough!");
+                    // require(self.stableTokens.contains(stableToken), "stable token not supported!");
+                    // require(success, "STE");
                     string[] memory allowedErrors = new string[](4);
                     allowedErrors[0] = "token not exists!";
                     allowedErrors[1] = "token amount not enough!";
@@ -1163,6 +1172,13 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
                 /// handle custom errors
                 catch(bytes memory err) {
                     
+                    // revert Errors.MintWithAmountZero();
+                    // revert Errors.MintWithParamError();
+                    // revert Errors.MintFailedWithBalanceNotEnough(account, token);
+                    // revert Errors.PoolValueIsZero();
+                    // revert Errors.MintTokenInvalid(mintRequest.stakeToken, mintRequest.requestToken);
+                    // revert Errors.MintStakeTokenTooSmall(minMintStakeAmount, mintRequest.requestTokenAmount);
+                    // revert Errors.StakeTokenInvalid(mintRequest.stakeToken);
                     bytes4[] memory allowedErrors = new bytes4[](7);
                     allowedErrors[0] = Errors.MintWithAmountZero.selector;
                     allowedErrors[1] = Errors.MintWithParamError.selector;
@@ -1268,22 +1284,18 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         /// handle `require` text-based errors
         catch Error(string memory err) {
-            string[] memory allowedErrors = new string[](1);
-            allowedErrors[0] = "STE";
+            // string[] memory allowedErrors = new string[](1);
+            // allowedErrors[0] = "First error";
 
-            _assertTextErrorsAllowed(err, allowedErrors);
+            // _assertTextErrorsAllowed(err, allowedErrors);
         }
 
         /// handle custom errors
         catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](5);
-            allowedErrors[0] = RoleAccessControl.InvalidRoleAccess.selector;
-            allowedErrors[1] = Errors.MintRequestNotExists.selector;
-            allowedErrors[2] = Errors.TransferErrorWithVaultBalanceNotEnough.selector;
-            allowedErrors[3] = TransferUtils.TokenTransferError.selector;
-            allowedErrors[4] = Vault.AddressSelfNotSupported.selector;
+            // bytes4[] memory allowedErrors = new bytes4[](1);
+            // allowedErrors[0] = ErrorRaiser.SecondError.selector;
 
-            _assertCustomErrorsAllowed(err, allowedErrors);
+            // _assertCustomErrorsAllowed(err, allowedErrors);
         }
     }
 
@@ -1291,7 +1303,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     function stakeFacet_executeRedeemStakeToken(uint256 _answer) public{
             // Get oracles
             BeforeAfterParamHelper memory beAfParams;
-            beAfParams.oracles = getOracleParam(_answer);
+        beAfParams.oracles = getOracleParam(_answer);
         
         
             
@@ -1320,34 +1332,30 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         
         
                     } 
-               
+
+                    
+                                                
                     /// handle `require` text-based errors
                     catch Error(string memory err) {
-                        string[] memory allowedErrors = new string[](5);
-                        allowedErrors[0] = "STE";
-                        allowedErrors[1] = "usd token amount not enough";
-                        allowedErrors[2] = "sub failed with balance not enough";
-                        allowedErrors[3] = "base token amount less than sub amount!";
-                        allowedErrors[4] = "token amount not enough";
+                        // string[] memory allowedErrors = new string[](1);
+                        // allowedErrors[0] = "First error";
                         
-                        _assertTextErrorsAllowed(err, allowedErrors);
-                        _keeperExecutions.redeemStakeTokenRequests[i].executed = true;
+                        // _assertTextErrorsAllowed(err, allowedErrors);
+                        // _keeperExecutions.redeemStakeTokenRequests[i].executed = true;
                     }
                     
                     /// handle custom errors
                     catch(bytes memory err) {
-                        bytes4[] memory allowedErrors = new bytes4[](11);
+                        // revert Errors.RedeemRequestNotExists();
+                        // revert Errors.RedeemStakeTokenTooSmall(redeemTokenAmount);
+                        // revert Errors.RedeemWithAmountNotEnough(params.account, params.redeemToken);
+                        // revert Errors.RedeemTokenInvalid(params.stakeToken, params.redeemToken);
+                        bytes4[] memory allowedErrors = new bytes4[](4);
                         allowedErrors[0] = Errors.RedeemRequestNotExists.selector;
                         allowedErrors[1] = Errors.RedeemStakeTokenTooSmall.selector;
                         allowedErrors[2] = Errors.RedeemWithAmountNotEnough.selector;
                         allowedErrors[3] = Errors.RedeemTokenInvalid.selector;
-                        allowedErrors[4] = RoleAccessControl.InvalidRoleAccess.selector;
-                        allowedErrors[5] = Errors.PoolAmountNotEnough.selector;
-                        allowedErrors[6] = Errors.StakeTokenInvalid.selector;
-                        allowedErrors[7] = Errors.TransferErrorWithVaultBalanceNotEnough.selector;
-                        allowedErrors[8] = Vault.AddressSelfNotSupported.selector;
-                        allowedErrors[9] = TransferUtils.TokenTransferError.selector;
-                        allowedErrors[10] = Errors.PriceIsZero.selector;
+
 
                         _assertCustomErrorsAllowed(err, allowedErrors);
                         _keeperExecutions.redeemStakeTokenRequests[i].executed = true;
@@ -1440,22 +1448,18 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         /// handle `require` text-based errors
         catch Error(string memory err) {
-            string[] memory allowedErrors = new string[](1);
-            allowedErrors[0] = "STE";
+            // string[] memory allowedErrors = new string[](1);
+            // allowedErrors[0] = "First error";
 
-            _assertTextErrorsAllowed(err, allowedErrors);
+            // _assertTextErrorsAllowed(err, allowedErrors);
         }
 
         /// handle custom errors
         catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](1);
-            allowedErrors[0] = RoleAccessControl.InvalidRoleAccess.selector;
-            allowedErrors[1] = Errors.RedeemRequestNotExists.selector;
-            allowedErrors[2] = Vault.AddressSelfNotSupported.selector;
-            allowedErrors[3] = TransferUtils.TokenTransferError.selector;
-            allowedErrors[4] = Errors.TransferErrorWithVaultBalanceNotEnough.selector;
+            // bytes4[] memory allowedErrors = new bytes4[](1);
+            // allowedErrors[0] = ErrorRaiser.SecondError.selector;
 
-            _assertCustomErrorsAllowed(err, allowedErrors);
+            // _assertCustomErrorsAllowed(err, allowedErrors);
         }
     }  
   
@@ -1517,20 +1521,33 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             t(true, "accountFacet_deposit: test passed");
 
         }
-            
-        /// handle `require` text-based errors
-        catch Error(string memory err) {
 
-            string[] memory allowedErrors = new string[](3);
-            allowedErrors[0] = "Deposit with token error!";
-            allowedErrors[1] = "subTokenLiability less than liability";
-            allowedErrors[2] = "SafeCast: value doesn't fit in an int256";
+        
+        
+            // Do something
             
-        _assertTextErrorsAllowed(err, allowedErrors);
+            /// handle `require` text-based errors
+            catch Error(string memory err) {
+                // require(wrapperToken == params.token, "Deposit with token error!");
+                // require(self.tokensTotalLiability[token] >= subLiability, "subTokenLiability less than liability");
+                // require(value <= uint256(type(int256).max), "SafeCast: value doesn't fit in an int256")
+                string[] memory allowedErrors = new string[](3);
+                allowedErrors[0] = "Deposit with token error!";
+                allowedErrors[1] = "subTokenLiability less than liability";
+                allowedErrors[2] = "SafeCast: value doesn't fit in an int256";
+                
+            _assertTextErrorsAllowed(err, allowedErrors);
         }
 
         /// handle custom errors
         catch(bytes memory err) {
+            // revert TransferUtils.TokenTransferError(token, receiver, amount);
+            // revert Errors.AmountZeroNotAllowed();
+            // revert Errors.AmountNotMatch(msg.value, amount);
+            // revert Errors.OnlyCollateralSupported();
+            // revert Errors.TokenIsNotSupportCollateral();
+            // revert Errors.CollateralTotalCapOverflow(token, tradeTokenConfig.collateralTotalCap);
+            // revert Errors.CollateralUserCapOverflow(token, tradeTokenConfig.collateralUserCap);
             bytes4[] memory allowedErrors = new bytes4[](7);
             allowedErrors[0] = TransferUtils.TokenTransferError.selector;
             allowedErrors[1] = Errors.AmountZeroNotAllowed.selector;
@@ -1579,16 +1596,19 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
 
         }
-
-        // /// handle `require` text-based errors
-        // catch Error(string memory err) {
-        //     // string[] memory allowedErrors = new string[](1);
-        //     // allowedErrors[0] = "First error";
+        
+        
+        /// handle `require` text-based errors
+        catch Error(string memory err) {
+            // string[] memory allowedErrors = new string[](1);
+            // allowedErrors[0] = "First error";
             
-        //     // _assertTextErrorsAllowed(err, allowedErrors);
-        // }
+            // _assertTextErrorsAllowed(err, allowedErrors);
+        }
         
         /// handle custom errors
+        // revert AddressUtils.AddressZero(); 
+        // revert Errors.AmountZeroNotAllowed();
         catch(bytes memory err) {
             bytes4[] memory allowedErrors = new bytes4[](2);
             allowedErrors[0] = AddressUtils.AddressZero.selector;
@@ -1699,19 +1719,16 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         /// handle `require` text-based errors
         catch Error(string memory err) {
-            string[] memory allowedErrors = new string[](3);
-            allowedErrors[0] = "token not exists!";
-            allowedErrors[1] = "token amount not enough!";
-            allowedErrors[2] = "token amount exclude used amount not enough!";
+            string[] memory allowedErrors = new string[](1);
+            allowedErrors[0] = "First error";
 
             _assertTextErrorsAllowed(err, allowedErrors);
         }
 
         /// handle custom errors
         catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](2);
-            allowedErrors[0] = AddressUtils.AddressZero.selector;
-            allowedErrors[1] = Errors.AccountNotExist.selector;
+            bytes4[] memory allowedErrors = new bytes4[](1);
+            allowedErrors[0] = ErrorRaiser.SecondError.selector;
 
             _assertCustomErrorsAllowed(err, allowedErrors);
         }
@@ -1863,22 +1880,33 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         }
 
-        /// handle `require` text-based errors
-        catch Error(string memory err) {
+            // Do something
 
-            string[] memory allowedErrors = new string[](5);
+            
+            
+            /// handle `require` text-based errors
+        catch Error(string memory err) {
+            // require(!params.isNativeToken || msg.value == params.orderMargin, "Deposit native token amount error!");
+            // require(wrapperToken == params.token, "Deposit with token error!");
+            // require(returndata.length == 0 || abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+            // require(keeper.balance >= value, "Address: insufficient balance for call");
+            string[] memory allowedErrors = new string[](4);
             allowedErrors[0] = "Deposit native token amount error!";
             allowedErrors[1] = "Deposit with token error!";
             allowedErrors[2] = "SafeERC20: ERC20 operation did not succeed";
             allowedErrors[3] = "Address: insufficient balance for call";
-            allowedErrors[4] = "place order with execution fee error!";
 
             _assertTextErrorsAllowed(err, allowedErrors);
         }
 
         /// handle custom errors
         catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](5);
+            // revert TransferUtils.TokenTransferError(token, receiver, amount);
+            // revert Errors.PlaceOrderWithParamsError();
+            // revert Errors.SymbolStatusInvalid(params.symbol);
+            // revert Errors.OnlyOneShortPositionSupport(params.symbol);
+            // revert Errors.ExecutionFeeNotEnough();
+            bytes4[] memory allowedErrors = new bytes4[](1);
             allowedErrors[0] = TransferUtils.TokenTransferError.selector;
             allowedErrors[1] = Errors.PlaceOrderWithParamsError.selector;
             allowedErrors[2] = Errors.SymbolStatusInvalid.selector;
@@ -2066,30 +2094,21 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
                 _keeperExecutions.orderExecutions.push(execution);
             }
             
-        }                      
-        
+        }                            
         /// handle `require` text-based errors
         catch Error(string memory err) {
-            string[] memory allowedErrors = new string[](3);
-            allowedErrors[0] = "place order with execution fee error!";
-            allowedErrors[1] = "Batch place order with execution fee error!";
-            allowedErrors[2] = "Deposit native token amount error!";
+            // string[] memory allowedErrors = new string[](1);
+            // allowedErrors[0] = "First error";
 
-            _assertTextErrorsAllowed(err, allowedErrors);
+            // _assertTextErrorsAllowed(err, allowedErrors);
         }
 
         /// handle custom errors
         catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](7);
-            allowedErrors[0] = Errors.OnlyDecreaseOrderSupported.selector;
-            allowedErrors[1] = Errors.MarginModeError.selector;
-            allowedErrors[2] = Errors.ExecutionFeeNotEnough.selector;
-            allowedErrors[3] = Errors.PlaceOrderWithParamsError.selector;
-            allowedErrors[4] = Errors.SymbolStatusInvalid.selector;
-            allowedErrors[5] = Errors.OnlyOneShortPositionSupport.selector;
-            allowedErrors[6] = TransferUtils.TokenTransferError.selector;
+            // bytes4[] memory allowedErrors = new bytes4[](1);
+            // allowedErrors[0] = ErrorRaiser.SecondError.selector;
 
-            _assertCustomErrorsAllowed(err, allowedErrors);
+            // _assertCustomErrorsAllowed(err, allowedErrors);
         }
     }
 
@@ -2160,24 +2179,27 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
             
         }
-
-        /// handle `require` text-based errors
+        
+        // Do something
+        
+            /// handle `require` text-based errors
         catch Error(string memory err) {
-            string[] memory allowedErrors = new string[](2);
+            // require(msg.value == params.executionFee, "update margin with execution fee error!");
+            string[] memory allowedErrors = new string[](1);
             allowedErrors[0] = "update margin with execution fee error!";
-            allowedErrors[1] = "Deposit eth amount error!";
 
             _assertTextErrorsAllowed(err, allowedErrors);
         }
 
         /// handle custom errors
         catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](5);
+            // revert Errors.AmountZeroNotAllowed();
+            // revert Errors.OnlyIsolateSupported();
+            // revert Errors.ExecutionFeeNotEnough();
+            bytes4[] memory allowedErrors = new bytes4[](3);
             allowedErrors[0] = Errors.AmountZeroNotAllowed.selector;
             allowedErrors[1] = Errors.OnlyIsolateSupported.selector;
             allowedErrors[2] = Errors.ExecutionFeeNotEnough.selector;
-            allowedErrors[3] = Errors.PositionNotExists.selector;
-            allowedErrors[4] = TransferUtils.TokenTransferError.selector;
 
             _assertCustomErrorsAllowed(err, allowedErrors);
         }
@@ -2261,25 +2283,27 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
             
         }
-
+        
         /// handle `require` text-based errors
         catch Error(string memory err) {
             // require(msg.value == params.executionFee, "update leverage with execution fee error!");
-            string[] memory allowedErrors = new string[](2);
+            string[] memory allowedErrors = new string[](1);
             allowedErrors[0] = "update leverage with execution fee error!";
-            allowedErrors[1] = "Deposit eth amount error!";
             
-            _assertTextErrorsAllowed(err, allowedErrors);
+        _assertTextErrorsAllowed(err, allowedErrors);
         }
 
         /// handle custom errors
         catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](5);
+            // revert Errors.SymbolNotExists();
+            // revert Errors.SymbolStatusInvalid(params.symbol);
+            // revert Errors.LeverageInvalid(params.symbol, params.leverage);
+            // revert Errors.ExecutionFeeNotEnough();
+            bytes4[] memory allowedErrors = new bytes4[](4);
             allowedErrors[0] = Errors.SymbolNotExists.selector;
             allowedErrors[1] = Errors.SymbolStatusInvalid.selector;
             allowedErrors[2] = Errors.LeverageInvalid.selector;
             allowedErrors[3] = Errors.ExecutionFeeNotEnough.selector;
-            allowedErrors[4] = TransferUtils.TokenTransferError.selector;
 
             _assertCustomErrorsAllowed(err, allowedErrors);
         }
@@ -2381,29 +2405,21 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             /// Invariants assessment
 
             
-        }         
-
+        }                            
         /// handle `require` text-based errors
         catch Error(string memory err) {
-            string[] memory allowedErrors = new string[](3);
-            allowedErrors[0] = "mint with execution fee error!";
-            allowedErrors[1] = "Deposit with token error!";
-            allowedErrors[2] = "Deposit eth amount error!";
+            // string[] memory allowedErrors = new string[](1);
+            // allowedErrors[0] = "First error";
 
-            _assertTextErrorsAllowed(err, allowedErrors);
+            // _assertTextErrorsAllowed(err, allowedErrors);
         }
 
         /// handle custom errors
         catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](6);
-            allowedErrors[0] = Errors.MintWithAmountZero.selector;
-            allowedErrors[1] = Errors.MintTokenInvalid.selector;
-            allowedErrors[2] = Errors.StakeTokenInvalid.selector;
-            allowedErrors[3] = Errors.MintWithParamError.selector;
-            allowedErrors[4] = Errors.ExecutionFeeNotEnough.selector;
-            allowedErrors[5] = TransferUtils.TokenTransferError.selector;
+            // bytes4[] memory allowedErrors = new bytes4[](1);
+            // allowedErrors[0] = ErrorRaiser.SecondError.selector;
 
-            _assertCustomErrorsAllowed(err, allowedErrors);
+            // _assertCustomErrorsAllowed(err, allowedErrors);
         }
     }
 
@@ -2472,6 +2488,8 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             
         }
 
+        
+        
         /// handle `require` text-based errors
         catch Error(string memory err) {
             // require(msg.value == executionFee, "redeem with execution fee error!");
@@ -2485,12 +2503,13 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         
         /// handle custom errors
         catch(bytes memory err) {
-
+            // revert AddressUtils.AddressZero();
+            // revert Errors.RedeemWithAmountNotEnough(account, params.stakeToken);
+            // revert Errors.RedeemTokenInvalid(params.stakeToken, params.redeemToken);
             bytes4[] memory allowedErrors = new bytes4[](3);
             allowedErrors[0] = AddressUtils.AddressZero.selector;
             allowedErrors[1] = Errors.RedeemWithAmountNotEnough.selector;
             allowedErrors[2] = Errors.RedeemTokenInvalid.selector;
-            allowedErrors[3] = Errors.StakeTokenInvalid.selector;
 
             _assertCustomErrorsAllowed(err, allowedErrors);
         }

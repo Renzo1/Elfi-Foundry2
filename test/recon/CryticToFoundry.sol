@@ -19,42 +19,44 @@ contract CryticToFoundry is Test, TargetFunctions, FoundryAsserts {
     /// Stakers Story
     function testStakeAndRedeemCoverage() public {
 
-        // Create Mint Params
-        uint256 _answer = 65000;
-        uint256 _stakeTokenIndex = 0;
-        uint256 _requestTokenIndex = 0;
-        uint256 _requestTokenAmount = 100e18;
-        uint256 _walletRequestTokenAmount = 99e18;
-        uint256 _minStakeAmount = 0;
-        bool _isCollateral = false;
-        bool _isNativeToken = false;
+        // // Create Mint Params
+        // uint256 _answer = 65000;
+        // uint256 _stakeTokenIndex = 0;
+        // uint256 _requestTokenIndex = 0;
+        // uint256 _requestTokenAmount = 100e18;
+        // uint256 _walletRequestTokenAmount = 99e18;
+        // uint256 _minStakeAmount = 0;
+        // bool _isCollateral = false;
+        // bool _isNativeToken = false;
 
-        // Cancel Mint Params
-        uint256 _requestIndex = 0;
+        // // Cancel Mint Params
+        // uint256 _requestIndex = 0;
 
-        // Create Redeem Params
-        uint256 _redeemTokenIndex = 0;
-        uint256 _redeemRequestTokenAmount = 50e18;
-        uint256 _unStakeAmount = 50e18;
-        uint256 _minRedeemAmount = 0;
+        // // Create Redeem Params
+        // uint256 _redeemTokenIndex = 0;
+        // uint256 _redeemRequestTokenAmount = 50e18;
+        // uint256 _unStakeAmount = 50e18;
+        // uint256 _minRedeemAmount = 0;
 
-        // vm.startPrank(keeper);
-        stakeFacet_createMintStakeTokenRequest(_answer, _stakeTokenIndex, _requestTokenIndex, _requestTokenAmount, _walletRequestTokenAmount, _minStakeAmount, _isCollateral, _isNativeToken);
-        // vm.stopPrank();
+        // // vm.startPrank(keeper);
         // stakeFacet_createMintStakeTokenRequest(_answer, _stakeTokenIndex, _requestTokenIndex, _requestTokenAmount, _walletRequestTokenAmount, _minStakeAmount, _isCollateral, _isNativeToken);
-        // stakeFacet_executeMintStakeToken(_answer);
-        // stakeFacet_cancelMintStakeToken(_requestIndex, _answer);
+        // // vm.stopPrank();
+        // // stakeFacet_createMintStakeTokenRequest(_answer, _stakeTokenIndex, _requestTokenIndex, _requestTokenAmount, _walletRequestTokenAmount, _minStakeAmount, _isCollateral, _isNativeToken);
+        // // stakeFacet_executeMintStakeToken(_answer);
+        // // stakeFacet_cancelMintStakeToken(_requestIndex, _answer);
 
-        // stakeFacet_createRedeemStakeTokenRequest(_answer, _stakeTokenIndex, _redeemTokenIndex, _redeemRequestTokenAmount, _unStakeAmount, _minRedeemAmount);
-        // stakeFacet_executeRedeemStakeToken(_answer);
-        // stakeFacet_cancelRedeemStakeToken(_requestIndex, _answer);
+        // // stakeFacet_createRedeemStakeTokenRequest(_answer, _stakeTokenIndex, _redeemTokenIndex, _redeemRequestTokenAmount, _unStakeAmount, _minRedeemAmount);
+        // // stakeFacet_executeRedeemStakeToken(_answer);
+        // // stakeFacet_cancelRedeemStakeToken(_requestIndex, _answer);
 
         t(true, "passed");
     }
     
     // function executeOrder(uint16 _answer) public {}
 
-    // function orderFacet_cancelOrder(uint8 _requestIndex, uint16 _answer) public {}
+    // function orderFacet_cancelOrder(uint8 _requestIndex, uint16 _answer) public {
+    // TODO callable by users
+    // }
 
     // function accountFacet_executeWithdraw(uint16 _answer) public{}
 

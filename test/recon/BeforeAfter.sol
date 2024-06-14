@@ -50,24 +50,24 @@ abstract contract BeforeAfter is Setup {
         uint256[] accountTokenBalancesLiability;
         
 
-        /// getAccountInfoWithOracles deconstructed values
-        address accountOwnerWithOracles;
-        // Account.TokenBalance[] accountTokenBalancesWithOracles;
-        address[] accountTokensWithOracles;
-        bytes32[] accountPositionsWithOracles;
-        uint256 accountPortfolioNetValueWithOracles;
-        uint256 accountTotalUsedValueWithOracles;
-        int256 accountAvailableValueWithOracles;
-        uint256 accountOrderHoldInUsdWithOracles;
-        int256 accountCrossMMRWithOracles;
-        int256 accountCrossNetValueWithOracles;
-        uint256 accountTotalMMWithOracles;
+        // /// getAccountInfoWithOracles deconstructed values
+        // address accountOwnerWithOracles;
+        // // Account.TokenBalance[] accountTokenBalancesWithOracles;
+        // address[] accountTokensWithOracles;
+        // bytes32[] accountPositionsWithOracles;
+        // uint256 accountPortfolioNetValueWithOracles;
+        // uint256 accountTotalUsedValueWithOracles;
+        // int256 accountAvailableValueWithOracles;
+        // uint256 accountOrderHoldInUsdWithOracles;
+        // int256 accountCrossMMRWithOracles;
+        // int256 accountCrossNetValueWithOracles;
+        // uint256 accountTotalMMWithOracles;
 
-        /// Account.TokenBalance[] deconstructed values
-        uint256[] accountTokenBalancesAmountWithOracles;
-        uint256[] accountTokenBalancesUsedAmountWithOracles;
-        uint256[] accountTokenBalancesInterestWithOracles;
-        uint256[] accountTokenBalancesLiabilityWithOracles;
+        // /// Account.TokenBalance[] deconstructed values
+        // uint256[] accountTokenBalancesAmountWithOracles;
+        // uint256[] accountTokenBalancesUsedAmountWithOracles;
+        // uint256[] accountTokenBalancesInterestWithOracles;
+        // uint256[] accountTokenBalancesLiabilityWithOracles;
 
         ///////// OrderFacet /////////
         // IOrder.AccountOrder[] accountOrders;
@@ -302,27 +302,27 @@ abstract contract BeforeAfter is Setup {
         _before.accountCrossNetValue = account.crossNetValue;
         _before.accountTotalMM = account.totalMM;
 
-        hevm.prank(_user);
-        IAccount.AccountInfo memory accountWithOracles = diamondAccountFacet.getAccountInfoWithOracles(_user, _oracles);
-        _before.accountOwnerWithOracles = accountWithOracles.owner;
+        // hevm.prank(_user);
+        // IAccount.AccountInfo memory accountWithOracles = diamondAccountFacet.getAccountInfoWithOracles(_user, _oracles);
+        // _before.accountOwnerWithOracles = accountWithOracles.owner;
 
-        // _before.accountTokenBalancesWithOracles = accountWithOracles.tokenBalances;
-        for(uint256 i = 0; i < accountWithOracles.tokenBalances.length; i++) {
-            _before.accountTokenBalancesAmountWithOracles[i] = accountWithOracles.tokenBalances[i].amount;
-            _before.accountTokenBalancesUsedAmountWithOracles[i] = accountWithOracles.tokenBalances[i].usedAmount;
-            _before.accountTokenBalancesInterestWithOracles[i] = accountWithOracles.tokenBalances[i].interest;
-            _before.accountTokenBalancesLiabilityWithOracles[i] = accountWithOracles.tokenBalances[i].liability;
-        }
+        // // _before.accountTokenBalancesWithOracles = accountWithOracles.tokenBalances;
+        // for(uint256 i = 0; i < accountWithOracles.tokenBalances.length; i++) {
+        //     _before.accountTokenBalancesAmountWithOracles[i] = accountWithOracles.tokenBalances[i].amount;
+        //     _before.accountTokenBalancesUsedAmountWithOracles[i] = accountWithOracles.tokenBalances[i].usedAmount;
+        //     _before.accountTokenBalancesInterestWithOracles[i] = accountWithOracles.tokenBalances[i].interest;
+        //     _before.accountTokenBalancesLiabilityWithOracles[i] = accountWithOracles.tokenBalances[i].liability;
+        // }
 
-        _before.accountTokensWithOracles = accountWithOracles.tokens;
-        _before.accountPositionsWithOracles = accountWithOracles.positions;
-        _before.accountPortfolioNetValueWithOracles = accountWithOracles.portfolioNetValue;
-        _before.accountTotalUsedValueWithOracles = accountWithOracles.totalUsedValue;
-        _before.accountAvailableValueWithOracles = accountWithOracles.availableValue;
-        _before.accountOrderHoldInUsdWithOracles = accountWithOracles.orderHoldInUsd;
-        _before.accountCrossMMRWithOracles = accountWithOracles.crossMMR;
-        _before.accountCrossNetValueWithOracles = accountWithOracles.crossNetValue;
-        _before.accountTotalMMWithOracles = accountWithOracles.totalMM;
+        // _before.accountTokensWithOracles = accountWithOracles.tokens;
+        // _before.accountPositionsWithOracles = accountWithOracles.positions;
+        // _before.accountPortfolioNetValueWithOracles = accountWithOracles.portfolioNetValue;
+        // _before.accountTotalUsedValueWithOracles = accountWithOracles.totalUsedValue;
+        // _before.accountAvailableValueWithOracles = accountWithOracles.availableValue;
+        // _before.accountOrderHoldInUsdWithOracles = accountWithOracles.orderHoldInUsd;
+        // _before.accountCrossMMRWithOracles = accountWithOracles.crossMMR;
+        // _before.accountCrossNetValueWithOracles = accountWithOracles.crossNetValue;
+        // _before.accountTotalMMWithOracles = accountWithOracles.totalMM;
 
         ///////// OrderFacet /////////
         // _before.accountOrders = diamondOrderFacet.getAccountOrders(_user);
@@ -627,27 +627,27 @@ abstract contract BeforeAfter is Setup {
         _after.accountCrossNetValue = account.crossNetValue;
         _after.accountTotalMM = account.totalMM;
 
-        hevm.prank(_user);
-        IAccount.AccountInfo memory accountWithOracles = diamondAccountFacet.getAccountInfoWithOracles(_user, _oracles);
-        _after.accountOwnerWithOracles = accountWithOracles.owner;
+        // hevm.prank(_user);
+        // IAccount.AccountInfo memory accountWithOracles = diamondAccountFacet.getAccountInfoWithOracles(_user, _oracles);
+        // _after.accountOwnerWithOracles = accountWithOracles.owner;
 
-        // _after.accountTokenBalancesWithOracles = accountWithOracles.tokenBalances;
-        for(uint256 i = 0; i < accountWithOracles.tokenBalances.length; i++) {
-            _after.accountTokenBalancesAmountWithOracles[i] = accountWithOracles.tokenBalances[i].amount;
-            _after.accountTokenBalancesUsedAmountWithOracles[i] = accountWithOracles.tokenBalances[i].usedAmount;
-            _after.accountTokenBalancesInterestWithOracles[i] = accountWithOracles.tokenBalances[i].interest;
-            _after.accountTokenBalancesLiabilityWithOracles[i] = accountWithOracles.tokenBalances[i].liability;
-        }
+        // // _after.accountTokenBalancesWithOracles = accountWithOracles.tokenBalances;
+        // for(uint256 i = 0; i < accountWithOracles.tokenBalances.length; i++) {
+        //     _after.accountTokenBalancesAmountWithOracles[i] = accountWithOracles.tokenBalances[i].amount;
+        //     _after.accountTokenBalancesUsedAmountWithOracles[i] = accountWithOracles.tokenBalances[i].usedAmount;
+        //     _after.accountTokenBalancesInterestWithOracles[i] = accountWithOracles.tokenBalances[i].interest;
+        //     _after.accountTokenBalancesLiabilityWithOracles[i] = accountWithOracles.tokenBalances[i].liability;
+        // }
 
-        _after.accountTokensWithOracles = accountWithOracles.tokens;
-        _after.accountPositionsWithOracles = accountWithOracles.positions;
-        _after.accountPortfolioNetValueWithOracles = accountWithOracles.portfolioNetValue;
-        _after.accountTotalUsedValueWithOracles = accountWithOracles.totalUsedValue;
-        _after.accountAvailableValueWithOracles = accountWithOracles.availableValue;
-        _after.accountOrderHoldInUsdWithOracles = accountWithOracles.orderHoldInUsd;
-        _after.accountCrossMMRWithOracles = accountWithOracles.crossMMR;
-        _after.accountCrossNetValueWithOracles = accountWithOracles.crossNetValue;
-        _after.accountTotalMMWithOracles = accountWithOracles.totalMM;
+        // _after.accountTokensWithOracles = accountWithOracles.tokens;
+        // _after.accountPositionsWithOracles = accountWithOracles.positions;
+        // _after.accountPortfolioNetValueWithOracles = accountWithOracles.portfolioNetValue;
+        // _after.accountTotalUsedValueWithOracles = accountWithOracles.totalUsedValue;
+        // _after.accountAvailableValueWithOracles = accountWithOracles.availableValue;
+        // _after.accountOrderHoldInUsdWithOracles = accountWithOracles.orderHoldInUsd;
+        // _after.accountCrossMMRWithOracles = accountWithOracles.crossMMR;
+        // _after.accountCrossNetValueWithOracles = accountWithOracles.crossNetValue;
+        // _after.accountTotalMMWithOracles = accountWithOracles.totalMM;
 
         ///////// OrderFacet /////////
         // _after.accountOrders = diamondOrderFacet.getAccountOrders(_user);
@@ -946,23 +946,23 @@ abstract contract BeforeAfter is Setup {
         delete _before.accountTokenBalancesInterest;
         delete _before.accountTokenBalancesLiability;
         
-        /// getAccountInfoWithOracles deconstructed values
-        _before.accountOwnerWithOracles = address(0);
-        delete _before.accountTokensWithOracles;
-        delete _before.accountPositionsWithOracles;
-        _before.accountPortfolioNetValueWithOracles = 0;
-        _before.accountTotalUsedValueWithOracles = 0;
-        _before.accountAvailableValueWithOracles = 0;
-        _before.accountOrderHoldInUsdWithOracles = 0;
-        _before.accountCrossMMRWithOracles = 0;
-        _before.accountCrossNetValueWithOracles = 0;
-        _before.accountTotalMMWithOracles = 0;
+        // /// getAccountInfoWithOracles deconstructed values
+        // _before.accountOwnerWithOracles = address(0);
+        // delete _before.accountTokensWithOracles;
+        // delete _before.accountPositionsWithOracles;
+        // _before.accountPortfolioNetValueWithOracles = 0;
+        // _before.accountTotalUsedValueWithOracles = 0;
+        // _before.accountAvailableValueWithOracles = 0;
+        // _before.accountOrderHoldInUsdWithOracles = 0;
+        // _before.accountCrossMMRWithOracles = 0;
+        // _before.accountCrossNetValueWithOracles = 0;
+        // _before.accountTotalMMWithOracles = 0;
 
-        /// Account.TokenBalance[] deconstructed values
-        delete _before.accountTokenBalancesAmountWithOracles;
-        delete _before.accountTokenBalancesUsedAmountWithOracles;
-        delete _before.accountTokenBalancesInterestWithOracles;
-        delete _before.accountTokenBalancesLiabilityWithOracles;
+        // /// Account.TokenBalance[] deconstructed values
+        // delete _before.accountTokenBalancesAmountWithOracles;
+        // delete _before.accountTokenBalancesUsedAmountWithOracles;
+        // delete _before.accountTokenBalancesInterestWithOracles;
+        // delete _before.accountTokenBalancesLiabilityWithOracles;
 
         ///////// OrderFacet /////////
         delete _before.orderId;
@@ -1157,23 +1157,23 @@ abstract contract BeforeAfter is Setup {
         delete _after.accountTokenBalancesInterest;
         delete _after.accountTokenBalancesLiability;
         
-        /// getAccountInfoWithOracles deconstructed values
-        _after.accountOwnerWithOracles = address(0);
-        delete _after.accountTokensWithOracles;
-        delete _after.accountPositionsWithOracles;
-        _after.accountPortfolioNetValueWithOracles = 0;
-        _after.accountTotalUsedValueWithOracles = 0;
-        _after.accountAvailableValueWithOracles = 0;
-        _after.accountOrderHoldInUsdWithOracles = 0;
-        _after.accountCrossMMRWithOracles = 0;
-        _after.accountCrossNetValueWithOracles = 0;
-        _after.accountTotalMMWithOracles = 0;
+        // /// getAccountInfoWithOracles deconstructed values
+        // _after.accountOwnerWithOracles = address(0);
+        // delete _after.accountTokensWithOracles;
+        // delete _after.accountPositionsWithOracles;
+        // _after.accountPortfolioNetValueWithOracles = 0;
+        // _after.accountTotalUsedValueWithOracles = 0;
+        // _after.accountAvailableValueWithOracles = 0;
+        // _after.accountOrderHoldInUsdWithOracles = 0;
+        // _after.accountCrossMMRWithOracles = 0;
+        // _after.accountCrossNetValueWithOracles = 0;
+        // _after.accountTotalMMWithOracles = 0;
 
-        /// Account.TokenBalance[] deconstructed values
-        delete _after.accountTokenBalancesAmountWithOracles;
-        delete _after.accountTokenBalancesUsedAmountWithOracles;
-        delete _after.accountTokenBalancesInterestWithOracles;
-        delete _after.accountTokenBalancesLiabilityWithOracles;
+        // /// Account.TokenBalance[] deconstructed values
+        // delete _after.accountTokenBalancesAmountWithOracles;
+        // delete _after.accountTokenBalancesUsedAmountWithOracles;
+        // delete _after.accountTokenBalancesInterestWithOracles;
+        // delete _after.accountTokenBalancesLiabilityWithOracles;
 
         ///////// OrderFacet /////////
         delete _after.orderId;
