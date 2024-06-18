@@ -548,7 +548,7 @@ abstract contract Setup is BaseSetup {
     USERS = new address[](3);
     USERS[0] = BOB;
     USERS[1] = ALICE;
-    USERS[2] = JAKE;
+    // USERS[2] = JAKE;
 
     for (uint8 i = 0; i < USERS.length; i++) {
       address user = USERS[i];

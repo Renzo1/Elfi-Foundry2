@@ -181,7 +181,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     struct PositionMarginRequests {
         address account;
         uint256 requestId;
-        uint256 positionKey;
+        bytes32 positionKey;
         bool isAdd;
         bool isNativeToken;
         uint256 updateMarginAmount;
@@ -192,7 +192,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     struct CanceledPositionMarginRequests {
         address account;
         uint256 requestId;
-        uint256 positionKey;
+        bytes32 positionKey;
         bool isAdd;
         bool isNativeToken;
         uint256 updateMarginAmount;
@@ -534,7 +534,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
                 /// handle custom errors
                 catch(bytes memory err) {
                     
-                    bytes4[] memory allowedErrors = new bytes4[](5);
+                    bytes4[] memory allowedErrors = new bytes4[](9);
                     allowedErrors[0] = Errors.WithdrawRequestNotExists.selector;
                     allowedErrors[1] = RoleAccessControl.InvalidRoleAccess.selector;
                     allowedErrors[2] = Errors.AmountZeroNotAllowed.selector;
@@ -992,7 +992,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         
         /// handle custom errors
         catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](3);
+            bytes4[] memory allowedErrors = new bytes4[](5);
             allowedErrors[0] = RoleAccessControl.InvalidRoleAccess.selector;
             allowedErrors[1] = Errors.UpdateLeverageRequestNotExists.selector;
             allowedErrors[2] = Errors.TransferErrorWithVaultBalanceNotEnough.selector;
@@ -1448,7 +1448,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         /// handle custom errors
         catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](1);
+            bytes4[] memory allowedErrors = new bytes4[](5);
             allowedErrors[0] = RoleAccessControl.InvalidRoleAccess.selector;
             allowedErrors[1] = Errors.RedeemRequestNotExists.selector;
             allowedErrors[2] = Vault.AddressSelfNotSupported.selector;
@@ -1474,34 +1474,18 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     ////////// AccountFacet //////////
     
-    /// deposit 
-    function accountFacet_deposit(uint256 _tokenIndex, uint256 _amount, bool _sendEth, bool _onlyEth, uint256 _ethValue, uint256 _answer) public{
+    /// deposit crypto token
+    function accountFacet_depositCrypto(uint256 _answer, uint256 _tokenIndex, uint256 _amount) public{
         // Get oracles
         BeforeAfterParamHelper memory beAfParams;
         beAfParams.oracles = getOracleParam(_answer);
         
-        
-        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
-
         // select a random token
-        uint256 tokenIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1);
-        address token = tokens[tokenIndex]; // select a random token
-
+        address token = tokens[EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1)]; // select a random token
         uint256 amount = EchidnaUtils.clampBetween(_amount, 0, IERC20(token).balanceOf(msg.sender));
-        
-        uint256 ethValue;
-        // _sendEth = false; // toggle this on for some jobs
-        if(_sendEth){
-            ethValue = EchidnaUtils.clampBetween(_ethValue, 0, msg.sender.balance);
-            amount = ethValue;
-
-            if (_onlyEth){ // to successfully deposit only eth
-                token = address(0);
-            }
-        }else{
-            ethValue = 0;
-        }
-
+        uint256 ethValue = 0;
+                    
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
         vm.prank(msg.sender);  
         try diamondAccountFacet.deposit{value: ethValue}(token, amount){
             __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
@@ -1545,34 +1529,78 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     }
 
 
-    /// createWithdrawRequest 
-    function accountFacet_createWithdrawRequest(uint256 _tokenIndex, uint256 _amount, uint256 _answer) public {
+    /// deposit native token
+    function accountFacet_depositNative(uint256 _answer, uint256 _amount) public{
         // Get oracles
         BeforeAfterParamHelper memory beAfParams;
         beAfParams.oracles = getOracleParam(_answer);
         
+        address token = address(0);
+        uint256 amount = EchidnaUtils.clampBetween(_amount, 0, msg.sender.balance);
+        uint256 ethValue = amount;
+                    
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+        vm.prank(msg.sender);  
+        try diamondAccountFacet.deposit{value: ethValue}(token, amount){
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+            // Update the deposit tracker; Remember to factor in transaction fee when calculating with this
+            _txsTracking.deposits[msg.sender][token] += 0;
+            _txsTracking.deposits[msg.sender][ETH_ADDRESS] += ethValue;
+
+            /// Invariants assessment
+            /**
+            - deposited amount should only enter portfolioVault
+            */
+            t(true, "accountFacet_deposit: test passed");
+
+        }
+            
+        /// handle `require` text-based errors
+        catch Error(string memory err) {
+
+            string[] memory allowedErrors = new string[](3);
+            allowedErrors[0] = "Deposit with token error!";
+            allowedErrors[1] = "subTokenLiability less than liability";
+            allowedErrors[2] = "SafeCast: value doesn't fit in an int256";
+            
+        _assertTextErrorsAllowed(err, allowedErrors);
+        }
+
+        /// handle custom errors
+        catch(bytes memory err) {
+            bytes4[] memory allowedErrors = new bytes4[](7);
+            allowedErrors[0] = TransferUtils.TokenTransferError.selector;
+            allowedErrors[1] = Errors.AmountZeroNotAllowed.selector;
+            allowedErrors[2] = Errors.AmountNotMatch.selector;
+            allowedErrors[3] = Errors.OnlyCollateralSupported.selector;
+            allowedErrors[4] = Errors.TokenIsNotSupportCollateral.selector;
+            allowedErrors[5] = Errors.CollateralTotalCapOverflow.selector;
+            allowedErrors[6] = Errors.CollateralUserCapOverflow.selector;
+
+            _assertCustomErrorsAllowed(err, allowedErrors);
+        }
+    }
+
+    /// createWithdrawRequest 
+    function accountFacet_createWithdrawRequest( uint256 _answer, uint256 _tokenIndex, uint256 _amount) public {
+        // Get oracles
+        BeforeAfterParamHelper memory beAfParams;
+        beAfParams.oracles = getOracleParam(_answer);
         
         __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
         // select a random token
-        uint256 tokenIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1);
-        address token = tokens[tokenIndex]; // select a random token
-        uint256 amount;
-
-        if(token == address(usdc)){
-            amount = EchidnaUtils.clampBetween(_amount, 0, _before.portfolioVaultUsdcBalance);
-        }else if(token == address(weth)){
-            amount = EchidnaUtils.clampBetween(_amount, 0, _before.portfolioVaultWethBalance);
-        }else{ // wbtc
-            amount = EchidnaUtils.clampBetween(_amount, 0, _before.portfolioVaultBtcBalance);
-        }
+        address token = tokens[EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1)]; // select a random token
+        uint256 amount = _before.portfolioVaultUsdcBalance + _before.portfolioVaultWethBalance + _before.portfolioVaultBtcBalance;
+        amount = EchidnaUtils.clampBetween(_amount, 0, amount);
 
         vm.prank(msg.sender);  
         try diamondAccountFacet.createWithdrawRequest(token, amount) returns(uint256 requestId){
             __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add to withdrawRequest Queue
-            AccountWithdrawExecutions memory execution = AccountWithdrawExecutions(msg.sender, requestId, token, amount,false);
+            AccountWithdrawExecutions memory execution = AccountWithdrawExecutions(msg.sender, requestId, token, amount, false);
             _keeperExecutions.accountWithdrawExecutions.push(execution);
 
             /// Invariants assessment
@@ -1598,127 +1626,6 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         }
     }
 
-    /*
-    /// batchUpdateAccountToken
-    function accountFacet_batchUpdateAccountToken(
-        uint256 _answer, 
-        uint96 _changedUsdc, 
-        uint96 _changedWeth, 
-        uint96 _changedBtc, 
-        bool _addUsdc,
-        bool _addWeth,
-        bool _addBtc
-    ) public {
-        // Get oracles
-        BeforeAfterParamHelper memory beAfParams;
-        beAfParams.oracles = getOracleParam(_answer);
-        
-        
-        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
-
-        AssetsProcess.UpdateAccountTokenParams memory params;
-        params.account = msg.sender;
-        params.tokens = tokens;
-        params.changedTokenAmounts = new int256[](tokens.length);
-
-        int256 usdcDelta;
-        int256 wethDelta;
-        int256 btcDelta;
-
-        uint256 accountUsdcBalance;
-        uint256 accountWethBalance;
-        uint256 accountBtcBalance;
-
-        for(uint256 i = 0; i < params.tokens.length; i++) {
-            
-            for(uint256 j = 0; j < _before.accountTokens.length; j++) {
-                if(_before.accountTokens[j] == address(usdc)){
-                    accountUsdcBalance = _before.accountTokenBalancesAmount[j];
-                }else if(_before.accountTokens[j] == address(weth)){
-                    accountWethBalance = _before.accountTokenBalancesAmount[j];
-                }else if(_before.accountTokens[j] == address(wbtc)){
-                    accountBtcBalance = _before.accountTokenBalancesAmount[j];
-                }else{
-                    accountUsdcBalance = 0;
-                    accountWethBalance = 0;
-                    accountBtcBalance = 0;
-                }
-            }
-
-            if(params.tokens[i] == address(weth)){
-                if(_addWeth){
-                    // set weth delta
-                    wethDelta = int256(EchidnaUtils.clampBetween(uint256(_changedWeth), 0, accountWethBalance));
-                }else{
-                    // set weth delta
-                    wethDelta = -(int256(EchidnaUtils.clampBetween(uint256(_changedWeth), 0, accountWethBalance)));
-                }
-
-                params.changedTokenAmounts[i] = wethDelta;
-
-            }else if(params.tokens[i] == address(wbtc)){
-                if(_addBtc){
-                    // set btc delta
-                    btcDelta = int256(EchidnaUtils.clampBetween(uint256(_changedBtc), 0, accountBtcBalance));
-                }else{
-                    // set btc delta
-                    btcDelta = -(int256(EchidnaUtils.clampBetween(uint256(_changedBtc), 0, accountBtcBalance)));
-                }
-
-                params.changedTokenAmounts[i] = btcDelta;
-
-            }else{
-                if(_addUsdc){
-                    // set usdc delta
-                    usdcDelta = int256(EchidnaUtils.clampBetween(uint256(_changedUsdc), 0, accountUsdcBalance));
-                }else{
-                    // set usdc delta
-                    usdcDelta = -(int256(EchidnaUtils.clampBetween(uint256(_changedUsdc), 0, accountUsdcBalance)));
-                }
-
-                params.changedTokenAmounts[i] = usdcDelta;
-
-            }
-            
-        }
-
-        vm.prank(msg.sender);  
-        try diamondAccountFacet.batchUpdateAccountToken(params) {
-            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
-
-            // Add to withdrawRequest Queue
-            // AccountWithdrawExecutions memory execution = AccountWithdrawExecutions(msg.sender, requestId, token, amount,false);
-            // _keeperExecutions.accountWithdrawExecutions.push(execution);
-
-            /// Invariants assessment
-
-            // Update the deposit tracker
-            // Add tx to keeper queue orders --> KeeperExecutions.accountExecutions[]
-
-        }            
-
-        /// handle `require` text-based errors
-        catch Error(string memory err) {
-            string[] memory allowedErrors = new string[](3);
-            allowedErrors[0] = "token not exists!";
-            allowedErrors[1] = "token amount not enough!";
-            allowedErrors[2] = "token amount exclude used amount not enough!";
-
-            _assertTextErrorsAllowed(err, allowedErrors);
-        }
-
-        /// handle custom errors
-        catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](2);
-            allowedErrors[0] = AddressUtils.AddressZero.selector;
-            allowedErrors[1] = Errors.AccountNotExist.selector;
-
-            _assertCustomErrorsAllowed(err, allowedErrors);
-        }
-    
-    }
-    */
-
     ////////// OrderFacet //////////
     
     struct OrderParamsHelper{
@@ -1735,117 +1642,48 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         int256 maxPrice;
     }
 
-    /// createOrderRequest
-    function orderFacet_createOrderRequest(
+    /// createOrderRequest for Crypto token
+    function orderFacet_createTokenOrderRequest(
         uint256 _answer, 
         bool _isCrossMargin, 
-        bool _isNativeToken,
-        uint256 _orderSide, 
-        uint256 _positionSide,
-        uint256 _orderType,
-        uint256 _stopType,
+        Order.Side _orderSide, 
+        Order.PositionSide _positionSide,
+        Order.Type _orderType,
+        Order.StopType _stopType,
         uint256 _marginTokenIndex,
         uint256 _qty,
         uint256 _orderMargin,
         uint256 _leverage,
-        uint256 _triggerPrice
+        uint256 _triggerPrice,
+        uint256 _acceptablePrice
     ) public {
-        // Get oracles
         BeforeAfterParamHelper memory beAfParams;
-        beAfParams.oracles = getOracleParam(_answer);
-        
-        
-        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
-
-        OrderParamsHelper memory orderParamsHelper;
-
         IOrder.PlaceOrderParams memory params;
+        OrderParamsHelper memory orderParamsHelper;
+        beAfParams.oracles = getOracleParam(_answer);
+
+
+        /// createOrder params setup
         params.isCrossMargin = _isCrossMargin;
-        params.isNativeToken = _isNativeToken;
-
-
-
-        orderParamsHelper.orderSide = EchidnaUtils.clampBetween(_orderSide, 0, 2);
-        if(orderParamsHelper.orderSide == 0){
-            params.orderSide = Order.Side.NONE;
-        }else if(orderParamsHelper.orderSide == 1){
-            params.orderSide = Order.Side.LONG;
-        }else{
-            params.orderSide = Order.Side.SHORT;
-        }
-
-        uint256 positionSide = EchidnaUtils.clampBetween(_positionSide, 0, 2);
-        if(positionSide == 0){
-            params.posSide = Order.PositionSide.NONE;
-        }else if(positionSide == 1){
-            params.posSide = Order.PositionSide.INCREASE;
-        }else{
-            params.posSide = Order.PositionSide.DECREASE;
-        }
-
-        orderParamsHelper.orderType = EchidnaUtils.clampBetween(_orderType, 0, 3);
-        if(orderParamsHelper.orderType == 0){
-            params.orderType = Order.Type.NONE;
-        }else if(orderParamsHelper.orderType == 1){
-            params.orderType = Order.Type.MARKET;
-        }else if(orderParamsHelper.orderType == 2){
-            params.orderType = Order.Type.LIMIT;
-        }else{
-            params.orderType = Order.Type.STOP;
-        }
-
-        orderParamsHelper.stopType = EchidnaUtils.clampBetween(_stopType, 0, 2);
-        if(orderParamsHelper.stopType == 0){
-            params.stopType = Order.StopType.NONE;
-        }else if(orderParamsHelper.stopType == 1){
-            params.stopType = Order.StopType.STOP_LOSS;
-        }else{
-            params.stopType = Order.StopType.TAKE_PROFIT;
-        }
-
+        params.isNativeToken = false;
+        params.orderSide = _orderSide;
+        params.posSide = _positionSide;
+        params.orderType = _orderType;
+        params.stopType = _stopType;
         orderParamsHelper.tokenIndex = EchidnaUtils.clampBetween(_marginTokenIndex, 0, 2);
-        orderParamsHelper.token = tokens[orderParamsHelper.tokenIndex];
-        params.marginToken = orderParamsHelper.token;
-
-        if(params.marginToken == address(weth)){
-            params.symbol = MarketConfig.getWethSymbol();
-        }else if(params.marginToken == address(wbtc)){
-            params.symbol = MarketConfig.getWbtcSymbol();
-        }else{
-            // Note: Usdc is not configured to besupported as marginToken for LONG positionsSide, thus it has no symbol in our test suite. 
-            // So to pass that check we are using a valid symbol whenever I test attempts to create a position with usdc as marginToken
-            params.symbol = MarketConfig.getWethSymbol();
-        }
-
-        for(uint256 i = 0; i < beAfParams.oracles.length; i++) {
-            if(beAfParams.oracles[i].token == params.marginToken) {
-                params.triggerPrice = EchidnaUtils.clampBetween(_triggerPrice, uint256(beAfParams.oracles[i].maxPrice) / 5, uint256(beAfParams.oracles[i].maxPrice) * 5); 
-                params.acceptablePrice = uint256(beAfParams.oracles[i].maxPrice); // TODO revisit this - bounds on acceptablePrice
-            }
-        }
-    
-        
-        orderParamsHelper.tokenMargin = EchidnaUtils.clampBetween(_orderMargin, 0, IERC20(orderParamsHelper.token).balanceOf(msg.sender));
-        orderParamsHelper.ethMargin = EchidnaUtils.clampBetween(_orderMargin, 0, msg.sender.balance);
-        
-        params.orderMargin = orderParamsHelper.tokenMargin;
-        params.qty = EchidnaUtils.clampBetween(_qty, 0, (_before.portfolioVaultUsdcBalance + _before.tradeVaultUsdcBalance + _before.lpVaultUsdcBalance) * 100);
-        // Consider a smaller bound on leverage to reduce revert cases that occurs when attempting to update a position with an unmatching leverage
+        params.marginToken = tokens[orderParamsHelper.tokenIndex];
+        params.qty = _qty;
+        params.orderMargin = EchidnaUtils.clampBetween(_orderMargin, 0, IERC20(params.marginToken).balanceOf(msg.sender));
         params.leverage = EchidnaUtils.clampBetween(_leverage, 0, MarketConfig.getMaxLeverage());
-        params.executionFee = (ChainConfig.getPlaceIncreaseOrderGasFeeLimit() * tx.gasprice) + 10_000; // extra 10k to account for margin of error
+        params.triggerPrice = EchidnaUtils.clampBetween(_triggerPrice, 0, 100_000e8);
+        params.acceptablePrice = EchidnaUtils.clampBetween(_acceptablePrice, 0, 100_000e8);
+        params.executionFee = ChainConfig.getPlaceIncreaseOrderGasFeeLimit();
         params.placeTime = block.timestamp;
-
-        orderParamsHelper.ethValue = params.executionFee;
-
-        if(params.isNativeToken){
-            // open position with native token
-            // and match orderMargin to ethValue, else Tx reverts
-            orderParamsHelper.ethValue = orderParamsHelper.ethMargin;
-            params.orderMargin = orderParamsHelper.ethMargin;
-        }
-
+        params.symbol = params.marginToken == address(weth) ? MarketConfig.getWethSymbol() : MarketConfig.getWbtcSymbol();
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code);
         vm.prank(msg.sender);
-        try diamondOrderFacet.createOrderRequest{value: orderParamsHelper.ethValue}(params)returns(uint256 orderId) {
+        try diamondOrderFacet.createOrderRequest{value: params.executionFee}(params)returns(uint256 orderId) {
             __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add to orderRequest Queue
@@ -1890,169 +1728,190 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     }
 
 
+    /// createOrderRequest for Native token
+    function orderFacet_createNativeOrderRequest(
+        uint256 _answer, 
+        bool _isCrossMargin, 
+        Order.Side _orderSide, 
+        Order.PositionSide _positionSide,
+        Order.Type _orderType,
+        Order.StopType _stopType,
+        uint256 _marginTokenIndex,
+        uint256 _qty,
+        uint256 _orderMargin,
+        uint256 _leverage,
+        uint256 _triggerPrice,
+        uint256 _acceptablePrice
+    ) public {
+        BeforeAfterParamHelper memory beAfParams;
+        IOrder.PlaceOrderParams memory params;
+        OrderParamsHelper memory orderParamsHelper;
+        beAfParams.oracles = getOracleParam(_answer);
+
+
+        /// createOrder params setup
+        params.isCrossMargin = _isCrossMargin;
+        params.isNativeToken = true;
+        params.orderSide = _orderSide;
+        params.posSide = _positionSide;
+        params.orderType = _orderType;
+        params.stopType = _stopType;
+        params.marginToken = address(weth);
+        params.qty = _qty;
+        params.orderMargin = EchidnaUtils.clampBetween(_orderMargin, 0, msg.sender.balance);
+        params.leverage = EchidnaUtils.clampBetween(_leverage, 0, MarketConfig.getMaxLeverage());
+        params.triggerPrice = EchidnaUtils.clampBetween(_triggerPrice, 0, 100_000e8);
+        params.acceptablePrice = EchidnaUtils.clampBetween(_acceptablePrice, 0, 100_000e8);
+        params.executionFee = ChainConfig.getPlaceIncreaseOrderGasFeeLimit();
+        params.placeTime = block.timestamp;
+        params.symbol = params.marginToken == address(weth) ? MarketConfig.getWethSymbol() : MarketConfig.getWbtcSymbol();
+        
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code);
+        vm.prank(msg.sender);
+        try diamondOrderFacet.createOrderRequest{value: params.orderMargin}(params)returns(uint256 orderId) {
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+            // Add to orderRequest Queue
+            OrderExecutions memory execution = OrderExecutions(
+                msg.sender, 
+                orderId,
+                params.isNativeToken,
+                params.marginToken,
+                params.orderMargin,
+                params.executionFee, 
+                false
+            );
+            _keeperExecutions.orderExecutions.push(execution);
+
+
+        }
+
+        /// handle `require` text-based errors
+        catch Error(string memory err) {
+
+            string[] memory allowedErrors = new string[](5);
+            allowedErrors[0] = "Deposit native token amount error!";
+            allowedErrors[1] = "Deposit with token error!";
+            allowedErrors[2] = "SafeERC20: ERC20 operation did not succeed";
+            allowedErrors[3] = "Address: insufficient balance for call";
+            allowedErrors[4] = "place order with execution fee error!";
+
+            _assertTextErrorsAllowed(err, allowedErrors);
+        }
+
+        /// handle custom errors
+        catch(bytes memory err) {
+            bytes4[] memory allowedErrors = new bytes4[](5);
+            allowedErrors[0] = TransferUtils.TokenTransferError.selector;
+            allowedErrors[1] = Errors.PlaceOrderWithParamsError.selector;
+            allowedErrors[2] = Errors.SymbolStatusInvalid.selector;
+            allowedErrors[3] = Errors.OnlyOneShortPositionSupport.selector;
+            allowedErrors[4] = Errors.ExecutionFeeNotEnough.selector;
+
+            _assertCustomErrorsAllowed(err, allowedErrors);
+        }
+    }
+
+    /* Note 
+    - You can't add INCREASE posSide to the batch, else it reverts --> 
+    - There all have to be the same isCrossMargin, else it reverts  --> v
+    - If any of the orderType is NONE, it reverts  --> 
+    - reverts if any PositionSide is DECREASE and Qty is zero --> 
+    - reverts if any PositionSide is INCREASE and Qty is zero --> 
+    - reverts if OrderSide is NONE --> 
+    - reverts if OrderType is LIMIT and triggerPrice is zero --> 
+    - reverts if OrderType is LIMIT and OrderPositionSide is DECREASE --> 
+    - reverts if OrderType is STOP and (OrderStopType is NONE or triggerPrice is Zero) --> 
+    */
+
+
     struct BatchCreateOrderParamsHelper{
-        bool _isCrossMargin;
-        uint256 _orderSide;
-        uint256 _orderType;
-        uint256 _stopType;
-        uint256 _marginTokenIndex;
-        uint256 _orderMargin;
-        uint256 _qty;
-        uint256 _leverage;
-        uint256 _triggerPrice;
+        bool isCrossMargin; 
+        Order.Side orderSide; 
+        Order.Type orderType;
+        Order.StopType stopType;
+        uint256 marginTokenIndex;
+        uint256 qty;
+        uint256 orderMargin;
+        uint256 leverage;
+        uint256 triggerPrice;
+        uint256 acceptablePrice;
+        uint256 ethValue;
     }
 
     function _createBatchOrders(
         uint256 _numOrders, 
-        OracleProcess.OracleParam[] memory oracles, 
+        // OracleProcess.OracleParam[] memory oracles, 
         BatchCreateOrderParamsHelper memory paramsHelper
     ) internal returns(IOrder.PlaceOrderParams[] memory orderParams, uint256 totalEthValue) {
-        /* Note 
-        - You can't add INCREASE posSide to the batch, else it reverts --> 
-        - There all have to be the same isCrossMargin, else it reverts  --> v
-        - If any of the orderType is NONE, it reverts  --> 
-        - reverts if any PositionSide is DECREASE and Qty is zero --> 
-        - reverts if any PositionSide is INCREASE and Qty is zero --> 
-        - reverts if OrderSide is NONE --> 
-        - reverts if OrderType is LIMIT and triggerPrice is zero --> 
-        - reverts if OrderType is LIMIT and OrderPositionSide is DECREASE --> 
-        - reverts if OrderType is STOP and (OrderStopType is NONE or triggerPrice is Zero) --> 
-        */
-        
-        orderParams = new IOrder.PlaceOrderParams[](_numOrders);
-        totalEthValue;
-        
+        IOrder.PlaceOrderParams[] memory params = new IOrder.PlaceOrderParams[](_numOrders);
+        IOrder.PlaceOrderParams memory params_item;
         OrderParamsHelper memory orderParamsHelper;
-        IOrder.PlaceOrderParams memory params;
 
-        for (uint256 i = 0; i < _numOrders; i++) {
+        for(uint256 i = 0; i < params.length; i++) {
+            /// createOrder params setup
+            params_item.isCrossMargin = paramsHelper.isCrossMargin;
+            params_item.isNativeToken = i % 2 == 0 ? true : false;
+            params_item.orderSide = i % 2 == 0 ? paramsHelper.orderSide : Order.Side.LONG;
+            params_item.posSide = Order.PositionSide.DECREASE;
+            params_item.orderType = i % 2 == 0 ? paramsHelper.orderType : Order.Type.MARKET;
+            params_item.stopType = i % 2 == 0 ? paramsHelper.stopType : Order.StopType.TAKE_PROFIT;
+            params_item.marginToken = tokens[EchidnaUtils.clampBetween(paramsHelper.marginTokenIndex, 0, tokens.length - 1)];
+            params_item.qty = paramsHelper.qty + i;
+            params_item.orderMargin = EchidnaUtils.clampBetween(paramsHelper.orderMargin, 0, IERC20(params_item.marginToken).balanceOf(msg.sender));
+            params_item.leverage = EchidnaUtils.clampBetween(paramsHelper.leverage, 0, MarketConfig.getMaxLeverage() - params.length);
+            params_item.triggerPrice = EchidnaUtils.clampBetween(paramsHelper.triggerPrice, 0, 100_000e8);
+            params_item.acceptablePrice = EchidnaUtils.clampBetween(paramsHelper.acceptablePrice, 0, 100_000e8);
+            params_item.executionFee = ChainConfig.getPlaceDecreaseOrderGasFeeLimit();
+            params_item.placeTime = block.timestamp;
+            params_item.symbol = params_item.marginToken == address(weth) ? MarketConfig.getWethSymbol() : MarketConfig.getWbtcSymbol();
             
-            params.isCrossMargin = paramsHelper._isCrossMargin;
-            params.isNativeToken = i % 2 == 0 ? true : false;
-    
-            orderParamsHelper.orderSide = EchidnaUtils.clampBetween(paramsHelper._orderSide, 0, 2);
-            if(orderParamsHelper.orderSide == 0){
-                params.orderSide = Order.Side.NONE;
-            }else if(orderParamsHelper.orderSide == 1){
-                params.orderSide = Order.Side.LONG;
-            }else{
-                params.orderSide = Order.Side.SHORT;
-            }
-    
-            params.posSide = i % 2 == 0 ? Order.PositionSide.DECREASE : Order.PositionSide.NONE;
-    
-            orderParamsHelper.orderType = EchidnaUtils.clampBetween(paramsHelper._orderType, 0, 2);
-            if(orderParamsHelper.orderType == 0){
-                params.orderType = Order.Type.MARKET;
-            }else if(orderParamsHelper.orderType == 1){
-                params.orderType = Order.Type.STOP;
-            }else{
-                params.orderType = Order.Type.LIMIT;
-            }
-    
-            orderParamsHelper.stopType = EchidnaUtils.clampBetween(paramsHelper._stopType, 0, 2);
-            if(orderParamsHelper.stopType == 0){
-                params.stopType = Order.StopType.NONE;
-            }else if(orderParamsHelper.stopType == 1){
-                params.stopType = Order.StopType.STOP_LOSS;
-            }else{
-                params.stopType = Order.StopType.TAKE_PROFIT;
-            }
-
-            orderParamsHelper.tokenAddresses = new address[](2);
-            orderParamsHelper.tokenAddresses[0] = address(weth);
-            orderParamsHelper.tokenAddresses[1] = address(wbtc);
-    
-            orderParamsHelper.tokenIndex = EchidnaUtils.clampBetween(paramsHelper._marginTokenIndex, 0, 1);
-            orderParamsHelper.token = orderParamsHelper.tokenAddresses[orderParamsHelper.tokenIndex];
-            params.marginToken = orderParamsHelper.token;
-    
-            if(params.marginToken == address(weth)){
-                params.symbol = MarketConfig.getWethSymbol();
-            }else{
-                params.symbol = MarketConfig.getWbtcSymbol();
-            }
-
-            for(uint256 j = 0; j < oracles.length; i++) {
-                if(oracles[j].token == params.marginToken) {
-                    orderParamsHelper.maxPrice = oracles[j].maxPrice;
-                    params.triggerPrice = EchidnaUtils.clampBetween(paramsHelper._triggerPrice, uint256(orderParamsHelper.maxPrice) / 5, uint256(orderParamsHelper.maxPrice) * 10); 
-                }
-            }
-        
-            // TODO fix
-            params.acceptablePrice = params.triggerPrice;
-            
-            orderParamsHelper.tokenMargin = EchidnaUtils.clampBetween(paramsHelper._orderMargin, 0, IERC20(orderParamsHelper.token).balanceOf(msg.sender) / 2);
-            orderParamsHelper.ethMargin = EchidnaUtils.clampBetween(paramsHelper._orderMargin, 0, msg.sender.balance);
-            
-            params.orderMargin = orderParamsHelper.tokenMargin;
-            params.qty = EchidnaUtils.clampBetween(paramsHelper._qty, 0, (_before.portfolioVaultUsdcBalance + _before.tradeVaultUsdcBalance + _before.lpVaultUsdcBalance) * 100);
-            params.leverage = EchidnaUtils.clampBetween(paramsHelper._leverage, 0, MarketConfig.getMaxLeverage());
-            params.executionFee = (ChainConfig.getPlaceIncreaseOrderGasFeeLimit() * tx.gasprice) + 10_000; // extra 10k to account for margin of error
-            params.placeTime = block.timestamp;
-    
-            orderParamsHelper.ethValue = params.executionFee;
-    
-            if(params.isNativeToken){
-                // open position with native token
-                // and match orderMargin to ethValue, else Tx reverts
-                // orderParamsHelper.ethValue = orderParamsHelper.ethMargin;
-                params.orderMargin = orderParamsHelper.ethMargin;
-            }
-
-            orderParams[i] = params;
-            totalEthValue += params.executionFee;
+            params[i] = params_item;
+            orderParamsHelper.ethValue += params_item.executionFee;
         }
-    }
 
+        return (params, orderParamsHelper.ethValue);
+    }
 
     /// batchCreateOrderRequest
     function orderFacet_batchCreateOrderRequest(
         uint256 _answer,
         uint256 _numOrders, 
         bool _isCrossMargin, 
-        uint256 _orderSide, 
-        uint256 _orderType, 
-        uint256 _stopType,
+        Order.Side _orderSide, 
+        Order.Type _orderType,
+        Order.StopType _stopType,
         uint256 _marginTokenIndex,
-        uint256 _orderMargin,
         uint256 _qty,
+        uint256 _orderMargin,
         uint256 _leverage,
-        uint256 _triggerPrice
+        uint256 _triggerPrice,
+        uint256 _acceptablePrice
     ) public {
-        // Get oracles
         BeforeAfterParamHelper memory beAfParams;
-        beAfParams.oracles = getOracleParam(_answer);
-        
-        
-        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
-
         IOrder.PlaceOrderParams[] memory params;
-        OrderParamsHelper memory orderParamsHelper;
         BatchCreateOrderParamsHelper memory paramsHelper;
-        
-        // keep the numOrder value very low to reduce the chance of tx reverts
-        orderParamsHelper.numOrders =  EchidnaUtils.clampBetween(_numOrders, 1, 5);
-        
-        paramsHelper._isCrossMargin = _isCrossMargin;
-        paramsHelper._orderSide = _orderSide;
-        paramsHelper._orderType = _orderType;
-        paramsHelper._stopType = _stopType;
-        paramsHelper._marginTokenIndex = _marginTokenIndex;
-        paramsHelper._orderMargin = _orderMargin;
-        paramsHelper._qty = _qty;
-        paramsHelper._leverage = _leverage;
-        paramsHelper._triggerPrice = _triggerPrice;
-        
-        (params, orderParamsHelper.ethValue) = _createBatchOrders(orderParamsHelper.numOrders, beAfParams.oracles, paramsHelper);
+        beAfParams.oracles = getOracleParam(_answer);
 
-        vm.prank(msg.sender); 
-        try diamondOrderFacet.batchCreateOrderRequest{value: orderParamsHelper.ethValue}(params)returns(uint256[] memory orderIds) {
-            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+        paramsHelper.isCrossMargin = _isCrossMargin;
+        paramsHelper.orderSide = _orderSide;
+        paramsHelper.orderType = _orderType;
+        paramsHelper.stopType = _stopType;
+        paramsHelper.marginTokenIndex = _marginTokenIndex;
+        paramsHelper.qty = _qty;
+        paramsHelper.orderMargin = _orderMargin;
+        paramsHelper.leverage = _leverage;
+        paramsHelper.triggerPrice = _triggerPrice;
+        paramsHelper.acceptablePrice = _acceptablePrice;
+        
+        (params, paramsHelper.ethValue) = _createBatchOrders(EchidnaUtils.clampBetween(_numOrders, 1, 5), paramsHelper);
+
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code);
+        vm.prank(msg.sender);
+        try diamondOrderFacet.batchCreateOrderRequest{value: paramsHelper.ethValue}(params)returns(uint256[] memory orderIds) {
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code);
 
             // Add to orderRequest Queue
-        
             OrderExecutions memory execution;
             for(uint256 i = 0; i < orderIds.length; i++) {
                 execution = OrderExecutions(
@@ -2065,6 +1924,8 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
                     false);
                 _keeperExecutions.orderExecutions.push(execution);
             }
+
+            /// Add Invariants
             
         }                      
         
@@ -2080,7 +1941,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         /// handle custom errors
         catch(bytes memory err) {
-            bytes4[] memory allowedErrors = new bytes4[](7);
+            bytes4[] memory allowedErrors = new bytes4[](8);
             allowedErrors[0] = Errors.OnlyDecreaseOrderSupported.selector;
             allowedErrors[1] = Errors.MarginModeError.selector;
             allowedErrors[2] = Errors.ExecutionFeeNotEnough.selector;
@@ -2088,6 +1949,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
             allowedErrors[4] = Errors.SymbolStatusInvalid.selector;
             allowedErrors[5] = Errors.OnlyOneShortPositionSupport.selector;
             allowedErrors[6] = TransferUtils.TokenTransferError.selector;
+            allowedErrors[7] = Errors.PositionNotExists.selector;
 
             _assertCustomErrorsAllowed(err, allowedErrors);
         }
@@ -2096,59 +1958,86 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
     ////////// PositionFacet //////////
 
-    /// createUpdatePositionMarginRequest
-    function positionFacet_createUpdatePositionMarginRequest(uint256 _answer, bool _isAdd, bool _isNativeToken, uint256 _tokenIndex, uint256 _updateMarginAmount) public {
-        // Get oracles
+    /// createUpdatePositionMarginRequest crytpo token
+    function positionFacet_createUpdatePositionMarginRequestCrypto(uint256 _answer, bool _isAdd, uint256 _positionKeyIndex, uint256 _tokenIndex, uint256 _updateMarginAmount) public {
         BeforeAfterParamHelper memory beAfParams;
-        beAfParams.oracles = getOracleParam(_answer);
-        
-        
-        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
-
-        /**
-        Questions
-        - Can the update marginToken be different from the position margin token? 
-        Ans: It does validate in the contract
-        */
-
-        PositionParamsHelper memory positionParamsHelper;
         IPosition.UpdatePositionMarginParams memory params;
+        beAfParams.oracles = getOracleParam(_answer);
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code);
 
-        if (_before.positionKey.length == 0) {
-            return;
-        }
-
-        positionParamsHelper.keyIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, _before.positionKey.length - 1);
-
-        params.positionKey = _before.positionKey[positionParamsHelper.keyIndex];
+        params.positionKey = _before.positionKey[EchidnaUtils.clampBetween(_positionKeyIndex, 0, _before.positionKey.length - 1)];
         params.isAdd = _isAdd;
-        params.isNativeToken = _isNativeToken;
+        params.isNativeToken = false;
+        params.marginToken = tokens[EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1)];
+        params.updateMarginAmount = EchidnaUtils.clampBetween(_updateMarginAmount, 0, IERC20(params.marginToken).balanceOf(msg.sender));
+        params.executionFee = ChainConfig.getPositionUpdateMarginGasFeeLimit();
 
-        positionParamsHelper.tokenIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1);
-        positionParamsHelper.token = tokens[positionParamsHelper.tokenIndex]; // select a random token
-        params.marginToken = positionParamsHelper.token;
-
-        positionParamsHelper.updateMarginAmount = EchidnaUtils.clampBetween(_updateMarginAmount, 0, IERC20(positionParamsHelper.token).balanceOf(msg.sender));
-        params.updateMarginAmount = positionParamsHelper.updateMarginAmount;
-
-        params.executionFee = (ChainConfig.getPositionUpdateMarginGasFeeLimit() * tx.gasprice) + 10_000;
-
-        positionParamsHelper.ethValue = params.executionFee;
-
-        if(_isNativeToken){
-            params.updateMarginAmount = EchidnaUtils.clampBetween(_updateMarginAmount, 0, msg.sender.balance);
-            positionParamsHelper.ethValue = params.updateMarginAmount;
-        }
-
-        vm.prank(msg.sender); 
-        try diamondPositionFacet.createUpdatePositionMarginRequest{value: positionParamsHelper.ethValue}(params)returns(uint256 requestId) {
+        vm.prank(msg.sender);
+        try diamondPositionFacet.createUpdatePositionMarginRequest{value: params.executionFee}(params)returns(uint256 requestId) {
             __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             // Add positionMarginRequest to Queue
             PositionMarginRequests memory execution = PositionMarginRequests(
                 msg.sender, 
                 requestId, 
-                positionParamsHelper.keyIndex,
+                params.positionKey,
+                params.isAdd,
+                params.isNativeToken,
+                params.updateMarginAmount,
+                params.executionFee,
+                false);
+            _keeperExecutions.positionMarginRequests.push(execution);
+
+            /// Invariants assessment
+
+            
+        }
+
+        /// handle `require` text-based errors
+        catch Error(string memory err) {
+            string[] memory allowedErrors = new string[](2);
+            allowedErrors[0] = "update margin with execution fee error!";
+            allowedErrors[1] = "Deposit eth amount error!";
+
+            _assertTextErrorsAllowed(err, allowedErrors);
+        }
+
+        /// handle custom errors
+        catch(bytes memory err) {
+            bytes4[] memory allowedErrors = new bytes4[](5);
+            allowedErrors[0] = Errors.AmountZeroNotAllowed.selector;
+            allowedErrors[1] = Errors.OnlyIsolateSupported.selector;
+            allowedErrors[2] = Errors.ExecutionFeeNotEnough.selector;
+            allowedErrors[3] = Errors.PositionNotExists.selector;
+            allowedErrors[4] = TransferUtils.TokenTransferError.selector;
+
+            _assertCustomErrorsAllowed(err, allowedErrors);
+        }
+    }
+
+
+    function positionFacet_createUpdatePositionMarginRequestNative(uint256 _answer, bool _isAdd, uint256 _positionKeyIndex, uint256 _tokenIndex, uint256 _updateMarginAmount) public {
+        BeforeAfterParamHelper memory beAfParams;
+        IPosition.UpdatePositionMarginParams memory params;
+        beAfParams.oracles = getOracleParam(_answer);
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code);
+
+        params.positionKey = _before.positionKey[EchidnaUtils.clampBetween(_positionKeyIndex, 0, _before.positionKey.length - 1)];
+        params.isAdd = _isAdd;
+        params.isNativeToken = true;
+        params.marginToken = tokens[EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1)];
+        params.updateMarginAmount = EchidnaUtils.clampBetween(_updateMarginAmount, 0, msg.sender.balance);
+        params.executionFee = ChainConfig.getPositionUpdateMarginGasFeeLimit();
+
+        vm.prank(msg.sender);
+        try diamondPositionFacet.createUpdatePositionMarginRequest{value: params.updateMarginAmount}(params)returns(uint256 requestId) {
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+            // Add positionMarginRequest to Queue
+            PositionMarginRequests memory execution = PositionMarginRequests(
+                msg.sender, 
+                requestId, 
+                params.positionKey,
                 params.isAdd,
                 params.isNativeToken,
                 params.updateMarginAmount,
@@ -2196,51 +2085,26 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         uint256 leverage;
     }
 
-    /// createUpdateLeverageRequest
-    function positionFacet_createUpdateLeverageRequest(uint256 _answer, bool _isLong, bool _isNativeToken, uint256 _tokenIndex, uint256 _addMarginAmount, uint256 _leverage ) public {
+    /// createUpdateLeverageRequest native token
+    function positionFacet_createUpdateLeverageRequestCrypto(uint256 _answer, bool _isLong, bool _isCrossMargin, uint256 _leverage, uint256 _tokenIndex, uint256 _addMarginAmount ) public {
         // Get oracles
         BeforeAfterParamHelper memory beAfParams;
-        beAfParams.oracles = getOracleParam(_answer);
-        
-        
-        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
-
-        PositionParamsHelper memory positionParamsHelper;
         IPosition.UpdateLeverageParams memory params;
+        beAfParams.oracles = getOracleParam(_answer);
 
-        if (_before.positionSymbol.length == 0) {
-            return;
-        }
-
-        positionParamsHelper.symbolIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, _before.positionSymbol.length - 1);
-        positionParamsHelper.symbol = _before.positionSymbol[positionParamsHelper.symbolIndex];
-        
-        params.symbol = positionParamsHelper.symbol;
         params.isLong = _isLong;
-        params.isNativeToken = _isNativeToken;
-        
-        positionParamsHelper.leverage = EchidnaUtils.clampBetween(_leverage, 0, MarketConfig.getMaxLeverage());
-        params.leverage = positionParamsHelper.leverage;
+        params.isNativeToken = false;
+        params.isCrossMargin = _isCrossMargin;
+        params.leverage =  EchidnaUtils.clampBetween(_leverage, 0, MarketConfig.getMaxLeverage());
+        params.marginToken = tokens[EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1)];
+        params.symbol = params.marginToken == address(weth) ? MarketConfig.getWethSymbol() : MarketConfig.getWbtcSymbol();
+        params.addMarginAmount = EchidnaUtils.clampBetween(_addMarginAmount, 0, IERC20(params.marginToken).balanceOf(msg.sender));
+        params.executionFee = ChainConfig.getPositionUpdateLeverageGasFeeLimit();
 
-        positionParamsHelper.tokenIndex = EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1);
-        positionParamsHelper.token = tokens[positionParamsHelper.tokenIndex]; // select a random token
-        params.marginToken = positionParamsHelper.token;
-
-        positionParamsHelper.addMarginAmount = EchidnaUtils.clampBetween(_addMarginAmount, 0, IERC20(positionParamsHelper.token).balanceOf(msg.sender));
-        params.addMarginAmount = positionParamsHelper.addMarginAmount;
-
-        params.executionFee = (ChainConfig.getPositionUpdateLeverageGasFeeLimit() * tx.gasprice) + 10_000;
-
-        positionParamsHelper.ethValue = params.executionFee;
-
-        if(_isNativeToken){
-            params.addMarginAmount = EchidnaUtils.clampBetween(_addMarginAmount, 0, msg.sender.balance);
-            positionParamsHelper.ethValue = params.addMarginAmount;
-        }
-
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, params.symbol);
         vm.prank(msg.sender); 
-        try diamondPositionFacet.createUpdateLeverageRequest{value: positionParamsHelper.ethValue}(params)returns(uint256 requestId) {
-            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+        try diamondPositionFacet.createUpdateLeverageRequest{value: params.executionFee}(params)returns(uint256 requestId) {
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, params.symbol); 
 
             // Add positionMarginRequest to Queue
             PositionLeverageRequests memory execution = PositionLeverageRequests(
@@ -2264,7 +2128,6 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
 
         /// handle `require` text-based errors
         catch Error(string memory err) {
-            // require(msg.value == params.executionFee, "update leverage with execution fee error!");
             string[] memory allowedErrors = new string[](2);
             allowedErrors[0] = "update leverage with execution fee error!";
             allowedErrors[1] = "Deposit eth amount error!";
@@ -2286,30 +2149,72 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
     }
 
 
+    /// createUpdateLeverageRequest Crypto
+    function positionFacet_createUpdateLeverageRequestNative(uint256 _answer, bool _isLong, bool _isCrossMargin, uint256 _leverage, uint256 _tokenIndex, uint256 _addMarginAmount ) public {
+        // Get oracles
+        BeforeAfterParamHelper memory beAfParams;
+        IPosition.UpdateLeverageParams memory params;
+        beAfParams.oracles = getOracleParam(_answer);
+
+        params.isLong = _isLong;
+        params.isNativeToken = true;
+        params.isCrossMargin = _isCrossMargin;
+        params.leverage =  EchidnaUtils.clampBetween(_leverage, 0, MarketConfig.getMaxLeverage());
+        params.marginToken = tokens[EchidnaUtils.clampBetween(_tokenIndex, 0, tokens.length - 1)];
+        params.symbol = params.marginToken == address(weth) ? MarketConfig.getWethSymbol() : MarketConfig.getWbtcSymbol();
+        params.addMarginAmount = EchidnaUtils.clampBetween(_addMarginAmount, 0, msg.sender.balance);
+        params.executionFee = ChainConfig.getPositionUpdateLeverageGasFeeLimit();
+
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, params.symbol);
+        vm.prank(msg.sender); 
+        try diamondPositionFacet.createUpdateLeverageRequest{value: params.addMarginAmount}(params)returns(uint256 requestId) {
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, params.symbol); 
+
+            // Add positionMarginRequest to Queue
+            PositionLeverageRequests memory execution = PositionLeverageRequests(
+                msg.sender, 
+                requestId,
+                params.symbol,
+                params.isLong,
+                params.isNativeToken,
+                params.isCrossMargin,
+                params.leverage,
+                params.marginToken,
+                params.addMarginAmount,
+                params.executionFee,
+                false);
+            _keeperExecutions.positionLeverageRequests.push(execution);
+
+            /// Invariants assessment
+
+            
+        }
+
+        /// handle `require` text-based errors
+        catch Error(string memory err) {
+            string[] memory allowedErrors = new string[](2);
+            allowedErrors[0] = "update leverage with execution fee error!";
+            allowedErrors[1] = "Deposit eth amount error!";
+            
+            _assertTextErrorsAllowed(err, allowedErrors);
+        }
+
+        /// handle custom errors
+        catch(bytes memory err) {
+            bytes4[] memory allowedErrors = new bytes4[](5);
+            allowedErrors[0] = Errors.SymbolNotExists.selector;
+            allowedErrors[1] = Errors.SymbolStatusInvalid.selector;
+            allowedErrors[2] = Errors.LeverageInvalid.selector;
+            allowedErrors[3] = Errors.ExecutionFeeNotEnough.selector;
+            allowedErrors[4] = TransferUtils.TokenTransferError.selector;
+
+            _assertCustomErrorsAllowed(err, allowedErrors);
+        }
+    }
+
     ////////// StakeFacet //////////
-    /// @dev MintStakeTokenParams struct used for minting
-    /// @param stakeToken The address of the pool
-    /// @param requestToken The address of the token being used
-    /// @param requestTokenAmount The total amount of tokens for minting
-    /// @param walletRequestTokenAmount The amount of tokens from the wallet for minting.
-    ///        When it is zero, it means that all of the requestTokenAmount is transferred from the user's trading account(Account).
-    /// @param minStakeAmount The minimum staking return amount expected
-    /// @param executionFee The execution fee for the keeper
-    /// @param isCollateral Whether the request token is used as collateral
-    /// @param isNativeToken whether the margin is ETH
-    // struct MintStakeTokenParams {
-    //     address stakeToken;
-    //     address requestToken;
-    //     uint256 requestTokenAmount;
-    //     uint256 walletRequestTokenAmount;
-    //     uint256 minStakeAmount;
-    //     uint256 executionFee;
-    //     bool isCollateral;
-    //     bool isNativeToken;
-    // }
 
     /// createMintStakeTokenRequest
-
     function stakeFacet_createMintStakeTokenRequest(
         uint256 _answer, 
         uint256 _stakeTokenIndex, 
@@ -2317,52 +2222,106 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         uint256 _requestTokenAmount,
         uint256 _walletRequestTokenAmount,
         uint256 _minStakeAmount,
-        bool _isCollateral,
-        bool _isNativeToken
+        bool _isCollateral
     ) public {
-        // Get oracles
         BeforeAfterParamHelper memory beAfParams;
-        beAfParams.oracles = getOracleParam(_answer);
-        
-        
-        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code);
-
-        StakeParamsHelper memory stakeParamsHelper;
         IStake.MintStakeTokenParams memory params;
+        StakeParamsHelper memory stakeParamsHelper;
+        beAfParams.oracles = getOracleParam(_answer);
 
+        /// createOrder params setup
         stakeParamsHelper.stakeTokenIndex = EchidnaUtils.clampBetween(_stakeTokenIndex, 0, stakedTokens.length - 1);
-        stakeParamsHelper.stakeToken = stakedTokens[stakeParamsHelper.stakeTokenIndex]; // select a random token
-        params.stakeToken = stakeParamsHelper.stakeToken;
-
+        params.stakeToken = stakedTokens[stakeParamsHelper.stakeTokenIndex];
         stakeParamsHelper.requestTokenIndex = EchidnaUtils.clampBetween(_requestTokenIndex, 0, tokens.length - 1);
-        stakeParamsHelper.requestToken = tokens[stakeParamsHelper.requestTokenIndex]; // select a random token
-        params.requestToken = stakeParamsHelper.requestToken;
-
-        Debugger.log("Request Token Balance", IERC20(params.requestToken).balanceOf(msg.sender));
-        stakeParamsHelper.walletRequestTokenAmount = EchidnaUtils.clampBetween(_walletRequestTokenAmount, 0, IERC20(params.requestToken).balanceOf(msg.sender));
-        params.walletRequestTokenAmount = stakeParamsHelper.walletRequestTokenAmount;
-        Debugger.log("Wallet Request Token Amount 2", params.walletRequestTokenAmount);
-
+        params.requestToken = tokens[stakeParamsHelper.requestTokenIndex];
+        params.requestTokenAmount = _requestTokenAmount;
+        params.walletRequestTokenAmount = EchidnaUtils.clampBetween(_walletRequestTokenAmount, 0, IERC20(params.requestToken).balanceOf(msg.sender));
         params.minStakeAmount = _minStakeAmount;
-        // params.executionFee = (ChainConfig.getMintGasFeeLimit() * tx.gasprice);
         params.executionFee = ChainConfig.getMintGasFeeLimit();
-        stakeParamsHelper.ethValue = params.executionFee;
-
         params.isCollateral = _isCollateral;
-        params.isNativeToken = _isNativeToken;
+        params.isNativeToken = false;
 
-        if(_isNativeToken){
-            stakeParamsHelper.ethValue = EchidnaUtils.clampBetween(_requestTokenAmount, 0, msg.sender.balance);
-            params.walletRequestTokenAmount = stakeParamsHelper.ethValue;
+        /// BeforAfter params setup
+        beAfParams.stakeToken = params.stakeToken;
+
+        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code);
+        vm.prank(msg.sender);
+        try diamondStakeFacet.createMintStakeTokenRequest{value: params.executionFee}(params)returns(uint256 requestId) {
+            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+
+            MintStakeRequests memory execution = MintStakeRequests(
+                msg.sender, 
+                requestId,
+                params.stakeToken,
+                params.requestToken,
+                params.requestTokenAmount,
+                params.walletRequestTokenAmount,
+                params.minStakeAmount,
+                params.executionFee,
+                params.isCollateral,
+                params.isNativeToken,
+                false);
+            _keeperExecutions.mintStakeRequests.push(execution);
+
+            /// Invariants assessment
+
+            
+        }         
+
+        /// handle `require` text-based errors
+        catch Error(string memory err) {
+            string[] memory allowedErrors = new string[](3);
+            allowedErrors[0] = "mint with execution fee error!";
+            allowedErrors[1] = "Deposit with token error!";
+            allowedErrors[2] = "Deposit eth amount error!";
+
+            _assertTextErrorsAllowed(err, allowedErrors);
         }
 
-        // Bound: requestTokenAmount >= walletRequestTokenAmount
-        params.requestTokenAmount = EchidnaUtils.clampBetween(_requestTokenAmount, params.walletRequestTokenAmount, _requestTokenAmount); 
+        /// handle custom errors
+        catch(bytes memory err) {
+            bytes4[] memory allowedErrors = new bytes4[](6);
+            allowedErrors[0] = Errors.MintWithAmountZero.selector;
+            allowedErrors[1] = Errors.MintTokenInvalid.selector;
+            allowedErrors[2] = Errors.StakeTokenInvalid.selector;
+            allowedErrors[3] = Errors.MintWithParamError.selector;
+            allowedErrors[4] = Errors.ExecutionFeeNotEnough.selector;
+            allowedErrors[5] = TransferUtils.TokenTransferError.selector;
 
+            _assertCustomErrorsAllowed(err, allowedErrors);
+        }
+    }
+
+    function stakeFacet_createMintStakeTokenRequestNative(
+        uint256 _answer, 
+        uint256 _stakeTokenIndex, 
+        uint256 _requestTokenIndex, 
+        uint256 _requestTokenAmount,
+        uint256 _walletRequestTokenAmount,
+        uint256 _minStakeAmount,
+        bool _isCollateral
+    ) public {
+        BeforeAfterParamHelper memory beAfParams;
+        IStake.MintStakeTokenParams memory params;
+        StakeParamsHelper memory stakeParamsHelper;
+        beAfParams.oracles = getOracleParam(_answer);
+
+        /// createOrder params setup
+        stakeParamsHelper.stakeTokenIndex = EchidnaUtils.clampBetween(_stakeTokenIndex, 0, stakedTokens.length - 1);
+        params.stakeToken = stakedTokens[stakeParamsHelper.stakeTokenIndex];
+        stakeParamsHelper.requestTokenIndex = EchidnaUtils.clampBetween(_requestTokenIndex, 0, tokens.length - 1);
+        params.requestToken = tokens[stakeParamsHelper.requestTokenIndex];
+        params.requestTokenAmount = _requestTokenAmount;
+        params.walletRequestTokenAmount = EchidnaUtils.clampBetween(_walletRequestTokenAmount, 0, msg.sender.balance);
+        params.minStakeAmount = _minStakeAmount;
+        params.executionFee = ChainConfig.getMintGasFeeLimit();
+        params.isCollateral = _isCollateral;
+        params.isNativeToken = true;
+
+        __before(msg.sender, beAfParams.oracles, params.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code);
         vm.prank(msg.sender); 
-        try diamondStakeFacet.createMintStakeTokenRequest{value: stakeParamsHelper.ethValue}(params)returns(uint256 requestId) {
-            // assert(false);
-            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+        try diamondStakeFacet.createMintStakeTokenRequest{value: params.walletRequestTokenAmount}(params)returns(uint256 requestId) {
+            __after(msg.sender, beAfParams.oracles, params.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             MintStakeRequests memory execution = MintStakeRequests(
                 msg.sender, 
@@ -2416,45 +2375,37 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         address redeemToken;
         uint256 walletRequestTokenAmount;
         uint256 ethValue;
+        uint256 receiverIndex;
     }
 
     function stakeFacet_createRedeemStakeTokenRequest(
         uint256 _answer, 
+        address _receiver,
+        uint256 _receiverIndex,
         uint256 _stakeTokenIndex, 
         uint256 _redeemTokenIndex, 
-        uint256 _requestTokenAmount,
         uint256 _unStakeAmount,
         uint256 _minRedeemAmount
     ) public {
         // Get oracles
         BeforeAfterParamHelper memory beAfParams;
-        beAfParams.oracles = getOracleParam(_answer);
-        
-        
-        __before(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
-
-        StakeParamsHelper memory stakeParamsHelper;
         IStake.RedeemStakeTokenParams memory params;
+        StakeParamsHelper memory stakeParamsHelper;
+        beAfParams.oracles = getOracleParam(_answer);
 
-        params.receiver = msg.sender;
-
-        stakeParamsHelper.stakeTokenIndex = EchidnaUtils.clampBetween(_stakeTokenIndex, 0, stakedTokens.length - 1);
-        stakeParamsHelper.stakeToken = stakedTokens[stakeParamsHelper.stakeTokenIndex]; // select a random token
-        params.stakeToken = stakeParamsHelper.stakeToken;
-
-        stakeParamsHelper.redeemTokenIndex = EchidnaUtils.clampBetween(_redeemTokenIndex, 0, tokens.length - 1);
-        stakeParamsHelper.redeemToken = tokens[stakeParamsHelper.redeemTokenIndex]; // select a random token
-        params.redeemToken = stakeParamsHelper.redeemToken;
-
-        params.unStakeAmount = EchidnaUtils.clampBetween(_unStakeAmount, 0, IERC20(params.stakeToken).balanceOf(msg.sender));
-
-        params.minRedeemAmount = _minRedeemAmount; 
-        params.executionFee = (ChainConfig.getRedeemGasFeeLimit() * tx.gasprice) + 10_000;
-        stakeParamsHelper.ethValue = params.executionFee;
-
+        // params.receiver = msg.sender; // Alt 1
+        // params.receiver = _receiver; // Alt 2
+        params.receiver = USERS[EchidnaUtils.clampBetween(_receiverIndex, 0, USERS.length - 1)];
+        params.stakeToken = stakedTokens[EchidnaUtils.clampBetween(_stakeTokenIndex, 0, stakedTokens.length - 1)];
+        params.redeemToken = tokens[EchidnaUtils.clampBetween(_redeemTokenIndex, 0, tokens.length - 1)];
+        params.unStakeAmount = _unStakeAmount;
+        params.minRedeemAmount = _minRedeemAmount;
+        params.executionFee = ChainConfig.getRedeemGasFeeLimit();
+        
+        __before(msg.sender, beAfParams.oracles, params.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code);
         vm.prank(msg.sender); 
-        try diamondStakeFacet.createRedeemStakeTokenRequest{value: stakeParamsHelper.ethValue}(params)returns(uint256 requestId) {
-            __after(msg.sender, beAfParams.oracles, beAfParams.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
+        try diamondStakeFacet.createRedeemStakeTokenRequest{value: params.executionFee}(params)returns(uint256 requestId) {
+            __after(msg.sender, beAfParams.oracles, params.stakeToken, beAfParams.collateralToken, beAfParams.token, beAfParams.code); 
 
             RedeemStakeTokenRequests memory execution = RedeemStakeTokenRequests(
                 msg.sender, 
@@ -2486,7 +2437,7 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties, BeforeAfte
         /// handle custom errors
         catch(bytes memory err) {
 
-            bytes4[] memory allowedErrors = new bytes4[](3);
+            bytes4[] memory allowedErrors = new bytes4[](4);
             allowedErrors[0] = AddressUtils.AddressZero.selector;
             allowedErrors[1] = Errors.RedeemWithAmountNotEnough.selector;
             allowedErrors[2] = Errors.RedeemTokenInvalid.selector;

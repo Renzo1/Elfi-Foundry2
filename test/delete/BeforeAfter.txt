@@ -286,10 +286,10 @@ abstract contract BeforeAfter is Setup {
         _before.accountOwner = account.owner;
         // _before.accountTokenBalances = account.tokenBalances;
         for(uint256 i = 0; i < account.tokenBalances.length; i++) {
-            _before.accountTokenBalancesAmount.push(account.tokenBalances[i].amount);
-            _before.accountTokenBalancesUsedAmount.push(account.tokenBalances[i].usedAmount);
-            _before.accountTokenBalancesInterest.push(account.tokenBalances[i].interest);
-            _before.accountTokenBalancesLiability.push(account.tokenBalances[i].liability);
+            _before.accountTokenBalancesAmount[i] = account.tokenBalances[i].amount;
+            _before.accountTokenBalancesUsedAmount[i] = account.tokenBalances[i].usedAmount;
+            _before.accountTokenBalancesInterest[i] = account.tokenBalances[i].interest;
+            _before.accountTokenBalancesLiability[i] = account.tokenBalances[i].liability;
         }
 
         _before.accountTokens = account.tokens;
@@ -302,29 +302,52 @@ abstract contract BeforeAfter is Setup {
         _before.accountCrossNetValue = account.crossNetValue;
         _before.accountTotalMM = account.totalMM;
 
+        // hevm.prank(_user);
+        // IAccount.AccountInfo memory accountWithOracles = diamondAccountFacet.getAccountInfoWithOracles(_user, _oracles);
+        // _before.accountOwnerWithOracles = accountWithOracles.owner;
+
+        // // _before.accountTokenBalancesWithOracles = accountWithOracles.tokenBalances;
+        // for(uint256 i = 0; i < accountWithOracles.tokenBalances.length; i++) {
+        //     _before.accountTokenBalancesAmountWithOracles[i] = accountWithOracles.tokenBalances[i].amount;
+        //     _before.accountTokenBalancesUsedAmountWithOracles[i] = accountWithOracles.tokenBalances[i].usedAmount;
+        //     _before.accountTokenBalancesInterestWithOracles[i] = accountWithOracles.tokenBalances[i].interest;
+        //     _before.accountTokenBalancesLiabilityWithOracles[i] = accountWithOracles.tokenBalances[i].liability;
+        // }
+
+        // _before.accountTokensWithOracles = accountWithOracles.tokens;
+        // _before.accountPositionsWithOracles = accountWithOracles.positions;
+        // _before.accountPortfolioNetValueWithOracles = accountWithOracles.portfolioNetValue;
+        // _before.accountTotalUsedValueWithOracles = accountWithOracles.totalUsedValue;
+        // _before.accountAvailableValueWithOracles = accountWithOracles.availableValue;
+        // _before.accountOrderHoldInUsdWithOracles = accountWithOracles.orderHoldInUsd;
+        // _before.accountCrossMMRWithOracles = accountWithOracles.crossMMR;
+        // _before.accountCrossNetValueWithOracles = accountWithOracles.crossNetValue;
+        // _before.accountTotalMMWithOracles = accountWithOracles.totalMM;
+
         ///////// OrderFacet /////////
         // _before.accountOrders = diamondOrderFacet.getAccountOrders(_user);
         hevm.prank(_user);
         IOrder.AccountOrder[] memory orders= diamondOrderFacet.getAccountOrders(_user);
         for(uint256 i = 0; i < orders.length; i++) {
-            _before.orderId.push(orders[i].orderId);
-            _before.orderAccount.push(orders[i].orderInfo.account);
-            _before.symbol.push(orders[i].orderInfo.symbol);
-            _before.orderSide.push(orders[i].orderInfo.orderSide);
-            _before.posSide.push(orders[i].orderInfo.posSide);
-            _before.orderType.push(orders[i].orderInfo.orderType);
-            _before.stopType.push(orders[i].orderInfo.stopType);
-            _before.isCrossMargin.push(orders[i].orderInfo.isCrossMargin);
-            _before.isExecutionFeeFromTradeVault.push(orders[i].orderInfo.isExecutionFeeFromTradeVault);
-            _before.marginToken.push(orders[i].orderInfo.marginToken);
-            _before.qty.push(orders[i].orderInfo.qty);
-            _before.leverage.push(orders[i].orderInfo.leverage);
-            _before.orderMargin.push(orders[i].orderInfo.orderMargin);
-            _before.triggerPrice.push(orders[i].orderInfo.triggerPrice);
-            _before.acceptablePrice.push(orders[i].orderInfo.acceptablePrice);
-            _before.placeTime.push(orders[i].orderInfo.placeTime);
-            _before.executionFee.push(orders[i].orderInfo.executionFee);
-            _before.lastBlock.push(orders[i].orderInfo.lastBlock);
+            _before.orderId[i] = orders[i].orderId;
+            _before.orderAccount[i] = orders[i].orderInfo.account;
+            _before.symbol[i] = orders[i].orderInfo.symbol;
+            _before.orderSide[i] = orders[i].orderInfo.orderSide;
+            _before.posSide[i] = orders[i].orderInfo.posSide;
+            _before.orderType[i] = orders[i].orderInfo.orderType;
+            _before.stopType[i] = orders[i].orderInfo.stopType;
+            _before.isCrossMargin[i] = orders[i].orderInfo.isCrossMargin;
+            _before.isExecutionFeeFromTradeVault[i] = orders[i].orderInfo.isExecutionFeeFromTradeVault;
+            _before.marginToken[i] = orders[i].orderInfo.marginToken;
+            _before.qty[i] = orders[i].orderInfo.qty;
+            _before.leverage[i] = orders[i].orderInfo.leverage;
+            _before.orderMargin[i] = orders[i].orderInfo.orderMargin;
+            _before.triggerPrice[i] = orders[i].orderInfo.triggerPrice;
+            _before.acceptablePrice[i] = orders[i].orderInfo.acceptablePrice;
+            _before.placeTime[i] = orders[i].orderInfo.placeTime;
+            _before.executionFee[i] = orders[i].orderInfo.executionFee;
+            _before.lastBlock[i] = orders[i].orderInfo.lastBlock;
+            
         }
 
         ///////// PositionFacet /////////
@@ -332,42 +355,39 @@ abstract contract BeforeAfter is Setup {
         hevm.prank(_user);
         IPosition.PositionInfo[] memory positions = diamondPositionFacet.getAllPositions(_user);
         for (uint256 i = 0; i < positions.length; i++) {
+            _before.positionLiquidationPrice[i] = positions[i].liquidationPrice;
+            _before.positionCurrentTimestamp[i] = positions[i].currentTimestamp;
 
-            _before.positionLiquidationPrice.push(positions[i].liquidationPrice);
-            _before.positionCurrentTimestamp.push(positions[i].currentTimestamp);
-
-            _before.positionKey.push(positions[i].position.key);
-            _before.positionSymbol.push(positions[i].position.symbol);
-            _before.positionIsLong.push(positions[i].position.isLong);
-            _before.positionIsCrossMargin.push(positions[i].position.isCrossMargin);
-            _before.positionAccount.push(positions[i].position.account);
-            _before.positionMarginToken.push(positions[i].position.marginToken);
-            _before.positionIndexToken.push(positions[i].position.indexToken);
-            _before.positionQty.push(positions[i].position.qty);
-            _before.positionEntryPrice.push(positions[i].position.entryPrice);
-            _before.positionLeverage.push(positions[i].position.leverage);
-            _before.positionInitialMargin.push(positions[i].position.initialMargin);
-            _before.positionInitialMarginInUsd.push(positions[i].position.initialMarginInUsd);
-            _before.positionInitialMarginInUsdFromBalance.push(positions[i].position.initialMarginInUsdFromBalance);
-            _before.positionHoldPoolAmount.push(positions[i].position.holdPoolAmount);
-            _before.positionRealizedPnl.push(positions[i].position.realizedPnl);
-            _before.positionLastUpdateTime.push(positions[i].position.lastUpdateTime);
-            _before.positionCloseFeeInUsd.push(positions[i].position.positionFee.closeFeeInUsd);
-            _before.positionOpenBorrowingFeePerToken.push(positions[i].position.positionFee.openBorrowingFeePerToken);
-            _before.positionRealizedBorrowingFee.push(positions[i].position.positionFee.realizedBorrowingFee);
-            _before.positionRealizedBorrowingFeeInUsd.push(positions[i].position.positionFee.realizedBorrowingFeeInUsd);
-            _before.positionOpenFundingFeePerQty.push(positions[i].position.positionFee.openFundingFeePerQty);
-            _before.positionRealizedFundingFee.push(positions[i].position.positionFee.realizedFundingFee);
-            _before.positionRealizedFundingFeeInUsd.push(positions[i].position.positionFee.realizedFundingFeeInUsd);
-
+            _before.positionKey[i] = positions[i].position.key;
+            _before.positionSymbol[i] = positions[i].position.symbol;
+            _before.positionIsLong[i] = positions[i].position.isLong;
+            _before.positionIsCrossMargin[i] = positions[i].position.isCrossMargin;
+            _before.positionAccount[i] = positions[i].position.account;
+            _before.positionMarginToken[i] = positions[i].position.marginToken;
+            _before.positionIndexToken[i] = positions[i].position.indexToken;
+            _before.positionQty[i] = positions[i].position.qty;
+            _before.positionEntryPrice[i] = positions[i].position.entryPrice;
+            _before.positionLeverage[i] = positions[i].position.leverage;
+            _before.positionInitialMargin[i] = positions[i].position.initialMargin;
+            _before.positionInitialMarginInUsd[i] = positions[i].position.initialMarginInUsd;
+            _before.positionInitialMarginInUsdFromBalance[i] = positions[i].position.initialMarginInUsdFromBalance;
+            _before.positionHoldPoolAmount[i] = positions[i].position.holdPoolAmount;
+            _before.positionRealizedPnl[i] = positions[i].position.realizedPnl;
+            _before.positionLastUpdateTime[i] = positions[i].position.lastUpdateTime;
+            _before.positionCloseFeeInUsd[i] = positions[i].position.positionFee.closeFeeInUsd;
+            _before.positionOpenBorrowingFeePerToken[i] = positions[i].position.positionFee.openBorrowingFeePerToken;
+            _before.positionRealizedBorrowingFee[i] = positions[i].position.positionFee.realizedBorrowingFee;
+            _before.positionRealizedBorrowingFeeInUsd[i] = positions[i].position.positionFee.realizedBorrowingFeeInUsd;
+            _before.positionOpenFundingFeePerQty[i] = positions[i].position.positionFee.openFundingFeePerQty;
+            _before.positionRealizedFundingFee[i] = positions[i].position.positionFee.realizedFundingFee;
+            _before.positionRealizedFundingFeeInUsd[i] = positions[i].position.positionFee.realizedFundingFeeInUsd;
         }
 
         ///////// StakingAccountFacet Computations /////////
 
-        // if(_stakeToken != address(0) || _collateralToken != address(0)) {
-        if(_stakeToken != address(0)) {
-            // hevm.prank(_user);
-            // _before.stakingAccountFacet_getAccountPoolCollateralAmount = diamondStakingAccountFacet.getAccountPoolCollateralAmount(_user, _stakeToken, _collateralToken);
+        if(_stakeToken != address(0) || _collateralToken != address(0)) {
+            hevm.prank(_user);
+            _before.stakingAccountFacet_getAccountPoolCollateralAmount = diamondStakingAccountFacet.getAccountPoolCollateralAmount(_user, _stakeToken, _collateralToken);
             hevm.prank(_user);
             _before.stakingAccountFacet_getAccountUsdPoolAmount = diamondStakingAccountFacet.getAccountUsdPoolAmount(_user);
 
@@ -456,13 +476,13 @@ abstract contract BeforeAfter is Setup {
             _before.pool_baseTokenBalance_collateralAmounts = pool.baseTokenBalance.collateralAmounts;
 
             for(uint256 i = 0; i < pool.stableTokenBalances.length; i++) {
-                _before.pool_stableTokenBalances_amount.push(pool.stableTokenBalances[i].amount);
-                _before.pool_stableTokenBalances_liability.push(pool.stableTokenBalances[i].liability);
-                _before.pool_stableTokenBalances_holdAmount.push(pool.stableTokenBalances[i].holdAmount);
-                _before.pool_stableTokenBalances_unsettledAmount.push(pool.stableTokenBalances[i].unsettledAmount);
-                _before.pool_stableTokenBalances_lossAmount.push(pool.stableTokenBalances[i].lossAmount);
-                _before.pool_stableTokenBalances_collateralTokens.push(pool.stableTokenBalances[i].collateralTokens);
-                _before.pool_stableTokenBalances_collateralAmounts.push(pool.stableTokenBalances[i].collateralAmounts);
+                _before.pool_stableTokenBalances_amount[i] = pool.stableTokenBalances[i].amount;
+                _before.pool_stableTokenBalances_liability[i] = pool.stableTokenBalances[i].liability;
+                _before.pool_stableTokenBalances_holdAmount[i] = pool.stableTokenBalances[i].holdAmount;
+                _before.pool_stableTokenBalances_unsettledAmount[i] = pool.stableTokenBalances[i].unsettledAmount;
+                _before.pool_stableTokenBalances_lossAmount[i] = pool.stableTokenBalances[i].lossAmount;
+                _before.pool_stableTokenBalances_collateralTokens[i] = pool.stableTokenBalances[i].collateralTokens;
+                _before.pool_stableTokenBalances_collateralAmounts[i] = pool.stableTokenBalances[i].collateralAmounts;
             }
 
             // LpPool.BorrowingFee borrowingFee;
@@ -486,17 +506,17 @@ abstract contract BeforeAfter is Setup {
 
             // UsdPool.TokenBalance[] stableTokenBalances;
             for(uint256 i = 0; i < usdPool.stableTokenBalances.length; i++) {
-                _before.usdPool_stableTokenBalances_amount.push(usdPool.stableTokenBalances[i].amount);
-                _before.usdPool_stableTokenBalances_holdAmount.push(usdPool.stableTokenBalances[i].holdAmount);
-                _before.usdPool_stableTokenBalances_unsettledAmount.push(usdPool.stableTokenBalances[i].unsettledAmount);
+                _before.usdPool_stableTokenBalances_amount[i] = usdPool.stableTokenBalances[i].amount;
+                _before.usdPool_stableTokenBalances_holdAmount[i] = usdPool.stableTokenBalances[i].holdAmount;
+                _before.usdPool_stableTokenBalances_unsettledAmount[i] = usdPool.stableTokenBalances[i].unsettledAmount;
             }
 
             // UsdPool.BorrowingFee[] borrowingFees;
             for(uint256 i = 0; i < usdPool.borrowingFees.length; i++) {
-                _before.usdPool_BorrowingFee_totalBorrowingFee.push(usdPool.borrowingFees[i].totalBorrowingFee);
-                _before.usdPool_BorrowingFee_totalRealizedBorrowingFee.push(usdPool.borrowingFees[i].totalRealizedBorrowingFee);
-                _before.usdPool_BorrowingFee_cumulativeBorrowingFeePerToken.push(usdPool.borrowingFees[i].cumulativeBorrowingFeePerToken);
-                _before.usdPool_BorrowingFee_lastUpdateTime.push(usdPool.borrowingFees[i].lastUpdateTime);
+                _before.usdPool_BorrowingFee_totalBorrowingFee[i] = usdPool.borrowingFees[i].totalBorrowingFee;
+                _before.usdPool_BorrowingFee_totalRealizedBorrowingFee[i] = usdPool.borrowingFees[i].totalRealizedBorrowingFee;
+                _before.usdPool_BorrowingFee_cumulativeBorrowingFeePerToken[i] = usdPool.borrowingFees[i].cumulativeBorrowingFeePerToken;
+                _before.usdPool_BorrowingFee_lastUpdateTime[i] = usdPool.borrowingFees[i].lastUpdateTime;
             }
         }
 
@@ -543,8 +563,8 @@ abstract contract BeforeAfter is Setup {
             _before.market_MarketInfo_FundingFee_lastUpdateTime = marketInfo.fundingFee.lastUpdateTime;
 
             for (uint256 i = 0; i < marketInfo.shortPositions.length; i++) {
-                _before.market_MarketInfo_ShortPositions_openInterest.push(marketInfo.shortPositions[i].openInterest);
-                _before.market_MarketInfo_ShortPositions_entryPrice.push(marketInfo.shortPositions[i].entryPrice);
+                _before.market_MarketInfo_ShortPositions_openInterest[i] = marketInfo.shortPositions[i].openInterest;
+                _before.market_MarketInfo_ShortPositions_entryPrice[i] = marketInfo.shortPositions[i].entryPrice;
             }
 
         }
@@ -585,17 +605,16 @@ abstract contract BeforeAfter is Setup {
     function __after(address _user, OracleProcess.OracleParam[] memory _oracles, address _stakeToken, address _collateralToken, address _token, bytes32 _code) internal {
         _resetAfter();
 
-
         ///////// AccountFacet /////////
         hevm.prank(_user);
         IAccount.AccountInfo memory account = diamondAccountFacet.getAccountInfo(_user);
         _after.accountOwner = account.owner;
         // _after.accountTokenBalances = account.tokenBalances;
         for(uint256 i = 0; i < account.tokenBalances.length; i++) {
-            _after.accountTokenBalancesAmount.push(account.tokenBalances[i].amount);
-            _after.accountTokenBalancesUsedAmount.push(account.tokenBalances[i].usedAmount);
-            _after.accountTokenBalancesInterest.push(account.tokenBalances[i].interest);
-            _after.accountTokenBalancesLiability.push(account.tokenBalances[i].liability);
+            _after.accountTokenBalancesAmount[i] = account.tokenBalances[i].amount;
+            _after.accountTokenBalancesUsedAmount[i] = account.tokenBalances[i].usedAmount;
+            _after.accountTokenBalancesInterest[i] = account.tokenBalances[i].interest;
+            _after.accountTokenBalancesLiability[i] = account.tokenBalances[i].liability;
         }
 
         _after.accountTokens = account.tokens;
@@ -608,72 +627,93 @@ abstract contract BeforeAfter is Setup {
         _after.accountCrossNetValue = account.crossNetValue;
         _after.accountTotalMM = account.totalMM;
 
+        // hevm.prank(_user);
+        // IAccount.AccountInfo memory accountWithOracles = diamondAccountFacet.getAccountInfoWithOracles(_user, _oracles);
+        // _after.accountOwnerWithOracles = accountWithOracles.owner;
+
+        // // _after.accountTokenBalancesWithOracles = accountWithOracles.tokenBalances;
+        // for(uint256 i = 0; i < accountWithOracles.tokenBalances.length; i++) {
+        //     _after.accountTokenBalancesAmountWithOracles[i] = accountWithOracles.tokenBalances[i].amount;
+        //     _after.accountTokenBalancesUsedAmountWithOracles[i] = accountWithOracles.tokenBalances[i].usedAmount;
+        //     _after.accountTokenBalancesInterestWithOracles[i] = accountWithOracles.tokenBalances[i].interest;
+        //     _after.accountTokenBalancesLiabilityWithOracles[i] = accountWithOracles.tokenBalances[i].liability;
+        // }
+
+        // _after.accountTokensWithOracles = accountWithOracles.tokens;
+        // _after.accountPositionsWithOracles = accountWithOracles.positions;
+        // _after.accountPortfolioNetValueWithOracles = accountWithOracles.portfolioNetValue;
+        // _after.accountTotalUsedValueWithOracles = accountWithOracles.totalUsedValue;
+        // _after.accountAvailableValueWithOracles = accountWithOracles.availableValue;
+        // _after.accountOrderHoldInUsdWithOracles = accountWithOracles.orderHoldInUsd;
+        // _after.accountCrossMMRWithOracles = accountWithOracles.crossMMR;
+        // _after.accountCrossNetValueWithOracles = accountWithOracles.crossNetValue;
+        // _after.accountTotalMMWithOracles = accountWithOracles.totalMM;
+
         ///////// OrderFacet /////////
         // _after.accountOrders = diamondOrderFacet.getAccountOrders(_user);
         hevm.prank(_user);
         IOrder.AccountOrder[] memory orders= diamondOrderFacet.getAccountOrders(_user);
         for(uint256 i = 0; i < orders.length; i++) {
-            _after.orderId.push(orders[i].orderId);
-            _after.orderAccount.push(orders[i].orderInfo.account);
-            _after.symbol.push(orders[i].orderInfo.symbol);
-            _after.orderSide.push(orders[i].orderInfo.orderSide);
-            _after.posSide.push(orders[i].orderInfo.posSide);
-            _after.orderType.push(orders[i].orderInfo.orderType);
-            _after.stopType.push(orders[i].orderInfo.stopType);
-            _after.isCrossMargin.push(orders[i].orderInfo.isCrossMargin);
-            _after.isExecutionFeeFromTradeVault.push(orders[i].orderInfo.isExecutionFeeFromTradeVault);
-            _after.marginToken.push(orders[i].orderInfo.marginToken);
-            _after.qty.push(orders[i].orderInfo.qty);
-            _after.leverage.push(orders[i].orderInfo.leverage);
-            _after.orderMargin.push(orders[i].orderInfo.orderMargin);
-            _after.triggerPrice.push(orders[i].orderInfo.triggerPrice);
-            _after.acceptablePrice.push(orders[i].orderInfo.acceptablePrice);
-            _after.placeTime.push(orders[i].orderInfo.placeTime);
-            _after.executionFee.push(orders[i].orderInfo.executionFee);
-            _after.lastBlock.push(orders[i].orderInfo.lastBlock);
+            _after.orderId[i] = orders[i].orderId;
+            _after.orderAccount[i] = orders[i].orderInfo.account;
+            _after.symbol[i] = orders[i].orderInfo.symbol;
+            _after.orderSide[i] = orders[i].orderInfo.orderSide;
+            _after.posSide[i] = orders[i].orderInfo.posSide;
+            _after.orderType[i] = orders[i].orderInfo.orderType;
+            _after.stopType[i] = orders[i].orderInfo.stopType;
+            _after.isCrossMargin[i] = orders[i].orderInfo.isCrossMargin;
+            _after.isExecutionFeeFromTradeVault[i] = orders[i].orderInfo.isExecutionFeeFromTradeVault;
+            _after.marginToken[i] = orders[i].orderInfo.marginToken;
+            _after.qty[i] = orders[i].orderInfo.qty;
+            _after.leverage[i] = orders[i].orderInfo.leverage;
+            _after.orderMargin[i] = orders[i].orderInfo.orderMargin;
+            _after.triggerPrice[i] = orders[i].orderInfo.triggerPrice;
+            _after.acceptablePrice[i] = orders[i].orderInfo.acceptablePrice;
+            _after.placeTime[i] = orders[i].orderInfo.placeTime;
+            _after.executionFee[i] = orders[i].orderInfo.executionFee;
+            _after.lastBlock[i] = orders[i].orderInfo.lastBlock;
+            
         }
 
         ///////// PositionFacet /////////
         // _after.accountPositionsInfo = diamondPositionFacet.getAllPositions(_user);
         hevm.prank(_user);
         IPosition.PositionInfo[] memory positions = diamondPositionFacet.getAllPositions(_user);
+        
         for (uint256 i = 0; i < positions.length; i++) {
+            _after.positionLiquidationPrice[i] = positions[i].liquidationPrice;
+            _after.positionCurrentTimestamp[i] = positions[i].currentTimestamp;
 
-            _after.positionLiquidationPrice.push(positions[i].liquidationPrice);
-            _after.positionCurrentTimestamp.push(positions[i].currentTimestamp);
-
-            _after.positionKey.push(positions[i].position.key);
-            _after.positionSymbol.push(positions[i].position.symbol);
-            _after.positionIsLong.push(positions[i].position.isLong);
-            _after.positionIsCrossMargin.push(positions[i].position.isCrossMargin);
-            _after.positionAccount.push(positions[i].position.account);
-            _after.positionMarginToken.push(positions[i].position.marginToken);
-            _after.positionIndexToken.push(positions[i].position.indexToken);
-            _after.positionQty.push(positions[i].position.qty);
-            _after.positionEntryPrice.push(positions[i].position.entryPrice);
-            _after.positionLeverage.push(positions[i].position.leverage);
-            _after.positionInitialMargin.push(positions[i].position.initialMargin);
-            _after.positionInitialMarginInUsd.push(positions[i].position.initialMarginInUsd);
-            _after.positionInitialMarginInUsdFromBalance.push(positions[i].position.initialMarginInUsdFromBalance);
-            _after.positionHoldPoolAmount.push(positions[i].position.holdPoolAmount);
-            _after.positionRealizedPnl.push(positions[i].position.realizedPnl);
-            _after.positionLastUpdateTime.push(positions[i].position.lastUpdateTime);
-            _after.positionCloseFeeInUsd.push(positions[i].position.positionFee.closeFeeInUsd);
-            _after.positionOpenBorrowingFeePerToken.push(positions[i].position.positionFee.openBorrowingFeePerToken);
-            _after.positionRealizedBorrowingFee.push(positions[i].position.positionFee.realizedBorrowingFee);
-            _after.positionRealizedBorrowingFeeInUsd.push(positions[i].position.positionFee.realizedBorrowingFeeInUsd);
-            _after.positionOpenFundingFeePerQty.push(positions[i].position.positionFee.openFundingFeePerQty);
-            _after.positionRealizedFundingFee.push(positions[i].position.positionFee.realizedFundingFee);
-            _after.positionRealizedFundingFeeInUsd.push(positions[i].position.positionFee.realizedFundingFeeInUsd);
-
+            _after.positionKey[i] = positions[i].position.key;
+            _after.positionSymbol[i] = positions[i].position.symbol;
+            _after.positionIsLong[i] = positions[i].position.isLong;
+            _after.positionIsCrossMargin[i] = positions[i].position.isCrossMargin;
+            _after.positionAccount[i] = positions[i].position.account;
+            _after.positionMarginToken[i] = positions[i].position.marginToken;
+            _after.positionIndexToken[i] = positions[i].position.indexToken;
+            _after.positionQty[i] = positions[i].position.qty;
+            _after.positionEntryPrice[i] = positions[i].position.entryPrice;
+            _after.positionLeverage[i] = positions[i].position.leverage;
+            _after.positionInitialMargin[i] = positions[i].position.initialMargin;
+            _after.positionInitialMarginInUsd[i] = positions[i].position.initialMarginInUsd;
+            _after.positionInitialMarginInUsdFromBalance[i] = positions[i].position.initialMarginInUsdFromBalance;
+            _after.positionHoldPoolAmount[i] = positions[i].position.holdPoolAmount;
+            _after.positionRealizedPnl[i] = positions[i].position.realizedPnl;
+            _after.positionLastUpdateTime[i] = positions[i].position.lastUpdateTime;
+            _after.positionCloseFeeInUsd[i] = positions[i].position.positionFee.closeFeeInUsd;
+            _after.positionOpenBorrowingFeePerToken[i] = positions[i].position.positionFee.openBorrowingFeePerToken;
+            _after.positionRealizedBorrowingFee[i] = positions[i].position.positionFee.realizedBorrowingFee;
+            _after.positionRealizedBorrowingFeeInUsd[i] = positions[i].position.positionFee.realizedBorrowingFeeInUsd;
+            _after.positionOpenFundingFeePerQty[i] = positions[i].position.positionFee.openFundingFeePerQty;
+            _after.positionRealizedFundingFee[i] = positions[i].position.positionFee.realizedFundingFee;
+            _after.positionRealizedFundingFeeInUsd[i] = positions[i].position.positionFee.realizedFundingFeeInUsd;
         }
 
         ///////// StakingAccountFacet Computations /////////
 
-        // if(_stakeToken != address(0) || _collateralToken != address(0)) {
-        if(_stakeToken != address(0)) {
-            // hevm.prank(_user);
-            // _after.stakingAccountFacet_getAccountPoolCollateralAmount = diamondStakingAccountFacet.getAccountPoolCollateralAmount(_user, _stakeToken, _collateralToken);
+        if(_stakeToken != address(0) || _collateralToken != address(0)) {
+            hevm.prank(_user);
+            _after.stakingAccountFacet_getAccountPoolCollateralAmount = diamondStakingAccountFacet.getAccountPoolCollateralAmount(_user, _stakeToken, _collateralToken);
             hevm.prank(_user);
             _after.stakingAccountFacet_getAccountUsdPoolAmount = diamondStakingAccountFacet.getAccountUsdPoolAmount(_user);
 
@@ -762,13 +802,13 @@ abstract contract BeforeAfter is Setup {
             _after.pool_baseTokenBalance_collateralAmounts = pool.baseTokenBalance.collateralAmounts;
 
             for(uint256 i = 0; i < pool.stableTokenBalances.length; i++) {
-                _after.pool_stableTokenBalances_amount.push(pool.stableTokenBalances[i].amount);
-                _after.pool_stableTokenBalances_liability.push(pool.stableTokenBalances[i].liability);
-                _after.pool_stableTokenBalances_holdAmount.push(pool.stableTokenBalances[i].holdAmount);
-                _after.pool_stableTokenBalances_unsettledAmount.push(pool.stableTokenBalances[i].unsettledAmount);
-                _after.pool_stableTokenBalances_lossAmount.push(pool.stableTokenBalances[i].lossAmount);
-                _after.pool_stableTokenBalances_collateralTokens.push(pool.stableTokenBalances[i].collateralTokens);
-                _after.pool_stableTokenBalances_collateralAmounts.push(pool.stableTokenBalances[i].collateralAmounts);
+                _after.pool_stableTokenBalances_amount[i] = pool.stableTokenBalances[i].amount;
+                _after.pool_stableTokenBalances_liability[i] = pool.stableTokenBalances[i].liability;
+                _after.pool_stableTokenBalances_holdAmount[i] = pool.stableTokenBalances[i].holdAmount;
+                _after.pool_stableTokenBalances_unsettledAmount[i] = pool.stableTokenBalances[i].unsettledAmount;
+                _after.pool_stableTokenBalances_lossAmount[i] = pool.stableTokenBalances[i].lossAmount;
+                _after.pool_stableTokenBalances_collateralTokens[i] = pool.stableTokenBalances[i].collateralTokens;
+                _after.pool_stableTokenBalances_collateralAmounts[i] = pool.stableTokenBalances[i].collateralAmounts;
             }
 
             // LpPool.BorrowingFee borrowingFee;
@@ -792,17 +832,17 @@ abstract contract BeforeAfter is Setup {
 
             // UsdPool.TokenBalance[] stableTokenBalances;
             for(uint256 i = 0; i < usdPool.stableTokenBalances.length; i++) {
-                _after.usdPool_stableTokenBalances_amount.push(usdPool.stableTokenBalances[i].amount);
-                _after.usdPool_stableTokenBalances_holdAmount.push(usdPool.stableTokenBalances[i].holdAmount);
-                _after.usdPool_stableTokenBalances_unsettledAmount.push(usdPool.stableTokenBalances[i].unsettledAmount);
+                _after.usdPool_stableTokenBalances_amount[i] = usdPool.stableTokenBalances[i].amount;
+                _after.usdPool_stableTokenBalances_holdAmount[i] = usdPool.stableTokenBalances[i].holdAmount;
+                _after.usdPool_stableTokenBalances_unsettledAmount[i] = usdPool.stableTokenBalances[i].unsettledAmount;
             }
 
             // UsdPool.BorrowingFee[] borrowingFees;
             for(uint256 i = 0; i < usdPool.borrowingFees.length; i++) {
-                _after.usdPool_BorrowingFee_totalBorrowingFee.push(usdPool.borrowingFees[i].totalBorrowingFee);
-                _after.usdPool_BorrowingFee_totalRealizedBorrowingFee.push(usdPool.borrowingFees[i].totalRealizedBorrowingFee);
-                _after.usdPool_BorrowingFee_cumulativeBorrowingFeePerToken.push(usdPool.borrowingFees[i].cumulativeBorrowingFeePerToken);
-                _after.usdPool_BorrowingFee_lastUpdateTime.push(usdPool.borrowingFees[i].lastUpdateTime);
+                _after.usdPool_BorrowingFee_totalBorrowingFee[i] = usdPool.borrowingFees[i].totalBorrowingFee;
+                _after.usdPool_BorrowingFee_totalRealizedBorrowingFee[i] = usdPool.borrowingFees[i].totalRealizedBorrowingFee;
+                _after.usdPool_BorrowingFee_cumulativeBorrowingFeePerToken[i] = usdPool.borrowingFees[i].cumulativeBorrowingFeePerToken;
+                _after.usdPool_BorrowingFee_lastUpdateTime[i] = usdPool.borrowingFees[i].lastUpdateTime;
             }
         }
 
@@ -849,8 +889,8 @@ abstract contract BeforeAfter is Setup {
             _after.market_MarketInfo_FundingFee_lastUpdateTime = marketInfo.fundingFee.lastUpdateTime;
 
             for (uint256 i = 0; i < marketInfo.shortPositions.length; i++) {
-                _after.market_MarketInfo_ShortPositions_openInterest.push(marketInfo.shortPositions[i].openInterest);
-                _after.market_MarketInfo_ShortPositions_entryPrice.push(marketInfo.shortPositions[i].entryPrice);
+                _after.market_MarketInfo_ShortPositions_openInterest[i] = marketInfo.shortPositions[i].openInterest;
+                _after.market_MarketInfo_ShortPositions_entryPrice[i] = marketInfo.shortPositions[i].entryPrice;
             }
 
         }
